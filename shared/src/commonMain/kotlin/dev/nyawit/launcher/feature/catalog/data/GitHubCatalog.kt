@@ -34,6 +34,7 @@ private val NON_APP_MARKERS = listOf(
     "backend", "server", "infra", "workflow", "readme", "gallery", "theme",
 )
 
+private val WEB_LANGUAGES = setOf("HTML", "CSS", "JavaScript", "TypeScript", "Vue", "Svelte", "Astro", "PHP")
 private val APP_LANGUAGES = setOf("Kotlin", "Java", "Dart", "Swift", "Rust", "C++", "C#", "Objective-C")
 private val APP_TOPICS = setOf("app", "android", "game", "launcher", "music", "desktop", "mobile", "android-tv")
 
@@ -99,6 +100,7 @@ private fun packageNameOf(fullName: String): String = when {
 private fun isAppRepo(repo: GithubRepo): Boolean {
     val text = "${repo.name} ${repo.description.orEmpty()}".lowercase()
     if (NON_APP_MARKERS.any { it in text }) return false
+    if (repo.language in WEB_LANGUAGES) return false
     if (repo.language in APP_LANGUAGES) return true
     return repo.topics.any { it.lowercase() in APP_TOPICS }
 }
