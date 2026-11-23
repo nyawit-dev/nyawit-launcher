@@ -239,7 +239,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             ) { ok, msg ->
                 appProgress = null
                 appPhase = app.fullName to if (ok) FlowPhase.DONE else FlowPhase.ERROR
-                if (ok) {
+                if (ok) scope.launch {
                     val installed = withContext(Dispatchers.Default) { installedVersion(app.packageName, platformContext) }
                     statuses = statuses + (app.fullName to if (installed != null) AppStatus.INSTALLED else AppStatus.NOT_INSTALLED)
                     updateCount = statuses.count { it.value == AppStatus.UPDATE_AVAILABLE }
