@@ -178,7 +178,10 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
 
     val filtered = apps.filter {
-        val matchPlatform = currentPlatform in it.platforms || (currentPlatform == dev.nyawit.launcher.core.platform.AppPlatform.ANDROID && AppPlatform.TV in it.platforms)
+        val matchPlatform = when (currentPlatform) {
+            AppPlatform.DESKTOP -> AppPlatform.DESKTOP in it.platforms
+            else -> AppPlatform.ANDROID in it.platforms || AppPlatform.TV in it.platforms
+        }
         val matchQuery = query.isBlank() || it.name.contains(query, true) || it.description.contains(query, true)
         val matchCategory = category == "Semua" || it.category == category
         matchPlatform && matchQuery && matchCategory
