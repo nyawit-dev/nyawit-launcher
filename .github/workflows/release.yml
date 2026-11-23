@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist-${{ matrix.name }}
-          find desktopApp/build -type f \( -name '*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' -o -name '*.rpm' -o -name '*.AppImage' \) -exec cp {} dist-${{ matrix.name }}/ \;
+          find desktopApp/build -type f \( -name 'nyawit-launcher-*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' \) -exec cp {} dist-${{ matrix.name }}/ \;
           ls -lh dist-${{ matrix.name }}/
       - uses: actions/upload-artifact@v4
         with:
