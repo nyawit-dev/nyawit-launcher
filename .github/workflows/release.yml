@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nyawit-launcher-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Accept SDK licenses
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build Android + JVM release artifacts
+        run: ./gradlew --no-daemon :androidApp:assembleRelease :desktopApp:packageUberJarForCurrentOS --stacktrace
+
+      - name: Verify Android TV launcher category
+        shell: bash
+        run: |
+          APK=$(find androidApp/build/outputs/apk/release -name '*.apk' -type f | head -n1)
+          test -n "$APK" || { echo "::error::No release APK"; exit 1; }
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | head -n1)
+          "$AAPT" dump badging "$APK" | grep -i 'LEANBACK_LAUNCHER' || {
+            echo "::error::Android TV launcher category missing"; exit 1;
+          }
+
+      - name: Collect artifacts
+        id: dist
+        shell: bash
+        run: |
+          mkdir -p dist
+          find androidApp/build/outputs/apk/release -name '*.apk' -type f -exec cp {} dist/ \;
+          find desktopApp/build -name '*.jar' -type f -exec cp {} dist/ \;
+          test -n "$(ls dist/* 2>/dev/null)" || { echo "::error::No artifacts"; exit 1; }
+          ls -lh dist/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
