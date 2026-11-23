@@ -32,10 +32,16 @@ kotlin {
             }
         }
         getByName("androidMain") {
-            dependencies { implementation(libs.ktor.client.okhttp) }
+            dependencies {
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.core.ktx)
+            }
         }
         getByName("desktopMain") {
-            dependencies { implementation(libs.ktor.client.okhttp) }
+            dependencies {
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.core.ktx)
+            }
         }
     }
 }
