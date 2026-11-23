@@ -1,3 +1,5 @@
+import dev.nyawit.launcher.core.platform.AppPlatform
+
 package dev.nyawit.launcher.feature.catalog.data
 
 import io.ktor.client.HttpClient
@@ -54,6 +56,7 @@ data class CatalogApp(
     val releaseUrl: String,
     val category: String,
     val packageName: String,
+    val platforms: List<AppPlatform>,
     val accent: Int,
 )
 
@@ -64,6 +67,18 @@ private fun categoryOf(name: String, description: String): String {
         listOf("game", "tetris", "snake", "arcade", "2048").any { it in text } -> "Game"
         "music" in text || "player" in text -> "Musik"
         else -> "Aplikasi"
+    }
+}
+
+private fun platformsOf(fullName: String, description: String): List<AppPlatform> {
+    val name = fullName.lowercase()
+    val text = "$name ${description.lowercase()}"
+    return when {
+        "launcher" in name -> listOf(AppPlatform.ANDROID, AppPlatform.TV, AppPlatform.DESKTOP)
+        "music" in name -> listOf(AppPlatform.ANDROID, AppPlatform.TV)
+        "tv" in text || "leanback" in text -> listOf(AppPlatform.ANDROID, AppPlatform.TV)
+        "desktop" in text || "jvm" in text || "compose multiplatform" in text -> listOf(AppPlatform.DESKTOP)
+        else -> listOf(AppPlatform.ANDROID)
     }
 }
 
@@ -108,6 +123,7 @@ class GitHubCatalog(
                     releaseUrl = "${repo.htmlUrl}/releases/latest",
                     category = categoryOf(name, desc),
                     packageName = packageNameOf(repo.fullName),
+                    platforms = platformsOf(repo.fullName, desc),
                     accent = ACCENTS[kotlin.math.abs(repo.name.hashCode()) % ACCENTS.size],
                 )
             }
