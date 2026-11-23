@@ -21,13 +21,20 @@ actual fun installApp(
     shouldCancel: () -> Boolean,
     onResult: (Boolean, String) -> Unit,
 ) {
-    val context = platformContext as? Context ?: return
+    val context = platformContext as? Context ?: run {
+        onResult(false, "Konteks Android tidak tersedia")
+        return
+    }
     val main = Handler(Looper.getMainLooper())
     Thread {
         val file = File(context.filesDir, fileName)
         try {
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.instanceFollowRedirects = true
+            if (connection.responseCode !in 200..299) {
+                connection.disconnect()
+                throw IllegalStateException("HTTP ${connection.responseCode}")
+            }
             connection.connectTimeout = 15000
             connection.readTimeout = 60000
             val total = connection.contentLengthLong
@@ -56,12 +63,22 @@ actual fun installApp(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
                         !context.packageManager.canRequestPackageInstalls()
                     ) {
-                        val settings = Intent(
+                        var settings = Intent(
                             Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                             Uri.parse("package:${context.packageName}"),
                         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(settings)
-                        onResult(false, "Izinkan pemasangan aplikasi tidak dikenal, lalu coba lagi")
+                        if (settings.resolveActivity(context.packageManager) == null) {
+                            settings = Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:${context.packageName}"),
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        if (settings.resolveActivity(context.packageManager) != null) {
+                            context.startActivity(settings)
+                            onResult(false, "Izinkan pemasangan aplikasi tidak dikenal, lalu coba lagi")
+                        } else {
+                            onResult(false, "Izinkan Install unknown apps untuk Nyawit Launcher")
+                        }
                         return@post
                     }
                     val uri: Uri = FileProvider.getUriForFile(
@@ -71,7 +88,7 @@ actual fun installApp(
                         .setDataAndType(uri, "application/vnd.android.package-archive")
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
-                    onResult(true, "Installer dibuka — konfirmasi pemasangan")
+                    onResult(true, "Installer dibuka — konfirmasi pemasangan diperlukan")
                 } catch (t: Throwable) {
                     file.delete()
                     onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}")
@@ -80,6 +97,8 @@ actual fun installApp(
         } catch (t: Throwable) {
             file.delete()
             main.post { onResult(false, "Gagal mengunduh: ${t.message ?: "unknown"}") }
+        } finally {
+            // connection disconnected implicitly by stream close; keep file for retry on validation errors
         }
     }.start()
 }
