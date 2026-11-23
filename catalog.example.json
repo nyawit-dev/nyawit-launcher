@@ -1,0 +1,6 @@
+{
+  "sources": [
+    { "type": "user", "name": "nyawit-dev" },
+    { "type": "repo", "name": "owner/nama-aplikasi-android" }
+  ]
+}
