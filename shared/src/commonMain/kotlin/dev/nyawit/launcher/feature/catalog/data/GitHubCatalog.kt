@@ -90,16 +90,21 @@ private fun platformsOf(fullName: String, description: String): List<AppPlatform
     }
 }
 
-private fun packageNameOf(fullName: String): String = when {
-    fullName.contains("launcher") -> "dev.nyawit.launcher"
-    fullName.contains("music") -> "dev.nyawit.music"
-    fullName.contains("arcade") -> "dev.nyawit.arcade"
-    else -> "dev.nyawit." + fullName.substringAfter('/').replace(Regex("[^a-z0-9]"), "")
-}
+private val PACKAGE_OVERRIDES = mapOf(
+    "nyawit-dev/nyawit-launcher" to "dev.nyawit.launcher",
+    "nyawit-dev/nyawit-music" to "dev.nyawit.music",
+    "nyawit-dev/garis_game" to "ngga.ring.garisgame",
+    "nyawit-dev/garis-arcade" to "dev.nyawit.arcade",
+)
+
+private fun packageNameOf(fullName: String): String =
+    PACKAGE_OVERRIDES[fullName] ?: "dev.nyawit." +
+        fullName.substringAfter('/').lowercase().replace(Regex("[^a-z0-9]"), "")
 
 private fun isAppRepo(repo: GithubRepo): Boolean {
     val text = "${repo.name} ${repo.description.orEmpty()}".lowercase()
-    if (NON_APP_MARKERS.any { it in text }) return false
+    val tokens = text.split(Regex("[^a-z0-9]+")).toSet()
+    if (NON_APP_MARKERS.any { it in tokens }) return false
     if (repo.language in WEB_LANGUAGES) return false
     if (repo.language in APP_LANGUAGES) return true
     return repo.topics.any { it.lowercase() in APP_TOPICS }
@@ -179,6 +184,8 @@ class GitHubCatalog(
             }
         return loaded.ifEmpty { fallbackApps() }
     }
+
+    fun close() { client.close() }
 
     suspend fun latestReleaseTag(fullName: String): String? = try {
         val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
