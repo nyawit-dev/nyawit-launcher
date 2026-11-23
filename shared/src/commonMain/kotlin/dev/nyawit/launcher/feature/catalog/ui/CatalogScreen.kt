@@ -41,11 +41,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.platform.installedVersion
+import dev.nyawit.launcher.core.platform.launchInstalledApp
 import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.feature.catalog.data.GitHubCatalog
+import dev.nyawit.launcher.feature.catalog.ui.AppStatus
 import dev.nyawit.launcher.feature.install.installApp
 import dev.nyawit.launcher.feature.update.applyUpdate
 import dev.nyawit.launcher.feature.update.data.UpdateRepository
@@ -66,6 +69,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val updater = remember { UpdateRepository() }
     val scope = rememberCoroutineScope()
     var apps by remember { mutableStateOf<List<CatalogApp>>(emptyList()) }
+    var statuses by remember { mutableStateOf<Map<String, AppStatus>>(emptyMap()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
@@ -76,9 +80,26 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var updating by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        try { apps = catalog.loadApps() }
-        catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog" }
+        try {
+            val loaded = catalog.loadApps()
+            apps = loaded
+            statuses = loaded.associate { app ->
+                val version = withContext(Dispatchers.Default) { installedVersion(app.packageName, platformContext) }
+                val tag = if (version == null) null else withContext(Dispatchers.Default) { catalog.latestReleaseTag(app.fullName) }
+                val status = when {
+                    version == null -> AppStatus.NOT_INSTALLED
+                    tag == null -> AppStatus.INSTALLED
+                    tag.removePrefix("v").trim() == version.trim() -> AppStatus.INSTALLED
+                    else -> AppStatus.UPDATE_AVAILABLE
+                }
+                app.fullName to status
+            }
+        } catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog" }
         finally { loading = false }
+    }
+
+    fun openApp(app: CatalogApp) {
+        launchInstalledApp(app.packageName, platformContext)
     }
 
     fun requestSelfUpdate() {
@@ -171,8 +192,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Text("Tidak ada aplikasi yang cocok.", color = MUTED)
                 }
-                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, installing, ::requestInstall)
-                else -> TabletGrid(filtered, installing, ::requestInstall)
+                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, installing, ::requestInstall, ::openApp)
+                else -> TabletGrid(filtered, statuses, installing, ::requestInstall, ::openApp)
             }
         }
     }
@@ -203,18 +224,38 @@ private fun Header(updating: Boolean, onUpdate: () -> Unit, updateMessage: Strin
 }
 
 @Composable
-private fun PhoneList(apps: List<CatalogApp>, installing: String?, onInstall: (CatalogApp) -> Unit) {
+private fun PhoneList(
+    apps: List<CatalogApp>,
+    statuses: Map<String, AppStatus>,
+    installing: String?,
+    onInstall: (CatalogApp) -> Unit,
+    onOpen: (CatalogApp) -> Unit,
+) {
     LazyColumn(
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps) { app -> AppCard(app, installing == app.fullName) { onInstall(app) } }
+        items(apps) { app ->
+            AppCard(
+                app = app,
+                status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
+                busy = installing == app.fullName,
+                onInstall = { onInstall(app) },
+                onOpen = { onOpen(app) },
+            )
+        }
     }
 }
 
 @Composable
-private fun TabletGrid(apps: List<CatalogApp>, installing: String?, onInstall: (CatalogApp) -> Unit) {
+private fun TabletGrid(
+    apps: List<CatalogApp>,
+    statuses: Map<String, AppStatus>,
+    installing: String?,
+    onInstall: (CatalogApp) -> Unit,
+    onOpen: (CatalogApp) -> Unit,
+) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 290.dp),
         contentPadding = PaddingValues(bottom = 24.dp),
@@ -222,6 +263,14 @@ private fun TabletGrid(apps: List<CatalogApp>, installing: String?, onInstall: (
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps) { app -> AppCard(app, installing == app.fullName) { onInstall(app) } }
+        items(apps) { app ->
+            AppCard(
+                app = app,
+                status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
+                busy = installing == app.fullName,
+                onInstall = { onInstall(app) },
+                onOpen = { onOpen(app) },
+            )
+        }
     }
 }
