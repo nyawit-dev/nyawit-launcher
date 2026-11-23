@@ -27,7 +27,7 @@ class UpdateRepository(
 
     fun pickAsset(release: ReleaseInfo): ReleaseAsset? {
         val key = platformKey()
-        return release.assets.firstOrNull {
+        val candidates = release.assets.filter {
             val n = it.name.lowercase()
             when (key) {
                 "windows" -> n.contains("windows") || n.endsWith(".msi")
@@ -36,5 +36,6 @@ class UpdateRepository(
                 else -> n.endsWith(".apk")
             }
         }
+        return candidates.firstOrNull { it.name.endsWith(".jar") } ?: candidates.firstOrNull()
     }
 }
