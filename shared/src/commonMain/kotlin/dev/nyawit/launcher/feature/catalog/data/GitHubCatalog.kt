@@ -13,8 +13,15 @@ import kotlinx.serialization.json.Json
 
 object CatalogSources {
     const val PRIMARY_USER = "nyawit-dev"
-    const val SECONDARY_ORG = "storytold"
+    const val CONFIG_URL =
+        "https://raw.githubusercontent.com/nyawit-dev/nyawit-launcher/main/catalog.json"
 }
+
+@Serializable
+data class CatalogSource(val type: String, val name: String)
+
+@Serializable
+data class CatalogConfig(val sources: List<CatalogSource> = emptyList())
 
 private val ACCENTS = listOf(
     0xFF3DDC97.toInt(), 0xFF5AA9E6.toInt(), 0xFFFFB454.toInt(),
@@ -101,17 +108,27 @@ class GitHubCatalog(
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     },
 ) {
+    private suspend fun reposFrom(source: CatalogSource): List<GithubRepo> = try {
+        when (source.type.lowercase()) {
+            "user" -> client.get("https://api.github.com/users/${source.name}/repos?per_page=100&type=public&sort=updated").body()
+            "org" -> client.get("https://api.github.com/orgs/${source.name}/repos?per_page=100&type=public&sort=updated").body()
+            "repo" -> listOf(client.get("https://api.github.com/repos/${source.name}").body<GithubRepo>())
+            else -> emptyList()
+        }
+    } catch (_: Throwable) { emptyList() }
+
     suspend fun loadApps(): List<CatalogApp> {
-        val primary: List<GithubRepo> = client
-            .get("https://api.github.com/users/${CatalogSources.PRIMARY_USER}/repos?per_page=100&type=public&sort=updated")
-            .body()
-        val secondary: List<GithubRepo> = try {
-            client.get("https://api.github.com/orgs/${CatalogSources.SECONDARY_ORG}/repos?per_page=100&type=public").body()
-        } catch (_: Throwable) { emptyList() }
-        return (primary + secondary)
+        val config: CatalogConfig = try {
+            client.get(CatalogSources.CONFIG_URL).body()
+        } catch (_: Throwable) {
+            CatalogConfig(listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)))
+        }
+        val sources = config.sources.ifEmpty { listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)) }
+        val repos = sources.fold(emptyList<GithubRepo>()) { acc, source -> acc + reposFrom(source) }
+        return repos
             .filter { !it.archived && isAppRepo(it) }
             .distinctBy { it.fullName }
-            .sortedBy { it.name }
+            .sortedWith(compareBy({ it.fullName.substringBefore('/') != CatalogSources.PRIMARY_USER }, { it.name }))
             .map { repo ->
                 val name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() }
                 val desc = repo.description?.takeIf { it.isNotBlank() } ?: "Aplikasi ${repo.fullName}"
