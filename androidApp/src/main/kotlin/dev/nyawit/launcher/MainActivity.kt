@@ -8,6 +8,6 @@ import dev.nyawit.launcher.LauncherApp
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LauncherApp() }
+        setContent { LauncherApp(platformContext = this@MainActivity) }
     }
 }
