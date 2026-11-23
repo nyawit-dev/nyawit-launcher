@@ -1,5 +1,11 @@
 package dev.nyawit.launcher.feature.catalog.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import kotlinx.coroutines.delay
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +71,9 @@ private val BG_BOTTOM = Color(0xFF0B0F14)
 private val MUTED = Color(0xFF8E9BA8)
 private val CATEGORIES = listOf("Semua", "Launcher", "Game", "Musik", "Aplikasi")
 
+private enum class FlowPhase { IDLE, CHECKING, DOWNLOADING, DONE, ERROR }
+private data class Notice(val text: String, val error: Boolean = false)
+
 @Composable
 fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
@@ -78,9 +88,20 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var query by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Semua") }
     var installing by remember { mutableStateOf<String?>(null) }
-    var message by remember { mutableStateOf<String?>(null) }
     var updateMessage by remember { mutableStateOf<String?>(null) }
     var updating by remember { mutableStateOf(false) }
+    var selfPhase by remember { mutableStateOf(FlowPhase.IDLE) }
+    var appPhase by remember { mutableStateOf<Pair<String, FlowPhase>?>(null) }
+    var notice by remember { mutableStateOf<Notice?>(null) }
+
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            delay(4500)
+            notice = null
+            selfPhase = FlowPhase.IDLE
+            appPhase = null
+        }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -106,29 +127,39 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
 
     fun requestSelfUpdate() {
-        updating = true
-        updateMessage = null
+        if (selfPhase == FlowPhase.CHECKING || selfPhase == FlowPhase.DOWNLOADING) return
+        selfPhase = FlowPhase.CHECKING
+        notice = Notice("Mengecek rilis terbaru…")
         scope.launch {
             val release = withContext(Dispatchers.Default) { updater.latest() }
             val asset = release?.let { updater.pickAsset(it) }
-            updating = false
-            if (asset == null) updateMessage = "Belum ada rilis platform ini"
-            else {
-                applyUpdate(asset.downloadUrl, asset.name, platformContext)
-                updateMessage = "Mengunduh ${release.tag}"
+            if (asset == null) {
+                selfPhase = FlowPhase.ERROR
+                notice = Notice("Tidak ada rilis untuk platform ini", error = true)
+                return@launch
             }
+            selfPhase = FlowPhase.DOWNLOADING
+            notice = Notice("Mengunduh ${release.tag}…")
+            applyUpdate(asset.downloadUrl, asset.name, platformContext)
+            selfPhase = FlowPhase.DONE
+            notice = Notice("Pembaruan ${release.tag} diunduh. Launcher baru akan berjalan.")
         }
     }
 
     fun requestInstall(app: CatalogApp) {
-        installing = app.fullName
-        message = null
+        if (appPhase?.first == app.fullName && appPhase?.second != FlowPhase.DONE) return
+        appPhase = app.fullName to FlowPhase.DOWNLOADING
+        notice = Notice("Mengunduh ${app.name}…")
         scope.launch {
             val url = withContext(Dispatchers.Default) { catalog.latestApkUrl(app.fullName) }
-            installing = null
-            if (url == null) { message = "Belum ada APK untuk ${app.name}"; return@launch }
+            if (url == null) {
+                appPhase = app.fullName to FlowPhase.ERROR
+                notice = Notice("Belum ada APK untuk ${app.name}", error = true)
+                return@launch
+            }
             installApp(url, "${app.fullName.replace('/', '_')}.apk", platformContext)
-            message = if (platformContext == null) "Unduhan dibuka di browser" else "Membuka installer ${app.name}"
+            appPhase = app.fullName to FlowPhase.DONE
+            notice = Notice(if (platformContext == null) "Unduhan ${app.name} dibuka di browser" else "Installer ${app.name} dibuka")
         }
     }
 
@@ -149,8 +180,20 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 .fillMaxSize()
                 .padding(horizontal = if (profile.kind == ScreenKind.PHONE) 20.dp else 36.dp, vertical = 20.dp),
         ) {
-            Header(updating, ::requestSelfUpdate, updateMessage)
-            Spacer(Modifier.height(22.dp))
+            Header(selfPhase, ::requestSelfUpdate)
+            val selfBusy = selfPhase == FlowPhase.CHECKING || selfPhase == FlowPhase.DOWNLOADING
+            AnimatedVisibility(
+                visible = selfBusy,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                    color = ACCENT,
+                    trackColor = Color(0xFF1D2A31),
+                )
+            }
+            Spacer(Modifier.height(18.dp))
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
@@ -176,9 +219,26 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     )
                 }
             }
-            message?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(it, color = ACCENT, style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = notice != null,
+                enter = fadeIn() + slideInVertically { -it / 2 },
+                exit = fadeOut(),
+            ) {
+                notice?.let { n ->
+                    Surface(
+                        color = if (n.error) Color(0xFF3A1E22) else Color(0xFF17332A),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            if (n.error || selfBusy || appPhase?.second == FlowPhase.DOWNLOADING) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = if (n.error) Color(0xFFFF8A80) else ACCENT)
+                                Spacer(Modifier.width(10.dp))
+                            }
+                            Text(n.text, color = if (n.error) Color(0xFFFF8A80) else ACCENT, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(16.dp))
             Text("${filtered.size} aplikasi", color = MUTED, style = MaterialTheme.typography.labelSmall)
@@ -196,34 +256,44 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Text("Tidak ada aplikasi untuk platform ini.", color = MUTED)
                 }
-                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, installing, ::requestInstall, ::openApp)
-                else -> TabletGrid(filtered, statuses, installing, ::requestInstall, ::openApp)
+                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, appPhase, ::requestInstall, ::openApp)
+                else -> TabletGrid(filtered, statuses, appPhase, ::requestInstall, ::openApp)
             }
         }
     }
 }
 
 @Composable
-private fun Header(updating: Boolean, onUpdate: () -> Unit, updateMessage: String?) {
+private fun Header(selfPhase: FlowPhase, onUpdate: () -> Unit) {
+    val busy = selfPhase == FlowPhase.CHECKING || selfPhase == FlowPhase.DOWNLOADING
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(color = ACCENT, shape = RoundedCornerShape(14.dp), modifier = Modifier.size(48.dp)) {
-            Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Text("N", color = Color(0xFF0B0F14), fontWeight = FontWeight.Bold)
-            }
+            Box(Modifier.fillMaxSize(), Alignment.Center) { Text("N", color = Color(0xFF0B0F14), fontWeight = FontWeight.Bold) }
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text("Nyawit", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            updateMessage?.let { Text(it, color = ACCENT, style = MaterialTheme.typography.labelSmall) }
-                ?: Text("Launcher dari GitHub", color = MUTED, style = MaterialTheme.typography.labelSmall)
+            Text("Launcher dari GitHub", color = MUTED, style = MaterialTheme.typography.labelSmall)
         }
         Button(
             onClick = onUpdate,
-            enabled = !updating,
+            enabled = !busy,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D2A31), contentColor = ACCENT),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
-        ) { Text(if (updating) "Mengecek…" else "Perbarui") }
+        ) {
+            if (busy) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = ACCENT)
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(when (selfPhase) {
+                FlowPhase.CHECKING -> "Mengecek…"
+                FlowPhase.DOWNLOADING -> "Mengunduh…"
+                FlowPhase.DONE -> "Selesai"
+                FlowPhase.ERROR -> "Coba lagi"
+                FlowPhase.IDLE -> "Perbarui"
+            })
+        }
     }
 }
 
@@ -231,7 +301,7 @@ private fun Header(updating: Boolean, onUpdate: () -> Unit, updateMessage: Strin
 private fun PhoneList(
     apps: List<CatalogApp>,
     statuses: Map<String, AppStatus>,
-    installing: String?,
+    appPhase: Pair<String, FlowPhase>?,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
 ) {
@@ -244,7 +314,7 @@ private fun PhoneList(
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
-                busy = installing == app.fullName,
+                busy = appPhase?.first == app.fullName && (appPhase?.second == FlowPhase.DOWNLOADING || appPhase?.second == FlowPhase.CHECKING),
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
@@ -256,7 +326,7 @@ private fun PhoneList(
 private fun TabletGrid(
     apps: List<CatalogApp>,
     statuses: Map<String, AppStatus>,
-    installing: String?,
+    appPhase: Pair<String, FlowPhase>?,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
 ) {
@@ -271,7 +341,7 @@ private fun TabletGrid(
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
-                busy = installing == app.fullName,
+                busy = appPhase?.first == app.fullName && (appPhase?.second == FlowPhase.DOWNLOADING || appPhase?.second == FlowPhase.CHECKING),
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
