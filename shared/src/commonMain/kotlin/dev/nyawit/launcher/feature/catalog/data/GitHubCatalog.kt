@@ -12,13 +12,21 @@ import kotlinx.serialization.json.Json
 object CatalogSources {
     const val PRIMARY_USER = "nyawit-dev"
     const val SECONDARY_ORG = "storytold"
-    const val ASSETS_REPO = "storytold/craft-launcher-assets"
 }
 
 private val ACCENTS = listOf(
-    0xFF7C5CFF.toInt(), 0xFF4BD6C5.toInt(), 0xFFFFC857.toInt(),
-    0xFFFF7B8A.toInt(), 0xFF67B7FF.toInt(), 0xFF9BE15D.toInt(),
+    0xFF3DDC97.toInt(), 0xFF5AA9E6.toInt(), 0xFFFFB454.toInt(),
+    0xFFF2789F.toInt(), 0xFF9B8CFF.toInt(), 0xFF54C5EB.toInt(),
 )
+
+private val NON_APP_MARKERS = listOf(
+    "assets", "asset", "docs", "doc", "website", "web", "portfolio", "blog",
+    "config", "template", "starter", "dotfiles", "scripts", "library", "sdk",
+    "backend", "server", "infra", "workflow", "readme", "gallery", "theme",
+)
+
+private val APP_LANGUAGES = setOf("Kotlin", "Java", "Dart", "Swift", "Rust", "C++", "C#", "Objective-C")
+private val APP_TOPICS = setOf("app", "android", "game", "launcher", "music", "desktop", "mobile", "android-tv")
 
 @Serializable
 data class GithubRepo(
@@ -26,6 +34,8 @@ data class GithubRepo(
     @SerialName("full_name") val fullName: String,
     val description: String? = null,
     @SerialName("html_url") val htmlUrl: String,
+    val language: String? = null,
+    val topics: List<String> = emptyList(),
     val fork: Boolean = false,
     val archived: Boolean = false,
 )
@@ -42,8 +52,26 @@ data class CatalogApp(
     val description: String,
     val repoUrl: String,
     val releaseUrl: String,
+    val category: String,
     val accent: Int,
 )
+
+private fun categoryOf(name: String, description: String): String {
+    val text = "$name ${description}".lowercase()
+    return when {
+        "launcher" in text -> "Launcher"
+        listOf("game", "tetris", "snake", "arcade", "2048").any { it in text } -> "Game"
+        "music" in text || "player" in text -> "Musik"
+        else -> "Aplikasi"
+    }
+}
+
+private fun isAppRepo(repo: GithubRepo): Boolean {
+    val text = "${repo.name} ${repo.description.orEmpty()}".lowercase()
+    if (NON_APP_MARKERS.any { it in text }) return false
+    if (repo.language in APP_LANGUAGES) return true
+    return repo.topics.any { it.lowercase() in APP_TOPICS }
+}
 
 class GitHubCatalog(
     private val client: HttpClient = HttpClient {
@@ -58,16 +86,19 @@ class GitHubCatalog(
             client.get("https://api.github.com/orgs/${CatalogSources.SECONDARY_ORG}/repos?per_page=100&type=public").body()
         } catch (_: Throwable) { emptyList() }
         return (primary + secondary)
-            .filter { !it.archived }
+            .filter { !it.archived && isAppRepo(it) }
             .distinctBy { it.fullName }
-            .sortedWith(compareBy({ it.fullName.startsWith(CatalogSources.SECONDARY_ORG) }, { it.name }))
+            .sortedBy { it.name }
             .map { repo ->
+                val name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() }
+                val desc = repo.description?.takeIf { it.isNotBlank() } ?: "Aplikasi ${repo.fullName}"
                 CatalogApp(
                     fullName = repo.fullName,
-                    name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() },
-                    description = (repo.description ?: "Repository ${repo.fullName}") + if (repo.fork) " (fork)" else "",
+                    name = name,
+                    description = desc,
                     repoUrl = repo.htmlUrl,
                     releaseUrl = "${repo.htmlUrl}/releases/latest",
+                    category = categoryOf(name, desc),
                     accent = ACCENTS[kotlin.math.abs(repo.name.hashCode()) % ACCENTS.size],
                 )
             }
