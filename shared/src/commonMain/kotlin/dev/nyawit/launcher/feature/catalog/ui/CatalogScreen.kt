@@ -18,10 +18,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -51,6 +53,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private val ACCENT = Color(0xFF3DDC97)
+private val BG_TOP = Color(0xFF101A20)
+private val BG_BOTTOM = Color(0xFF0B0F14)
+private val MUTED = Color(0xFF8E9BA8)
+private val CATEGORIES = listOf("Semua", "Launcher", "Game", "Musik", "Aplikasi")
+
 @Composable
 fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
@@ -61,6 +69,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Semua") }
     var installing by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var updateMessage by remember { mutableStateOf<String?>(null) }
@@ -68,7 +77,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
 
     LaunchedEffect(Unit) {
         try { apps = catalog.loadApps() }
-        catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog GitHub" }
+        catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog" }
         finally { loading = false }
     }
 
@@ -79,11 +88,10 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             val release = withContext(Dispatchers.Default) { updater.latest() }
             val asset = release?.let { updater.pickAsset(it) }
             updating = false
-            if (asset == null) {
-                updateMessage = "Belum ada rilis untuk platform ini"
-            } else {
+            if (asset == null) updateMessage = "Belum ada rilis platform ini"
+            else {
                 applyUpdate(asset.downloadUrl, asset.name, platformContext)
-                updateMessage = "Mengunduh pembaruan ${release.tag}"
+                updateMessage = "Mengunduh ${release.tag}"
             }
         }
     }
@@ -94,39 +102,74 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         scope.launch {
             val url = withContext(Dispatchers.Default) { catalog.latestApkUrl(app.fullName) }
             installing = null
-            if (url == null) { message = "Belum ada APK di Releases ${app.name}"; return@launch }
+            if (url == null) { message = "Belum ada APK untuk ${app.name}"; return@launch }
             installApp(url, "${app.fullName.replace('/', '_')}.apk", platformContext)
-            message = if (platformContext == null) "Membuka halaman unduhan di browser" else "Mengunduh & membuka installer"
+            message = if (platformContext == null) "Unduhan dibuka di browser" else "Membuka installer ${app.name}"
         }
     }
 
-    val filtered = apps.filter { query.isBlank() || it.name.contains(query, true) || it.description.contains(query, true) }
+    val filtered = apps.filter {
+        val matchQuery = query.isBlank() || it.name.contains(query, true) || it.description.contains(query, true)
+        val matchCategory = category == "Semua" || it.category == category
+        matchQuery && matchCategory
+    }
 
     Box(
         modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF120B2E), Color(0xFF1B1246), Color(0xFF0D0B1F)))),
+            .background(Brush.verticalGradient(listOf(BG_TOP, BG_BOTTOM))),
     ) {
-        Column(Modifier.fillMaxSize().padding(if (profile.kind == ScreenKind.PHONE) 20.dp else 32.dp)) {
-            Header(profile.kind, updating, ::requestSelfUpdate, updateMessage)
-            Spacer(Modifier.height(20.dp))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = if (profile.kind == ScreenKind.PHONE) 20.dp else 36.dp, vertical = 20.dp),
+        ) {
+            Header(updating, ::requestSelfUpdate, updateMessage)
+            Spacer(Modifier.height(22.dp))
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Cari aplikasi…") },
+                placeholder = { Text("Cari aplikasi…", color = MUTED) },
                 singleLine = true,
-                leadingIcon = { Text("⌕", color = Color(0xFFFFC857)) },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(16.dp), 1f),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(14.dp), 1f),
             )
-            message?.let { Spacer(Modifier.height(8.dp)); Text(it, color = Color(0xFFFFC857), style = MaterialTheme.typography.bodySmall) }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CATEGORIES.forEach { item ->
+                    FilterChip(
+                        selected = category == item,
+                        onClick = { category = item },
+                        label = { Text(item) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ACCENT,
+                            selectedLabelColor = Color(0xFF0B0F14),
+                            containerColor = Color(0xFF182129),
+                            labelColor = MUTED,
+                        ),
+                        modifier = Modifier.tvFocusHighlight(RoundedCornerShape(18.dp), 1f),
+                    )
+                }
+            }
+            message?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = ACCENT, style = MaterialTheme.typography.labelSmall)
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("${filtered.size} aplikasi", color = MUTED, style = MaterialTheme.typography.labelSmall)
+            Spacer(Modifier.height(10.dp))
+
             when {
-                loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = Color(0xFFFFC857)) }
+                loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    CircularProgressIndicator(color = ACCENT)
+                }
                 error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Error: $error", color = Color(0xFFFF8A80))
+                    Text("Gagal memuat: $error", color = Color(0xFFFF8A80))
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = { error = null; loading = true }) { Text("Coba lagi") }
+                }
+                filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text("Tidak ada aplikasi yang cocok.", color = MUTED)
                 }
                 profile.kind == ScreenKind.PHONE -> PhoneList(filtered, installing, ::requestInstall)
                 else -> TabletGrid(filtered, installing, ::requestInstall)
@@ -136,26 +179,26 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
 }
 
 @Composable
-private fun Header(kind: ScreenKind, updating: Boolean, onUpdate: () -> Unit, updateMessage: String?) {
+private fun Header(updating: Boolean, onUpdate: () -> Unit, updateMessage: String?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Surface(color = Color(0xFFFFC857), shape = CircleShape, modifier = Modifier.size(if (kind == ScreenKind.PHONE) 52.dp else 64.dp)) {
-            Box(Modifier.fillMaxSize(), Alignment.Center) { Text("N", color = Color(0xFF120B2E), fontWeight = FontWeight.Bold) }
+        Surface(color = ACCENT, shape = RoundedCornerShape(14.dp), modifier = Modifier.size(48.dp)) {
+            Box(Modifier.fillMaxSize(), Alignment.Center) {
+                Text("N", color = Color(0xFF0B0F14), fontWeight = FontWeight.Bold)
+            }
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text("Nyawit Launcher", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("Pasang & perbarui langsung dari GitHub", style = MaterialTheme.typography.bodySmall, color = Color(0xFFB9AFDE))
-            updateMessage?.let { Text(it, color = Color(0xFFFFC857), style = MaterialTheme.typography.labelSmall) }
+            Text("Nyawit", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            updateMessage?.let { Text(it, color = ACCENT, style = MaterialTheme.typography.labelSmall) }
+                ?: Text("Launcher dari GitHub", color = MUTED, style = MaterialTheme.typography.labelSmall)
         }
         Button(
             onClick = onUpdate,
             enabled = !updating,
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFFC857),
-                contentColor = Color(0xFF120B2E),
-            ),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D2A31), contentColor = ACCENT),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
-        ) { Text(if (updating) "Mengecek…" else "Perbarui App") }
+        ) { Text(if (updating) "Mengecek…" else "Perbarui") }
     }
 }
 
@@ -173,7 +216,7 @@ private fun PhoneList(apps: List<CatalogApp>, installing: String?, onInstall: (C
 @Composable
 private fun TabletGrid(apps: List<CatalogApp>, installing: String?, onInstall: (CatalogApp) -> Unit) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 300.dp),
+        columns = GridCells.Adaptive(minSize = 290.dp),
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
