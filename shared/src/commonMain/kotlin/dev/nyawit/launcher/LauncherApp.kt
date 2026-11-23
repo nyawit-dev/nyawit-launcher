@@ -51,7 +51,7 @@ fun LauncherApp(modifier: Modifier = Modifier) {
         ) {
             Column(Modifier.fillMaxSize().padding(16.dp)) {
                 Text("Nyawit Launcher", style = MaterialTheme.typography.headlineMedium)
-                Text("Katalog dari github.com/storytold", style = MaterialTheme.typography.bodyMedium)
+                Text("Katalog: nyawit-dev + storytold", style = MaterialTheme.typography.bodyMedium)
                 if (loading) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
