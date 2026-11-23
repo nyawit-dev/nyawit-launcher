@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
