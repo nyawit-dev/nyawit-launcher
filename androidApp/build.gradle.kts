@@ -14,8 +14,8 @@ android {
         applicationId = "dev.nyawit.launcher"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "1.2.2"
     }
 
     buildTypes {
