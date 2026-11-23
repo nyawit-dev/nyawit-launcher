@@ -25,7 +25,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
       - name: Build Android and JVM
-        run: ./gradlew --no-daemon :androidApp:assembleDebug :desktopApp:jar --stacktrace
+        run: ./gradlew --no-daemon :androidApp:assembleDebug :desktopApp:desktopJar --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
