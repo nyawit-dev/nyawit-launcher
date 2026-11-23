@@ -34,10 +34,17 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 
 enum class AppStatus { NOT_INSTALLED, INSTALLED, UPDATE_AVAILABLE, UNKNOWN }
+
+private fun AppPlatform.label() = when (this) {
+    AppPlatform.ANDROID -> "Android"
+    AppPlatform.TV -> "TV"
+    AppPlatform.DESKTOP -> "Desktop"
+}
 
 @Composable
 fun AppCard(
@@ -70,7 +77,11 @@ fun AppCard(
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(app.name, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(app.category, color = Color(app.accent), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            app.platforms.joinToString(" · ") { it.label() } + " · " + app.category,
+                            color = Color(app.accent),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                     }
                     StatusChip(status)
                 }
