@@ -322,8 +322,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Text("Tidak ada aplikasi untuk platform ini.", color = MUTED)
                 }
-                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, appPhase, ::requestInstall, ::openApp)
-                else -> TabletGrid(filtered, statuses, appPhase, ::requestInstall, ::openApp)
+                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, appPhase, appProgress, ::requestInstall, ::openApp)
+                else -> TabletGrid(filtered, statuses, appPhase, appProgress, ::requestInstall, ::openApp)
             }
         }
     }
@@ -375,6 +375,7 @@ private fun PhoneList(
     apps: List<CatalogApp>,
     statuses: Map<String, AppStatus>,
     appPhase: Pair<String, FlowPhase>?,
+    appProgress: Pair<String, Float>?,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
 ) {
@@ -401,6 +402,7 @@ private fun TabletGrid(
     apps: List<CatalogApp>,
     statuses: Map<String, AppStatus>,
     appPhase: Pair<String, FlowPhase>?,
+    appProgress: Pair<String, Float>?,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
 ) {
