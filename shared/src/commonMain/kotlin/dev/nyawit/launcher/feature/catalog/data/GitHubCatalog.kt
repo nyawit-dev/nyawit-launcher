@@ -1,6 +1,6 @@
-import dev.nyawit.launcher.core.platform.AppPlatform
-
 package dev.nyawit.launcher.feature.catalog.data
+
+import dev.nyawit.launcher.core.platform.AppPlatform
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
