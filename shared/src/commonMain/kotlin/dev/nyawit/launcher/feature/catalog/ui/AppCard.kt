@@ -24,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -106,9 +107,17 @@ fun AppCard(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
                 ) {
+                    if (busy) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = if (status == AppStatus.UPDATE_AVAILABLE) Color(0xFF0B0F14) else Color.White,
+                        )
+                        Spacer(Modifier.width(10.dp))
+                    }
                     Text(
                         when {
-                            busy -> "Memproses…"
+                            busy -> "Mengunduh…"
                             status == AppStatus.INSTALLED -> "Buka Aplikasi"
                             status == AppStatus.UPDATE_AVAILABLE -> "Perbarui"
                             else -> "Pasang"
