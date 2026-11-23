@@ -39,8 +39,8 @@ android {
 dependencies {
     implementation(project(":shared"))
     implementation(libs.activity.compose)
-    implementation(compose.runtime)
-    implementation(compose.foundation)
-    implementation(compose.material3)
-    implementation(compose.ui)
+    implementation(libs.runtime)
+    implementation(libs.foundation)
+    implementation(libs.material3)
+    implementation(libs.ui)
 }
