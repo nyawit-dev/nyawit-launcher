@@ -105,6 +105,37 @@ private fun isAppRepo(repo: GithubRepo): Boolean {
     return repo.topics.any { it.lowercase() in APP_TOPICS }
 }
 
+
+private fun fallbackApps(): List<CatalogApp> {
+    fun app(
+        name: String,
+        desc: String,
+        platforms: List<AppPlatform>,
+        accent: Long,
+    ) = CatalogApp(
+        fullName = "nyawit-dev/$name",
+        name = name.replace('-', ' ').replaceFirstChar { it.uppercase() },
+        description = desc,
+        repoUrl = "https://github.com/nyawit-dev/$name",
+        releaseUrl = "https://github.com/nyawit-dev/$name/releases/latest",
+        category = when {
+            "launcher" in name -> "Launcher"
+            "music" in name -> "Musik"
+            else -> "Game"
+        },
+        packageName = packageNameOf("nyawit-dev/$name"),
+        platforms = platforms,
+        accent = accent.toInt(),
+    )
+    return listOf(
+        app("nyawit-launcher", "Launcher aplikasi Nyawit untuk Android, TV, dan desktop", listOf(AppPlatform.ANDROID, AppPlatform.TV, AppPlatform.DESKTOP), 0xFF3DDC97),
+        app("nyawit-music", "Pemutar musik dengan dukungan Android TV", listOf(AppPlatform.ANDROID, AppPlatform.TV), 0xFF5AA9E6),
+        app("garis-arcade", "Kumpulan game klasik: Snake, 2048, Tetris", listOf(AppPlatform.ANDROID), 0xFFFFB454),
+        app("garis_game", "Tetris Kotlin Compose", listOf(AppPlatform.ANDROID), 0xFFF2789F),
+        app("monopoly-kmp", "Game monopoli Kotlin Multiplatform", listOf(AppPlatform.ANDROID), 0xFF9B8CFF),
+    )
+}
+
 class GitHubCatalog(
     private val client: HttpClient = HttpClient {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
@@ -127,7 +158,7 @@ class GitHubCatalog(
         }
         val sources = config.sources.ifEmpty { listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)) }
         val repos = sources.fold(emptyList<GithubRepo>()) { acc, source -> acc + reposFrom(source) }
-        return repos
+        val loaded = repos
             .filter { !it.archived && isAppRepo(it) }
             .distinctBy { it.fullName }
             .sortedWith(compareBy({ it.fullName.substringBefore('/') != CatalogSources.PRIMARY_USER }, { it.name }))
@@ -146,6 +177,7 @@ class GitHubCatalog(
                     accent = ACCENTS[kotlin.math.abs(repo.name.hashCode()) % ACCENTS.size],
                 )
             }
+        return loaded.ifEmpty { fallbackApps() }
     }
 
     suspend fun latestReleaseTag(fullName: String): String? = try {
