@@ -22,6 +22,8 @@ jobs:
           java-version: '21'
       - name: Accept SDK licenses
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+      - name: Make gradlew executable
+        run: chmod +x gradlew
       - name: Build Android and JVM
         run: ./gradlew --no-daemon :androidApp:assembleDebug :desktopApp:jar --stacktrace
       - name: Upload APK
