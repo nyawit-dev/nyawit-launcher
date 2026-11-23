@@ -21,3 +21,25 @@ Semua build berjalan di GitHub Actions:
 ```
 
 Lisensi: GPL-3.0.
+
+
+## Katalog aplikasi
+
+Launcher mengambil daftar aplikasi dari GitHub tanpa server. Sumber diatur di [`catalog.json`](catalog.json):
+
+```json
+{
+  "sources": [
+    { "type": "user", "name": "nyawit-dev" },
+    { "type": "org", "name": "organisasi-lain" },
+    { "type": "repo", "name": "owner/repo-aplikasi" }
+  ]
+}
+```
+
+- `user` / `org` = semua repo public dari akun atau organisasi
+- `repo` = satu repo tertentu
+- Repo `nyawit-dev` selalu diurutkan lebih dulu
+- Hanya repo yang terdeteksi sebagai aplikasi yang ditampilkan, dan hanya untuk platform yang didukungnya (Android, Android TV, Desktop)
+
+Edit `catalog.json` di `main`, lalu launcher akan membaca otomatis saat dibuka.
