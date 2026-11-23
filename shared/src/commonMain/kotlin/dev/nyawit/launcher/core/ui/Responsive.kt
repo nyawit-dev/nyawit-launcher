@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.isTvPlatform
@@ -27,7 +28,7 @@ data class DeviceProfile(val kind: ScreenKind, val widthDp: Float)
 
 @Composable
 fun rememberDeviceProfile(): DeviceProfile {
-    val width = LocalWindowInfo.current.containerSize.width.toFloat()
+    val width = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }
     val kind = when {
         isTvPlatform() -> ScreenKind.TV
         width >= 840 -> ScreenKind.TABLET
