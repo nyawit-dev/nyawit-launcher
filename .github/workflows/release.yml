@@ -40,7 +40,7 @@ jobs:
           APK=$(find androidApp/build/outputs/apk/release -name '*.apk' -type f | head -n1)
           test -n "$APK" || { echo "::error::No release APK"; exit 1; }
           AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | head -n1)
-          "$AAPT" dump badging "$APK" | grep -i 'LEANBACK_LAUNCHER' || {
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -i 'LEANBACK_LAUNCHER' || {
             echo "::error::Android TV launcher category missing"; exit 1;
           }
 
