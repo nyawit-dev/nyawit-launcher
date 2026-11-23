@@ -14,23 +14,26 @@ kotlin {
         androidResources.enable = true
     }
     jvm("desktop")
+    jvmToolchain(21)
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.json)
-            implementation(libs.kotlinx.serialization.json)
+        getByName("commonMain") {
+            dependencies {
+                implementation(libs.runtime)
+                implementation(libs.foundation)
+                implementation(libs.material3)
+                implementation(libs.ui)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.json)
+                implementation(libs.kotlinx.serialization.json)
+            }
         }
-        androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
+        getByName("androidMain") {
+            dependencies { implementation(libs.ktor.client.okhttp) }
         }
-        desktopMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
+        getByName("desktopMain") {
+            dependencies { implementation(libs.ktor.client.okhttp) }
         }
     }
 }
