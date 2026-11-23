@@ -13,19 +13,45 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-actual fun installApp(url: String, fileName: String, platformContext: Any?) {
+actual fun installApp(
+    url: String,
+    fileName: String,
+    platformContext: Any?,
+    onProgress: (Float) -> Unit,
+    shouldCancel: () -> Boolean,
+    onResult: (Boolean, String) -> Unit,
+) {
     val context = platformContext as? Context ?: return
+    val main = Handler(Looper.getMainLooper())
     Thread {
+        val file = File(context.filesDir, fileName)
         try {
-            val file = File(context.filesDir, fileName)
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.instanceFollowRedirects = true
             connection.connectTimeout = 15000
             connection.readTimeout = 60000
+            val total = connection.contentLengthLong
             connection.inputStream.use { input ->
-                FileOutputStream(file).use { output -> input.copyTo(output) }
+                FileOutputStream(file).use { output ->
+                    val buffer = ByteArray(16 * 1024)
+                    var read: Int
+                    var written = 0L
+                    while (input.read(buffer).also { read = it } != -1) {
+                        if (shouldCancel()) {
+                            file.delete()
+                            main.post { onResult(false, "Unduhan dibatalkan") }
+                            return@Thread
+                        }
+                        output.write(buffer, 0, read)
+                        written += read
+                        if (total > 0) {
+                            val fraction = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                            main.post { onProgress(fraction) }
+                        }
+                    }
+                }
             }
-            Handler(Looper.getMainLooper()).post {
+            main.post {
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
                         !context.packageManager.canRequestPackageInstalls()
@@ -35,21 +61,25 @@ actual fun installApp(url: String, fileName: String, platformContext: Any?) {
                             Uri.parse("package:${context.packageName}"),
                         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(settings)
+                        onResult(false, "Izinkan pemasangan aplikasi tidak dikenal, lalu coba lagi")
                         return@post
                     }
                     val uri: Uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file,
+                        context, "${context.packageName}.fileprovider", file,
                     )
                     val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
                         .setDataAndType(uri, "application/vnd.android.package-archive")
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
-                } catch (_: Throwable) {
-                    // Fallback: let the user open the downloaded file manually.
+                    onResult(true, "Installer dibuka — konfirmasi pemasangan")
+                } catch (t: Throwable) {
+                    file.delete()
+                    onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}")
                 }
             }
-        } catch (_: Throwable) { }
+        } catch (t: Throwable) {
+            file.delete()
+            main.post { onResult(false, "Gagal mengunduh: ${t.message ?: "unknown"}") }
+        }
     }.start()
 }
