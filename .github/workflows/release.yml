@@ -50,10 +50,13 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux
+            native_task: ':desktopApp:packageDistributionForCurrentOS'
           - os: windows-latest
             name: windows
+            native_task: ':desktopApp:packageDistributionForCurrentOS'
           - os: macos-latest
             name: mac
+            native_task: ''
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -66,7 +69,7 @@ jobs:
         run: chmod +x gradlew
       - name: Build JVM artifacts for ${{ matrix.name }}
         shell: bash
-        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS :desktopApp:packageDistributionForCurrentOS --stacktrace
+        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS ${{ matrix.native_task }} --stacktrace
       - name: Collect JVM artifacts
         shell: bash
         run: |
