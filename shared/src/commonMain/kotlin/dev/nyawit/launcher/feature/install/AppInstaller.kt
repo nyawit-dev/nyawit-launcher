@@ -1,3 +1,11 @@
 package dev.nyawit.launcher.feature.install
 
-expect fun installApp(url: String, fileName: String, platformContext: Any?)
+/** All callbacks are invoked on the main thread. */
+expect fun installApp(
+    url: String,
+    fileName: String,
+    platformContext: Any?,
+    onProgress: (Float) -> Unit,
+    shouldCancel: () -> Boolean,
+    onResult: (Boolean, String) -> Unit,
+)
