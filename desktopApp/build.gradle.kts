@@ -28,7 +28,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = "nyawit-launcher"
-            packageVersion = "1.2.2"
+            packageVersion = "1.2.3"
         }
     }
 }
