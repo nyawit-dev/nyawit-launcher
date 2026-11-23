@@ -25,6 +25,8 @@ class UpdateRepository(
         client.get("https://api.github.com/repos/nyawit-dev/nyawit-launcher/releases/latest").body()
     } catch (_: Throwable) { null }
 
+    fun close() { client.close() }
+
     fun pickAsset(release: ReleaseInfo): ReleaseAsset? {
         val key = platformKey()
         val candidates = release.assets.filter {
