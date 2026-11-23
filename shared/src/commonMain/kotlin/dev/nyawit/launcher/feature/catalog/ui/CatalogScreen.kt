@@ -96,6 +96,9 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var appPhase by remember { mutableStateOf<Pair<String, FlowPhase>?>(null) }
     var notice by remember { mutableStateOf<Notice?>(null) }
     var launcherUpdateTag by remember { mutableStateOf<String?>(null) }
+    var selfProgress by remember { mutableStateOf<Float?>(null) }
+    var appProgress by remember { mutableStateOf<Pair<String, Float>?>(null) }
+    var cancelDownload by remember { mutableStateOf(false) }
     var updateCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(notice) {
@@ -153,10 +156,20 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 return@launch
             }
             selfPhase = FlowPhase.DOWNLOADING
+            cancelDownload = false
+            selfProgress = 0f
             notice = Notice("Mengunduh ${release.tag}…")
-            applyUpdate(asset.downloadUrl, asset.name, platformContext)
-            selfPhase = FlowPhase.DONE
-            notice = Notice("Pembaruan ${release.tag} diunduh. Launcher baru akan berjalan.")
+            applyUpdate(
+                asset.downloadUrl,
+                asset.name,
+                platformContext,
+                onProgress = { selfProgress = it },
+                shouldCancel = { cancelDownload },
+            ) { ok, msg ->
+                selfProgress = null
+                selfPhase = if (ok) FlowPhase.DONE else FlowPhase.ERROR
+                notice = Notice(if (ok) "Pembaruan ${release.tag}: $msg" else msg, error = !ok)
+            }
         }
     }
 
@@ -171,9 +184,19 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 notice = Notice("Belum ada APK untuk ${app.name}", error = true)
                 return@launch
             }
-            installApp(url, "${app.fullName.replace('/', '_')}.apk", platformContext)
-            appPhase = app.fullName to FlowPhase.DONE
-            notice = Notice(if (platformContext == null) "Unduhan ${app.name} dibuka di browser" else "Installer ${app.name} dibuka")
+            cancelDownload = false
+            appProgress = app.fullName to 0f
+            installApp(
+                url,
+                "${app.fullName.replace('/', '_')}.apk",
+                platformContext,
+                onProgress = { appProgress = app.fullName to it },
+                shouldCancel = { cancelDownload },
+            ) { ok, msg ->
+                appProgress = null
+                appPhase = app.fullName to if (ok) FlowPhase.DONE else FlowPhase.ERROR
+                notice = Notice("${app.name}: $msg", error = !ok)
+            }
         }
     }
 
@@ -252,7 +275,33 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                                 CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = if (n.error) Color(0xFFFF8A80) else ACCENT)
                                 Spacer(Modifier.width(10.dp))
                             }
-                            Text(n.text, color = if (n.error) Color(0xFFFF8A80) else ACCENT, style = MaterialTheme.typography.bodySmall)
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    n.text + when {
+                                        selfProgress != null -> " ${(selfProgress!! * 100).toInt()}%"
+                                        appProgress != null -> " ${(appProgress!!.second * 100).toInt()}%"
+                                        else -> ""
+                                    },
+                                    color = if (n.error) Color(0xFFFF8A80) else ACCENT,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                val p = selfProgress ?: appProgress?.second
+                                if (p != null) {
+                                    Spacer(Modifier.height(6.dp))
+                                    LinearProgressIndicator(
+                                        progress = { p },
+                                        modifier = Modifier.fillMaxWidth().height(5.dp),
+                                        color = ACCENT,
+                                        trackColor = Color(0xFF25313A),
+                                    )
+                                }
+                            }
+                            if (selfProgress != null || appProgress != null) {
+                                Spacer(Modifier.width(10.dp))
+                                androidx.compose.material3.TextButton(onClick = { cancelDownload = true }) {
+                                    Text("Batal", color = Color(0xFFFF8A80))
+                                }
+                            }
                         }
                     }
                 }
@@ -339,6 +388,7 @@ private fun PhoneList(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
                 busy = appPhase?.first == app.fullName && (appPhase?.second == FlowPhase.DOWNLOADING || appPhase?.second == FlowPhase.CHECKING),
+                progress = if (appPhase?.first == app.fullName) appProgress?.second else null,
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
@@ -366,6 +416,7 @@ private fun TabletGrid(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
                 busy = appPhase?.first == app.fullName && (appPhase?.second == FlowPhase.DOWNLOADING || appPhase?.second == FlowPhase.CHECKING),
+                progress = if (appPhase?.first == app.fullName) appProgress?.second else null,
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
