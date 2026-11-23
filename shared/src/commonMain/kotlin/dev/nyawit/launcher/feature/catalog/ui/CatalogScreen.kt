@@ -45,6 +45,8 @@ import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.feature.catalog.data.GitHubCatalog
 import dev.nyawit.launcher.feature.install.installApp
+import dev.nyawit.launcher.feature.update.applyUpdate
+import dev.nyawit.launcher.feature.update.data.UpdateRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +55,7 @@ import kotlinx.coroutines.withContext
 fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
     val catalog = remember { GitHubCatalog() }
+    val updater = remember { UpdateRepository() }
     val scope = rememberCoroutineScope()
     var apps by remember { mutableStateOf<List<CatalogApp>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -60,11 +63,29 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var query by remember { mutableStateOf("") }
     var installing by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
+    var updateMessage by remember { mutableStateOf<String?>(null) }
+    var updating by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         try { apps = catalog.loadApps() }
         catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog GitHub" }
         finally { loading = false }
+    }
+
+    fun requestSelfUpdate() {
+        updating = true
+        updateMessage = null
+        scope.launch {
+            val release = withContext(Dispatchers.Default) { updater.latest() }
+            val asset = release?.let { updater.pickAsset(it) }
+            updating = false
+            if (asset == null) {
+                updateMessage = "Belum ada rilis untuk platform ini"
+            } else {
+                applyUpdate(asset.downloadUrl, asset.name, platformContext)
+                updateMessage = "Mengunduh pembaruan ${release.tag}"
+            }
+        }
     }
 
     fun requestInstall(app: CatalogApp) {
@@ -87,7 +108,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             .background(Brush.verticalGradient(listOf(Color(0xFF120B2E), Color(0xFF1B1246), Color(0xFF0D0B1F)))),
     ) {
         Column(Modifier.fillMaxSize().padding(if (profile.kind == ScreenKind.PHONE) 20.dp else 32.dp)) {
-            Header(profile.kind)
+            Header(profile.kind, updating, ::requestSelfUpdate, updateMessage)
             Spacer(Modifier.height(20.dp))
             OutlinedTextField(
                 value = query,
@@ -115,16 +136,26 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
 }
 
 @Composable
-private fun Header(kind: ScreenKind) {
+private fun Header(kind: ScreenKind, updating: Boolean, onUpdate: () -> Unit, updateMessage: String?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(color = Color(0xFFFFC857), shape = CircleShape, modifier = Modifier.size(if (kind == ScreenKind.PHONE) 52.dp else 64.dp)) {
             Box(Modifier.fillMaxSize(), Alignment.Center) { Text("N", color = Color(0xFF120B2E), fontWeight = FontWeight.Bold) }
         }
-        Spacer(Modifier.width(14.dp))
-        Column {
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
             Text("Nyawit Launcher", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
             Text("Pasang & perbarui langsung dari GitHub", style = MaterialTheme.typography.bodySmall, color = Color(0xFFB9AFDE))
+            updateMessage?.let { Text(it, color = Color(0xFFFFC857), style = MaterialTheme.typography.labelSmall) }
         }
+        Button(
+            onClick = onUpdate,
+            enabled = !updating,
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFFC857),
+                contentColor = Color(0xFF120B2E),
+            ),
+            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
+        ) { Text(if (updating) "Mengecek…" else "Perbarui App") }
     }
 }
 
