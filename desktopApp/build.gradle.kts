@@ -13,11 +13,11 @@ kotlin {
     sourceSets {
         jvmMain.dependencies {
             implementation(project(":shared"))
-            implementation(compose.desktop.currentOs)
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
+            implementation(libs.compose.desktop)
+            implementation(libs.runtime)
+            implementation(libs.foundation)
+            implementation(libs.material3)
+            implementation(libs.ui)
         }
     }
 }
