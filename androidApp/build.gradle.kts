@@ -10,6 +10,15 @@ android {
         version = release(37) { minorApiLevel = 1 }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.jks")
+            storePassword = "nyawit123"
+            keyAlias = "nyawit"
+            keyPassword = "nyawit123"
+        }
+    }
+
     defaultConfig {
         applicationId = "dev.nyawit.launcher"
         minSdk = 26
@@ -21,7 +30,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
