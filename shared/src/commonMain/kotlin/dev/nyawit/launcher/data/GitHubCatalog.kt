@@ -15,6 +15,11 @@ object CatalogSources {
     const val ASSETS_REPO = "storytold/craft-launcher-assets"
 }
 
+private val ACCENTS = listOf(
+    0xFF7C5CFF.toInt(), 0xFF4BD6C5.toInt(), 0xFFFFC857.toInt(),
+    0xFFFF7B8A.toInt(), 0xFF67B7FF.toInt(), 0xFF9BE15D.toInt(),
+)
+
 @Serializable
 data class GithubRepo(
     val name: String,
@@ -26,20 +31,28 @@ data class GithubRepo(
     val archived: Boolean = false,
 )
 
+@Serializable
+data class GithubAsset(
+    val name: String,
+    @SerialName("browser_download_url") val downloadUrl: String,
+)
+
+@Serializable
+data class GithubRelease(val assets: List<GithubAsset> = emptyList())
+
 data class CatalogApp(
+    val fullName: String,
     val name: String,
     val description: String,
     val repoUrl: String,
     val releaseUrl: String,
     val previewUrl: String,
+    val accent: Int,
 )
 
-/** GitHub-backed catalog: no application server required. Primary = user's own repos. */
 class GitHubCatalog(
     private val client: HttpClient = HttpClient {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     },
 ) {
     suspend fun loadApps(): List<CatalogApp> {
@@ -47,23 +60,28 @@ class GitHubCatalog(
             .get("https://api.github.com/users/${CatalogSources.PRIMARY_USER}/repos?per_page=100&type=public&sort=updated")
             .body()
         val secondary: List<GithubRepo> = try {
-            client.get("https://api.github.com/orgs/${CatalogSources.SECONDARY_ORG}/repos?per_page=100&type=public")
-                .body()
-        } catch (_: Throwable) {
-            emptyList()
-        }
-        val all = (primary + secondary)
+            client.get("https://api.github.com/orgs/${CatalogSources.SECONDARY_ORG}/repos?per_page=100&type=public").body()
+        } catch (_: Throwable) { emptyList() }
+        return (primary + secondary)
             .filter { !it.archived }
             .distinctBy { it.fullName }
             .sortedWith(compareBy({ it.fullName.startsWith(CatalogSources.SECONDARY_ORG) }, { it.name }))
-        return all.map { repo ->
-            CatalogApp(
-                name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() },
-                description = (repo.description ?: "Repository ${repo.fullName}") + if (repo.fork) " (fork)" else "",
-                repoUrl = repo.htmlUrl,
-                releaseUrl = "${repo.htmlUrl}/releases/latest",
-                previewUrl = "https://raw.githubusercontent.com/${CatalogSources.ASSETS_REPO}/main/${repo.name}/hero.jpg",
-            )
-        }
+            .map { repo ->
+                CatalogApp(
+                    fullName = repo.fullName,
+                    name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() },
+                    description = (repo.description ?: "Repository ${repo.fullName}") + if (repo.fork) " (fork)" else "",
+                    repoUrl = repo.htmlUrl,
+                    releaseUrl = "${repo.htmlUrl}/releases/latest",
+                    previewUrl = "https://raw.githubusercontent.com/${CatalogSources.ASSETS_REPO}/main/${repo.name}/hero.jpg",
+                    accent = ACCENTS[kotlin.math.abs(repo.name.hashCode()) % ACCENTS.size],
+                )
+            }
     }
+
+    /** URL APK terbaru dari GitHub Releases, atau null kalau belum ada. */
+    suspend fun latestApkUrl(fullName: String): String? = try {
+        val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
+        release.assets.firstOrNull { it.name.endsWith(".apk", true) }?.downloadUrl
+    } catch (_: Throwable) { null }
 }
