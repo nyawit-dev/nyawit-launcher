@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.platform.appVersion
 import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
@@ -78,6 +79,7 @@ private data class Notice(val text: String, val error: Boolean = false)
 fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
     val currentPlatform = remember { currentAppPlatform() }
+    val version = remember { appVersion(platformContext) }
     val catalog = remember { GitHubCatalog() }
     val updater = remember { UpdateRepository() }
     val scope = rememberCoroutineScope()
@@ -93,6 +95,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var selfPhase by remember { mutableStateOf(FlowPhase.IDLE) }
     var appPhase by remember { mutableStateOf<Pair<String, FlowPhase>?>(null) }
     var notice by remember { mutableStateOf<Notice?>(null) }
+    var launcherUpdateTag by remember { mutableStateOf<String?>(null) }
+    var updateCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(notice) {
         if (notice != null) {
@@ -120,6 +124,16 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             }
         } catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog" }
         finally { loading = false }
+        val release = withContext(Dispatchers.Default) { updater.latest() }
+        val tag = release?.tag?.removePrefix("v")?.trim()
+        if (tag != null && tag != version.trim()) {
+            launcherUpdateTag = release.tag
+            notice = Notice("Pembaruan launcher ${release.tag} tersedia")
+        }
+        updateCount = statuses.count { it.value == AppStatus.UPDATE_AVAILABLE }
+        if (updateCount > 0 && launcherUpdateTag == null) {
+            notice = Notice("$updateCount aplikasi memiliki pembaruan")
+        }
     }
 
     fun openApp(app: CatalogApp) {
@@ -180,7 +194,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 .fillMaxSize()
                 .padding(horizontal = if (profile.kind == ScreenKind.PHONE) 20.dp else 36.dp, vertical = 20.dp),
         ) {
-            Header(selfPhase, ::requestSelfUpdate)
+            Header(version, launcherUpdateTag, selfPhase, ::requestSelfUpdate)
             val selfBusy = selfPhase == FlowPhase.CHECKING || selfPhase == FlowPhase.DOWNLOADING
             AnimatedVisibility(
                 visible = selfBusy,
@@ -241,7 +255,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 }
             }
             Spacer(Modifier.height(16.dp))
-            Text("${filtered.size} aplikasi", color = MUTED, style = MaterialTheme.typography.labelSmall)
+            Text("${filtered.size} aplikasi" + if (updateCount > 0) " · $updateCount pembaruan" else "", color = if (updateCount > 0) Color(0xFFFFB454) else MUTED, style = MaterialTheme.typography.labelSmall)
             Spacer(Modifier.height(10.dp))
 
             when {
@@ -264,7 +278,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
 }
 
 @Composable
-private fun Header(selfPhase: FlowPhase, onUpdate: () -> Unit) {
+private fun Header(version: String, updateTag: String?, selfPhase: FlowPhase, onUpdate: () -> Unit) {
     val busy = selfPhase == FlowPhase.CHECKING || selfPhase == FlowPhase.DOWNLOADING
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(color = ACCENT, shape = RoundedCornerShape(14.dp), modifier = Modifier.size(48.dp)) {
@@ -273,17 +287,24 @@ private fun Header(selfPhase: FlowPhase, onUpdate: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text("Nyawit", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("Launcher dari GitHub", color = MUTED, style = MaterialTheme.typography.labelSmall)
+            Text(
+                "v$version" + if (updateTag != null) " · pembaruan $updateTag tersedia" else " · Launcher dari GitHub",
+                color = if (updateTag != null) Color(0xFFFFB454) else MUTED,
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
         Button(
             onClick = onUpdate,
             enabled = !busy,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D2A31), contentColor = ACCENT),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (updateTag != null) Color(0xFFFFB454) else Color(0xFF1D2A31),
+                contentColor = if (updateTag != null) Color(0xFF0B0F14) else ACCENT,
+            ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
         ) {
             if (busy) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = ACCENT)
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = if (updateTag != null) Color(0xFF0B0F14) else ACCENT)
                 Spacer(Modifier.width(8.dp))
             }
             Text(when (selfPhase) {
@@ -291,7 +312,7 @@ private fun Header(selfPhase: FlowPhase, onUpdate: () -> Unit) {
                 FlowPhase.DOWNLOADING -> "Mengunduh…"
                 FlowPhase.DONE -> "Selesai"
                 FlowPhase.ERROR -> "Coba lagi"
-                FlowPhase.IDLE -> "Perbarui"
+                FlowPhase.IDLE -> if (updateTag != null) "Perbarui" else "Cek Update"
             })
         }
     }
