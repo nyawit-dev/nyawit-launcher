@@ -1,6 +1,7 @@
 package dev.nyawit.launcher.feature.install
 
 import java.awt.Desktop
+import java.awt.EventQueue
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
@@ -30,14 +31,14 @@ actual fun installApp(
                     var written = 0L
                     val total = connection.contentLengthLong
                     while (input.read(buffer).also { read = it } != -1) {
-                        if (shouldCancel()) { file.delete(); onResult(false, "Dibatalkan"); return@Thread }
+                        if (shouldCancel()) { file.delete(); EventQueue.invokeLater { onResult(false, "Dibatalkan") }; return@Thread }
                         output.write(buffer, 0, read)
                         written += read
-                        if (total > 0) onProgress((written.toFloat() / total.toFloat()).coerceIn(0f, 1f))
+                        if (total > 0) { val p = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f); EventQueue.invokeLater { onProgress(p) } }
                     }
                 }
             }
-            onResult(true, "Pembaruan siap, menjalankan versi baru…")
+            EventQueue.invokeLater { onResult(true, "Pembaruan siap, menjalankan versi baru…") }
             val java = File(
                 System.getProperty("java.home"),
                 "bin/java${if (System.getProperty("os.name").lowercase().contains("win")) ".exe" else ""}",
@@ -45,7 +46,7 @@ actual fun installApp(
             ProcessBuilder(java, "-jar", file.absolutePath).inheritIO().start()
             exitProcess(0)
         } catch (t: Throwable) {
-            onResult(false, "Gagal: ${t.message ?: "unknown"}")
+            EventQueue.invokeLater { onResult(false, "Gagal: ${t.message ?: "unknown"}") }
         }
     }.start()
 }
