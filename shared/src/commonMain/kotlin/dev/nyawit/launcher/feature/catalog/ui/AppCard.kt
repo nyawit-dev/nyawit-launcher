@@ -8,6 +8,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -69,6 +71,8 @@ fun AppCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .scale(appear)
+                .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() }
+                .focusable()
                 .tvFocusHighlight(),
         ) {
             Column(Modifier.padding(18.dp)) {
