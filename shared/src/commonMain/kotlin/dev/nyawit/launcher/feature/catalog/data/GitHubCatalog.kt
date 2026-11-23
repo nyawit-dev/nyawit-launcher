@@ -44,7 +44,7 @@ data class GithubRepo(
 data class GithubAsset(val name: String, @SerialName("browser_download_url") val downloadUrl: String)
 
 @Serializable
-data class GithubRelease(val assets: List<GithubAsset> = emptyList())
+data class GithubRelease(@SerialName("tag_name") val tag: String = "", val assets: List<GithubAsset> = emptyList())
 
 data class CatalogApp(
     val fullName: String,
@@ -53,6 +53,7 @@ data class CatalogApp(
     val repoUrl: String,
     val releaseUrl: String,
     val category: String,
+    val packageName: String,
     val accent: Int,
 )
 
@@ -64,6 +65,13 @@ private fun categoryOf(name: String, description: String): String {
         "music" in text || "player" in text -> "Musik"
         else -> "Aplikasi"
     }
+}
+
+private fun packageNameOf(fullName: String): String = when {
+    fullName.contains("launcher") -> "dev.nyawit.launcher"
+    fullName.contains("music") -> "dev.nyawit.music"
+    fullName.contains("arcade") -> "dev.nyawit.arcade"
+    else -> "dev.nyawit." + fullName.substringAfter('/').replace(Regex("[^a-z0-9]"), "")
 }
 
 private fun isAppRepo(repo: GithubRepo): Boolean {
@@ -99,10 +107,16 @@ class GitHubCatalog(
                     repoUrl = repo.htmlUrl,
                     releaseUrl = "${repo.htmlUrl}/releases/latest",
                     category = categoryOf(name, desc),
+                    packageName = packageNameOf(repo.fullName),
                     accent = ACCENTS[kotlin.math.abs(repo.name.hashCode()) % ACCENTS.size],
                 )
             }
     }
+
+    suspend fun latestReleaseTag(fullName: String): String? = try {
+        val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
+        release.tag.ifBlank { null }
+    } catch (_: Throwable) { null }
 
     suspend fun latestApkUrl(fullName: String): String? = try {
         val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
