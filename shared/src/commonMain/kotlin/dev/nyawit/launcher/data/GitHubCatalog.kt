@@ -10,8 +10,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 object CatalogSources {
-    const val ORGANIZATION = "storytold"
-    const val LAUNCHER_REPO = "storytold/craft-launcher"
+    const val PRIMARY_USER = "nyawit-dev"
+    const val SECONDARY_ORG = "storytold"
     const val ASSETS_REPO = "storytold/craft-launcher-assets"
 }
 
@@ -34,7 +34,7 @@ data class CatalogApp(
     val previewUrl: String,
 )
 
-/** GitHub-backed catalog: no application server required. */
+/** GitHub-backed catalog: no application server required. Primary = user's own repos. */
 class GitHubCatalog(
     private val client: HttpClient = HttpClient {
         install(ContentNegotiation) {
@@ -43,20 +43,27 @@ class GitHubCatalog(
     },
 ) {
     suspend fun loadApps(): List<CatalogApp> {
-        val repos: List<GithubRepo> = client
-            .get("https://api.github.com/orgs/${CatalogSources.ORGANIZATION}/repos?per_page=100&type=public")
+        val primary: List<GithubRepo> = client
+            .get("https://api.github.com/users/${CatalogSources.PRIMARY_USER}/repos?per_page=100&type=public&sort=updated")
             .body()
-        return repos
-            .filter { !it.fork && !it.archived }
-            .sortedBy { it.name }
-            .map { repo ->
-                CatalogApp(
-                    name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() },
-                    description = repo.description ?: "Aplikasi dari ${CatalogSources.ORGANIZATION}",
-                    repoUrl = repo.htmlUrl,
-                    releaseUrl = "${repo.htmlUrl}/releases/latest",
-                    previewUrl = "https://raw.githubusercontent.com/${CatalogSources.ASSETS_REPO}/main/${repo.name}/hero.jpg",
-                )
-            }
+        val secondary: List<GithubRepo> = try {
+            client.get("https://api.github.com/orgs/${CatalogSources.SECONDARY_ORG}/repos?per_page=100&type=public")
+                .body()
+        } catch (_: Throwable) {
+            emptyList()
+        }
+        val all = (primary + secondary)
+            .filter { !it.archived }
+            .distinctBy { it.fullName }
+            .sortedWith(compareBy({ it.fullName.startsWith(CatalogSources.SECONDARY_ORG) }, { it.name }))
+        return all.map { repo ->
+            CatalogApp(
+                name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() },
+                description = (repo.description ?: "Repository ${repo.fullName}") + if (repo.fork) " (fork)" else "",
+                repoUrl = repo.htmlUrl,
+                releaseUrl = "${repo.htmlUrl}/releases/latest",
+                previewUrl = "https://raw.githubusercontent.com/${CatalogSources.ASSETS_REPO}/main/${repo.name}/hero.jpg",
+            )
+        }
     }
 }
