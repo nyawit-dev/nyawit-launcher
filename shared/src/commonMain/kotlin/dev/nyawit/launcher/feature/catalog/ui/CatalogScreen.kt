@@ -7,6 +7,8 @@ import androidx.compose.animation.slideInVertically
 import kotlinx.coroutines.delay
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -72,6 +77,18 @@ private val BG_BOTTOM = Color(0xFF0B0F14)
 private val MUTED = Color(0xFF8E9BA8)
 private val CATEGORIES = listOf("Semua", "Launcher", "Game", "Musik", "Aplikasi")
 
+private fun isNewer(latest: String, installed: String): Boolean {
+    fun parse(v: String) = v.removePrefix("v").trim().split(".").mapNotNull { it.toIntOrNull() }
+    val a = parse(latest)
+    val b = parse(installed)
+    for (i in 0 until maxOf(a.size, b.size)) {
+        val av = a.getOrElse(i) { 0 }
+        val bv = b.getOrElse(i) { 0 }
+        if (av != bv) return av > bv
+    }
+    return false
+}
+
 private enum class FlowPhase { IDLE, CHECKING, DOWNLOADING, DONE, ERROR }
 private data class Notice(val text: String, val error: Boolean = false)
 
@@ -79,7 +96,7 @@ private data class Notice(val text: String, val error: Boolean = false)
 fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
     val currentPlatform = remember { currentAppPlatform() }
-    val version = remember { appVersion(platformContext) }
+    var version by remember { mutableStateOf(appVersion(platformContext)) }
     val catalog = remember { GitHubCatalog() }
     val updater = remember { UpdateRepository() }
     val scope = rememberCoroutineScope()
@@ -98,19 +115,41 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var launcherUpdateTag by remember { mutableStateOf<String?>(null) }
     var selfProgress by remember { mutableStateOf<Float?>(null) }
     var appProgress by remember { mutableStateOf<Pair<String, Float>?>(null) }
-    var cancelDownload by remember { mutableStateOf(false) }
+    var cancelSelf by remember { mutableStateOf(false) }
+    var cancelApp by remember { mutableStateOf(false) }
+    var reloadKey by remember { mutableStateOf(0) }
+    val searchFocus = remember { FocusRequester() }
     var updateCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(notice) {
         if (notice != null) {
-            delay(4500)
+            delay(5000)
             notice = null
+        }
+    }
+    LaunchedEffect(selfPhase) {
+        if (selfPhase == FlowPhase.DONE || selfPhase == FlowPhase.ERROR) {
+            delay(3000)
             selfPhase = FlowPhase.IDLE
+        }
+    }
+    LaunchedEffect(appPhase) {
+        if (appPhase?.second == FlowPhase.DONE || appPhase?.second == FlowPhase.ERROR) {
+            delay(3000)
             appPhase = null
         }
     }
+    DisposableEffect(Unit) {
+        onDispose {
+            catalog.close()
+            updater.close()
+        }
+    }
+    if (profile.kind == ScreenKind.TV) {
+        LaunchedEffect(Unit) { searchFocus.requestFocus() }
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(reloadKey) {
         try {
             val loaded = catalog.loadApps()
             apps = loaded
@@ -120,7 +159,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 val status = when {
                     version == null -> AppStatus.NOT_INSTALLED
                     tag == null -> AppStatus.INSTALLED
-                    tag.removePrefix("v").trim() == version.trim() -> AppStatus.INSTALLED
+                    !isNewer(tag, version) -> AppStatus.INSTALLED
                     else -> AppStatus.UPDATE_AVAILABLE
                 }
                 app.fullName to status
@@ -128,8 +167,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         } catch (t: Throwable) { error = t.message ?: "Gagal memuat katalog" }
         finally { loading = false }
         val release = withContext(Dispatchers.Default) { updater.latest() }
-        val tag = release?.tag?.removePrefix("v")?.trim()
-        if (tag != null && tag != version.trim()) {
+        val tag = release?.tag
+        if (tag != null && isNewer(tag, version)) {
             launcherUpdateTag = release.tag
             notice = Notice("Pembaruan launcher ${release.tag} tersedia")
         }
@@ -156,7 +195,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 return@launch
             }
             selfPhase = FlowPhase.DOWNLOADING
-            cancelDownload = false
+            cancelSelf = false
             selfProgress = 0f
             notice = Notice("Mengunduh ${release.tag}…")
             applyUpdate(
@@ -164,11 +203,16 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 asset.name,
                 platformContext,
                 onProgress = { selfProgress = it },
-                shouldCancel = { cancelDownload },
+                shouldCancel = { cancelSelf },
             ) { ok, msg ->
                 selfProgress = null
                 selfPhase = if (ok) FlowPhase.DONE else FlowPhase.ERROR
                 notice = Notice(if (ok) "Pembaruan ${release.tag}: $msg" else msg, error = !ok)
+                if (ok) scope.launch {
+                    delay(2500)
+                    version = withContext(Dispatchers.Default) { appVersion(platformContext) }
+                    launcherUpdateTag = null
+                }
             }
         }
     }
@@ -184,17 +228,22 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 notice = Notice("Belum ada APK untuk ${app.name}", error = true)
                 return@launch
             }
-            cancelDownload = false
+            cancelApp = false
             appProgress = app.fullName to 0f
             installApp(
                 url,
                 "${app.fullName.replace('/', '_')}.apk",
                 platformContext,
                 onProgress = { appProgress = app.fullName to it },
-                shouldCancel = { cancelDownload },
+                shouldCancel = { cancelApp },
             ) { ok, msg ->
                 appProgress = null
                 appPhase = app.fullName to if (ok) FlowPhase.DONE else FlowPhase.ERROR
+                if (ok) {
+                    val installed = withContext(Dispatchers.Default) { installedVersion(app.packageName, platformContext) }
+                    statuses = statuses + (app.fullName to if (installed != null) AppStatus.INSTALLED else AppStatus.NOT_INSTALLED)
+                    updateCount = statuses.count { it.value == AppStatus.UPDATE_AVAILABLE }
+                }
                 notice = Notice("${app.name}: $msg", error = !ok)
             }
         }
@@ -240,7 +289,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 placeholder = { Text("Cari aplikasi…", color = MUTED) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(14.dp), 1f),
+                modifier = Modifier.fillMaxWidth().focusRequester(searchFocus).tvFocusHighlight(RoundedCornerShape(14.dp), 1f),
             )
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -298,7 +347,12 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             }
                             if (selfProgress != null || appProgress != null) {
                                 Spacer(Modifier.width(10.dp))
-                                androidx.compose.material3.TextButton(onClick = { cancelDownload = true }) {
+                                androidx.compose.material3.TextButton(
+                                    onClick = {
+                                        if (selfProgress != null) cancelSelf = true else cancelApp = true
+                                    },
+                                    modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                                ) {
                                     Text("Batal", color = Color(0xFFFF8A80))
                                 }
                             }
@@ -317,7 +371,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Gagal memuat: $error", color = Color(0xFFFF8A80))
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = { error = null; loading = true }) { Text("Coba lagi") }
+                    Button(onClick = { error = null; loading = true; reloadKey++ }) { Text("Coba lagi") }
                 }
                 filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Text("Tidak ada aplikasi untuk platform ini.", color = MUTED)
