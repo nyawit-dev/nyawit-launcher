@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -65,6 +66,7 @@ private val CATEGORIES = listOf("Semua", "Launcher", "Game", "Musik", "Aplikasi"
 @Composable
 fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
+    val currentPlatform = remember { currentAppPlatform() }
     val catalog = remember { GitHubCatalog() }
     val updater = remember { UpdateRepository() }
     val scope = rememberCoroutineScope()
@@ -130,9 +132,10 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
 
     val filtered = apps.filter {
+        val matchPlatform = currentPlatform in it.platforms || (currentPlatform == dev.nyawit.launcher.core.platform.AppPlatform.ANDROID && AppPlatform.TV in it.platforms)
         val matchQuery = query.isBlank() || it.name.contains(query, true) || it.description.contains(query, true)
         val matchCategory = category == "Semua" || it.category == category
-        matchQuery && matchCategory
+        matchPlatform && matchQuery && matchCategory
     }
 
     Box(
@@ -190,7 +193,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     Button(onClick = { error = null; loading = true }) { Text("Coba lagi") }
                 }
                 filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("Tidak ada aplikasi yang cocok.", color = MUTED)
+                    Text("Tidak ada aplikasi untuk platform ini.", color = MUTED)
                 }
                 profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, installing, ::requestInstall, ::openApp)
                 else -> TabletGrid(filtered, statuses, installing, ::requestInstall, ::openApp)
