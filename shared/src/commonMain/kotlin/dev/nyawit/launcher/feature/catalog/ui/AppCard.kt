@@ -25,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,6 +54,7 @@ fun AppCard(
     app: CatalogApp,
     status: AppStatus,
     busy: Boolean,
+    progress: Float? = null,
     onInstall: () -> Unit,
     onOpen: () -> Unit,
 ) {
@@ -117,6 +119,7 @@ fun AppCard(
                     }
                     Text(
                         when {
+                            busy && progress != null -> "Mengunduh ${(progress * 100).toInt()}%"
                             busy -> "Mengunduh…"
                             status == AppStatus.INSTALLED -> "Buka Aplikasi"
                             status == AppStatus.UPDATE_AVAILABLE -> "Perbarui"
