@@ -2,34 +2,40 @@ package dev.nyawit.launcher.core.platform
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 
+private fun normalize(value: String): String =
+    value.lowercase().replace(Regex("[^a-z0-9]"), "")
+
+/** Resolve an installed package without guessing from loose substring matches. */
 internal fun resolvePackage(
     packageName: String,
     displayName: String?,
     context: Context,
 ): String? {
     val pm = context.packageManager
+    // 1. Authoritative: the package id recorded in catalog.json.
     if (runCatching { @Suppress("DEPRECATION") pm.getPackageInfo(packageName, 0) }.isSuccess) {
         return packageName
     }
 
-    val apps = runCatching { pm.getInstalledApplications(0) }.getOrNull() ?: return null
-    val wanted = displayName?.trim()?.lowercase()?.takeIf { it.length >= 3 }
-    val token = packageName.substringAfterLast('.').lowercase().replace("_", "").takeIf { it.length >= 4 }
+    val wanted = displayName?.let(::normalize)?.takeIf { it.length >= 3 } ?: return null
+    val token = normalize(packageName.substringAfterLast('.'))
+        .takeIf { it.length >= 4 }
+        ?: normalize(displayName.orEmpty()).takeIf { it.length >= 4 }
+        ?: return null
 
-    fun labelOf(info: android.content.pm.ApplicationInfo): String =
-        runCatching { pm.getApplicationLabel(info).toString().lowercase() }.getOrNull().orEmpty()
+    val candidates = runCatching { pm.getInstalledApplications(0) }.getOrNull()
+        ?.filter { info ->
+            (info.flags and ApplicationInfo.FLAG_SYSTEM) == 0 &&
+                normalize(runCatching { pm.getApplicationLabel(info).toString() }.getOrNull().orEmpty()) == wanted &&
+                normalize(info.packageName).contains(token)
+        }
+        .orEmpty()
 
-    if (wanted != null) {
-        apps.firstOrNull { labelOf(it).contains(wanted) }?.let { return it.packageName }
-    }
-    if (token != null) {
-        apps.firstOrNull {
-            labelOf(it).contains(token) || it.packageName.lowercase().contains(token)
-        }?.let { return it.packageName }
-    }
-    return null
+    // Ambiguous label matches must never be reported as installed.
+    return candidates.singleOrNull()?.packageName
 }
 
 actual fun installedVersion(
