@@ -68,6 +68,7 @@ fun AppCard(
     onDetail: (() -> Unit)? = null,
     onInstall: () -> Unit,
     onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
     val accent = Color(app.accent)
@@ -81,7 +82,7 @@ fun AppCard(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = c.Surface),
             border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .scale(appear)
                 .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() }
