@@ -114,7 +114,6 @@ private fun isNewer(latest: String, installed: String): Boolean {
     return false
 }
 
-enum class FlowPhase { IDLE, CHECKING, DOWNLOADING, DONE, ERROR }
 private data class Notice(
     val text: String,
     val error: Boolean = false,
