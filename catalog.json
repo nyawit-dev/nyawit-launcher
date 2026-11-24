@@ -1,5 +1,61 @@
 {
   "sources": [
-    { "type": "user", "name": "nyawit-dev" }
+    {
+      "owner": {
+        "name": "nyawit-dev",
+        "web": "https://nyawit-dev.github.io/"
+      },
+      "repo": [
+        {
+          "type": "repo",
+          "name": "nyawit-dev/nyawit-music",
+          "label": "Nyawit Music",
+          "description": "Pemutar musik dengan dukungan Android TV.",
+          "category": "Musik",
+          "platforms": [
+            "android",
+            "tv",
+            "desktop"
+          ],
+          "packageName": "dev.nyawit.music",
+          "accent": "#5AA9E6"
+        },
+        {
+          "type": "repo",
+          "name": "nyawit-dev/garis-arcade",
+          "label": "Garis Arcade",
+          "description": "Kumpulan game klasik: Snake, 2048, dan Tetris.",
+          "category": "Game",
+          "platforms": [
+            "android"
+          ],
+          "packageName": "dev.nyawit.arcade",
+          "accent": "#FFB454"
+        },
+        {
+          "type": "repo",
+          "name": "nyawit-dev/garis_game",
+          "label": "Garis Game",
+          "description": "Tetris Kotlin Compose.",
+          "category": "Game",
+          "platforms": [
+            "android"
+          ],
+          "packageName": "ngga.ring.garisgame",
+          "accent": "#F2789F"
+        },
+        {
+          "type": "repo",
+          "name": "nyawit-dev/monopoly-kmp",
+          "label": "Monopoly KMP",
+          "description": "Game monopoli Kotlin Multiplatform.",
+          "category": "Game",
+          "platforms": [
+            "android"
+          ],
+          "accent": "#9B8CFF"
+        }
+      ]
+    }
   ]
 }

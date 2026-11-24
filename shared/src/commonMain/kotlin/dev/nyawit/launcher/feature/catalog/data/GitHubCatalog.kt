@@ -11,17 +11,127 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+private val catalogJson = Json { ignoreUnknownKeys = true }
+
 object CatalogSources {
     const val PRIMARY_USER = "nyawit-dev"
     const val CONFIG_URL =
         "https://raw.githubusercontent.com/nyawit-dev/nyawit-launcher/main/catalog.json"
 }
 
+/** Informasi pemilik/grup katalog. */
 @Serializable
-data class CatalogSource(val type: String, val name: String)
+data class OwnerInfo(
+    val name: String = "",
+    val web: String? = null,
+)
+
+/**
+ * Satu entri katalog. Bisa berupa grup (`owner` + `repo`) maupun entri tunggal
+ * (`type` + `name`) seperti format lama.
+ *
+ * type: user | org | repo | app
+ * - user/org: ambil semua repo publik dari akun/organisasi.
+ * - repo: ambil satu repo GitHub.
+ * - app: entri manual, tidak perlu repo terdeteksi otomatis.
+ */
+@Serializable
+data class CatalogSource(
+    val type: String? = null,
+    val name: String? = null,
+    val owner: OwnerInfo? = null,
+    val repo: List<CatalogSource> = emptyList(),
+    /** URL repo; mengganti URL GitHub yang dibuat dari `name`. */
+    val url: String? = null,
+    val label: String? = null,
+    val description: String? = null,
+    val category: String? = null,
+    val platforms: List<String>? = null,
+    val packageName: String? = null,
+    val accent: String? = null,
+    val hidden: Boolean = false,
+    val pinned: Boolean = false,
+)
 
 @Serializable
-data class CatalogConfig(val sources: List<CatalogSource> = emptyList())
+data class CatalogConfig(
+    val sources: List<CatalogSource> = emptyList(),
+    /** Daftar `owner/repo` yang disembunyikan dari hasil deteksi user/org. */
+    val exclude: List<String> = emptyList(),
+)
+
+/** Entri yang sudah dinormalisasi dari format grup maupun format lama. */
+private data class ResolvedSource(
+    val type: String,
+    val name: String,
+    val ownerName: String?,
+    val ownerWeb: String?,
+    val url: String?,
+    val label: String?,
+    val description: String?,
+    val category: String?,
+    val platforms: List<String>?,
+    val packageName: String?,
+    val accent: String?,
+    val hidden: Boolean,
+    val pinned: Boolean,
+) {
+    val hasDetail: Boolean
+        get() = type.equals("app", ignoreCase = true) ||
+            label != null || description != null || category != null ||
+            platforms != null || packageName != null || accent != null || pinned
+}
+
+private fun resolveSources(entries: List<CatalogSource>): List<ResolvedSource> {
+    val result = mutableListOf<ResolvedSource>()
+    for (entry in entries) {
+        if (entry.repo.isNotEmpty()) {
+            val groupOwner = entry.owner?.name?.takeIf { it.isNotBlank() }
+            val groupWeb = entry.owner?.web
+            for (repo in entry.repo) {
+                val type = repo.type ?: "app"
+                val rawName = repo.name ?: continue
+                val name = if (type.lowercase() in setOf("user", "org") || "/" in rawName) {
+                    rawName
+                } else {
+                    "${groupOwner ?: CatalogSources.PRIMARY_USER}/$rawName"
+                }
+                result += ResolvedSource(
+                    type = type,
+                    name = name,
+                    ownerName = groupOwner,
+                    ownerWeb = groupWeb,
+                    url = repo.url,
+                    label = repo.label,
+                    description = repo.description,
+                    category = repo.category,
+                    platforms = repo.platforms,
+                    packageName = repo.packageName,
+                    accent = repo.accent,
+                    hidden = repo.hidden,
+                    pinned = repo.pinned,
+                )
+            }
+        } else if (entry.type != null && entry.name != null) {
+            result += ResolvedSource(
+                type = entry.type,
+                name = entry.name,
+                ownerName = entry.owner?.name?.takeIf { it.isNotBlank() },
+                ownerWeb = entry.owner?.web,
+                url = entry.url,
+                label = entry.label,
+                description = entry.description,
+                category = entry.category,
+                platforms = entry.platforms,
+                packageName = entry.packageName,
+                accent = entry.accent,
+                hidden = entry.hidden,
+                pinned = entry.pinned,
+            )
+        }
+    }
+    return result
+}
 
 private val ACCENTS = listOf(
     0xFF3DDC97.toInt(), 0xFF5AA9E6.toInt(), 0xFFFFB454.toInt(),
@@ -66,7 +176,32 @@ data class CatalogApp(
     val packageName: String,
     val platforms: List<AppPlatform>,
     val accent: Int,
+    val pinned: Boolean = false,
+    val ownerWeb: String? = null,
 )
+
+private fun parseAccent(value: String?): Int? {
+    val raw = value?.trim()?.takeIf { it.isNotBlank() } ?: return null
+    val hex = raw.removePrefix("#").removePrefix("0x").removePrefix("0X")
+    val color = hex.toLongOrNull(16) ?: return null
+    return if (hex.length == 6) (0xFF000000L or color).toInt() else color.toInt()
+}
+
+private fun parsePlatforms(values: List<String>?): List<AppPlatform>? {
+    if (values.isNullOrEmpty()) return null
+    val parsed = values.mapNotNull { value ->
+        when (value.trim().lowercase()) {
+            "android" -> AppPlatform.ANDROID
+            "tv", "android-tv", "androidtv" -> AppPlatform.TV
+            "desktop", "jvm", "jvm-desktop" -> AppPlatform.DESKTOP
+            else -> null
+        }
+    }.distinct()
+    return parsed.takeIf { it.isNotEmpty() }
+}
+
+private fun displayName(fullName: String): String =
+    fullName.substringAfter('/').replace('-', ' ').replaceFirstChar { it.uppercase() }
 
 private fun categoryOf(name: String, description: String): String {
     val text = "$name ${description}".lowercase()
@@ -110,43 +245,97 @@ private fun isAppRepo(repo: GithubRepo): Boolean {
     return repo.topics.any { it.lowercase() in APP_TOPICS }
 }
 
-
-private fun fallbackApps(): List<CatalogApp> {
-    fun app(
-        name: String,
-        desc: String,
-        platforms: List<AppPlatform>,
-        accent: Long,
-    ) = CatalogApp(
-        fullName = "nyawit-dev/$name",
-        name = name.replace('-', ' ').replaceFirstChar { it.uppercase() },
+private fun buildApp(
+    fullName: String,
+    label: String? = null,
+    description: String? = null,
+    category: String? = null,
+    platforms: List<String>? = null,
+    packageName: String? = null,
+    accent: String? = null,
+    pinned: Boolean = false,
+    ownerWeb: String? = null,
+    fallbackDescription: String = "Aplikasi $fullName",
+    repoUrl: String = "https://github.com/$fullName",
+    seed: String = fullName,
+): CatalogApp {
+    val name = label?.takeIf { it.isNotBlank() } ?: displayName(fullName)
+    val desc = description?.takeIf { it.isNotBlank() } ?: fallbackDescription
+    return CatalogApp(
+        fullName = fullName,
+        name = name,
         description = desc,
-        repoUrl = "https://github.com/nyawit-dev/$name",
-        releaseUrl = "https://github.com/nyawit-dev/$name/releases/latest",
-        category = when {
-            "launcher" in name -> "Launcher"
-            "music" in name -> "Musik"
-            else -> "Game"
-        },
-        packageName = packageNameOf("nyawit-dev/$name"),
-        platforms = platforms,
-        accent = accent.toInt(),
-    )
-    return listOf(
-        app("nyawit-launcher", "Launcher aplikasi Nyawit untuk Android, TV, dan desktop", listOf(AppPlatform.ANDROID, AppPlatform.TV, AppPlatform.DESKTOP), 0xFF3DDC97),
-        app("nyawit-music", "Pemutar musik dengan dukungan Android TV", listOf(AppPlatform.ANDROID, AppPlatform.TV), 0xFF5AA9E6),
-        app("garis-arcade", "Kumpulan game klasik: Snake, 2048, Tetris", listOf(AppPlatform.ANDROID), 0xFFFFB454),
-        app("garis_game", "Tetris Kotlin Compose", listOf(AppPlatform.ANDROID), 0xFFF2789F),
-        app("monopoly-kmp", "Game monopoli Kotlin Multiplatform", listOf(AppPlatform.ANDROID), 0xFF9B8CFF),
+        repoUrl = repoUrl,
+        releaseUrl = "$repoUrl/releases/latest",
+        category = category?.takeIf { it.isNotBlank() } ?: categoryOf(name, desc),
+        packageName = packageName?.takeIf { it.isNotBlank() } ?: packageNameOf(fullName),
+        platforms = parsePlatforms(platforms) ?: platformsOf(fullName, desc),
+        accent = parseAccent(accent) ?: ACCENTS[kotlin.math.abs(seed.hashCode()) % ACCENTS.size],
+        pinned = pinned,
+        ownerWeb = ownerWeb?.takeIf { it.isNotBlank() },
     )
 }
 
+private fun fallbackApps(): List<CatalogApp> = listOf(
+    buildApp(
+        fullName = "nyawit-dev/nyawit-launcher",
+        label = "Nyawit Launcher",
+        description = "Launcher aplikasi Nyawit untuk Android, TV, dan desktop",
+        category = "Launcher",
+        platforms = listOf("android", "tv", "desktop"),
+        packageName = "dev.nyawit.launcher",
+        accent = "#3DDC97",
+        pinned = true,
+        seed = "nyawit-launcher",
+    ),
+    buildApp(
+        fullName = "nyawit-dev/nyawit-music",
+        label = "Nyawit Music",
+        description = "Pemutar musik dengan dukungan Android TV",
+        category = "Musik",
+        platforms = listOf("android", "tv"),
+        packageName = "dev.nyawit.music",
+        accent = "#5AA9E6",
+        seed = "nyawit-music",
+    ),
+    buildApp(
+        fullName = "nyawit-dev/garis-arcade",
+        label = "Garis Arcade",
+        description = "Kumpulan game klasik: Snake, 2048, Tetris",
+        category = "Game",
+        platforms = listOf("android"),
+        packageName = "dev.nyawit.arcade",
+        accent = "#FFB454",
+        seed = "garis-arcade",
+    ),
+    buildApp(
+        fullName = "nyawit-dev/garis_game",
+        label = "Garis Game",
+        description = "Tetris Kotlin Compose",
+        category = "Game",
+        platforms = listOf("android"),
+        packageName = "ngga.ring.garisgame",
+        accent = "#F2789F",
+        seed = "garis_game",
+    ),
+    buildApp(
+        fullName = "nyawit-dev/monopoly-kmp",
+        label = "Monopoly KMP",
+        description = "Game monopoli Kotlin Multiplatform",
+        category = "Game",
+        platforms = listOf("android"),
+        accent = "#9B8CFF",
+        seed = "monopoly-kmp",
+    ),
+)
+
 class GitHubCatalog(
+    private val localCatalogJson: String? = null,
     private val client: HttpClient = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        install(ContentNegotiation) { json(catalogJson) }
     },
 ) {
-    private suspend fun reposFrom(source: CatalogSource): List<GithubRepo> = try {
+    private suspend fun reposFrom(source: ResolvedSource): List<GithubRepo> = try {
         when (source.type.lowercase()) {
             "user" -> client.get("https://api.github.com/users/${source.name}/repos?per_page=100&type=public&sort=updated").body()
             "org" -> client.get("https://api.github.com/orgs/${source.name}/repos?per_page=100&type=public&sort=updated").body()
@@ -156,33 +345,75 @@ class GitHubCatalog(
     } catch (_: Throwable) { emptyList() }
 
     suspend fun loadApps(): List<CatalogApp> {
-        val config: CatalogConfig = try {
+        val config: CatalogConfig = localCatalogJson?.let {
+            runCatching { catalogJson.decodeFromString<CatalogConfig>(it) }.getOrNull()
+        } ?: try {
             client.get(CatalogSources.CONFIG_URL).body()
         } catch (_: Throwable) {
             CatalogConfig(listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)))
         }
-        val sources = config.sources.ifEmpty { listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)) }
-        val repos = sources.fold(emptyList<GithubRepo>()) { acc, source -> acc + reposFrom(source) }
-        val loaded = repos
-            .filter { !it.archived && isAppRepo(it) }
+        val entries = config.sources.ifEmpty { listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)) }
+        val sources = resolveSources(entries)
+        val primaryOwner = sources.firstNotNullOfOrNull { it.ownerName } ?: CatalogSources.PRIMARY_USER
+
+        val details = sources.filter { it.hasDetail }.associateBy { it.name.lowercase() }
+        val hidden = (config.exclude + sources.filter { it.hidden }.map { it.name })
+            .map { it.lowercase() }.toSet()
+
+        val discovered = sources
+            .filterNot { it.hidden && it.type.lowercase() in setOf("user", "org") }
+            .filterNot { it.type.equals("app", ignoreCase = true) }
+            .fold(emptyList<GithubRepo>()) { acc, source -> acc + reposFrom(source) }
+            .filter { !it.archived && (isAppRepo(it) || details.containsKey(it.fullName.lowercase())) }
             .distinctBy { it.fullName }
-            .sortedWith(compareBy({ it.fullName.substringBefore('/') != CatalogSources.PRIMARY_USER }, { it.name }))
-            .map { repo ->
-                val name = repo.name.replace('-', ' ').replaceFirstChar { it.uppercase() }
-                val desc = repo.description?.takeIf { it.isNotBlank() } ?: "Aplikasi ${repo.fullName}"
-                CatalogApp(
+            .mapNotNull { repo ->
+                if (repo.fullName.lowercase() in hidden) return@mapNotNull null
+                val detail = details[repo.fullName.lowercase()]
+                buildApp(
                     fullName = repo.fullName,
-                    name = name,
-                    description = desc,
-                    repoUrl = repo.htmlUrl,
-                    releaseUrl = "${repo.htmlUrl}/releases/latest",
-                    category = categoryOf(name, desc),
-                    packageName = packageNameOf(repo.fullName),
-                    platforms = platformsOf(repo.fullName, desc),
-                    accent = ACCENTS[kotlin.math.abs(repo.name.hashCode()) % ACCENTS.size],
+                    label = detail?.label,
+                    description = detail?.description ?: repo.description,
+                    category = detail?.category,
+                    platforms = detail?.platforms,
+                    packageName = detail?.packageName,
+                    accent = detail?.accent,
+                    pinned = detail?.pinned ?: false,
+                    ownerWeb = detail?.ownerWeb,
+                    fallbackDescription = "Aplikasi ${repo.fullName}",
+                    repoUrl = detail?.url ?: repo.htmlUrl,
+                    seed = repo.name,
                 )
             }
-        return loaded.ifEmpty { fallbackApps() }
+
+        val manual = sources
+            .filter { it.type.equals("app", ignoreCase = true) }
+            .mapNotNull { source ->
+                if (source.name.lowercase() in hidden) return@mapNotNull null
+                buildApp(
+                    fullName = source.name,
+                    label = source.label,
+                    description = source.description,
+                    category = source.category,
+                    platforms = source.platforms,
+                    packageName = source.packageName,
+                    accent = source.accent,
+                    pinned = source.pinned,
+                    ownerWeb = source.ownerWeb,
+                    repoUrl = source.url ?: "https://github.com/${source.name}",
+                )
+            }
+
+        // Entri manual menimpa hasil deteksi dengan fullName yang sama.
+        val combined = (manual + discovered)
+            .distinctBy { it.fullName.lowercase() }
+            .sortedWith(
+                compareBy(
+                    { !it.pinned },
+                    { it.fullName.substringBefore('/') != primaryOwner },
+                    { it.name },
+                ),
+            )
+        return combined.ifEmpty { fallbackApps() }
     }
 
     fun close() { client.close() }

@@ -1,10 +1,9 @@
 package dev.nyawit.launcher.feature.update
 
+import dev.nyawit.launcher.feature.install.InstallRequest
+
 expect fun applyUpdate(
-    url: String,
-    fileName: String,
-    platformContext: Any?,
-    registryKey: String,
+    request: InstallRequest,
     onProgress: (Float) -> Unit,
     shouldCancel: () -> Boolean,
     onResult: (Boolean, String) -> Unit,

@@ -8,8 +8,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +31,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,12 +38,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.ui.ArrowIcon
+import dev.nyawit.launcher.core.ui.DownloadIcon
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
+import dev.nyawit.launcher.theme.LocalNyawitColors
+import dev.nyawit.launcher.theme.NyawitType
 
 enum class AppStatus { NOT_INSTALLED, INSTALLED, UPDATE_AVAILABLE, UNKNOWN }
 
@@ -61,77 +69,193 @@ fun AppCard(
     onInstall: () -> Unit,
     onOpen: () -> Unit,
 ) {
-    val appear by animateFloatAsState(targetValue = 1f, animationSpec = tween(350))
+    val c = LocalNyawitColors.current
+    val accent = Color(app.accent)
+    val appear by animateFloatAsState(targetValue = 1f, animationSpec = tween(280))
+
     AnimatedVisibility(
         visible = true,
-        enter = fadeIn(tween(350)) + slideInVertically(tween(350) { it / 2 }),
+        enter = fadeIn(tween(280)) + slideInVertically(tween(280) { it / 3 }),
     ) {
         Card(
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF151B23)),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = c.Surface),
+            border = BorderStroke(1.dp, c.Border),
             modifier = Modifier
                 .fillMaxWidth()
                 .scale(appear)
                 .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() }
                 .focusable()
-                .tvFocusHighlight(),
+                .tvFocusHighlight(RoundedCornerShape(18.dp)),
         ) {
-            Column(Modifier.padding(18.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(color = Color(app.accent), shape = CircleShape, modifier = Modifier.size(44.dp)) {
-                        Box(Modifier.fillMaxSize(), Alignment.Center) {
-                            Text(app.name.first().uppercase(), color = Color(0xFF0B0F14), fontWeight = FontWeight.Bold)
+            Column {
+                // Top-lit specular accent line
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(2.5.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(accent, accent.copy(alpha = 0.3f), Color.Transparent),
+                            ),
+                        ),
+                )
+
+                Column(Modifier.padding(18.dp)) {
+                    // Header row: AppIcon + Name & Pills + Status chip
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AppIcon(
+                            fullName = app.fullName,
+                            fallbackName = app.name,
+                            size = 48.dp,
+                            shape = RoundedCornerShape(13.dp),
+                        )
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                app.name,
+                                style = NyawitType.Title,
+                                color = c.Text,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Surface(
+                                    color = c.SurfaceRaised,
+                                    shape = RoundedCornerShape(6.dp),
+                                ) {
+                                    Text(
+                                        app.category.uppercase(),
+                                        style = NyawitType.Overline,
+                                        color = accent,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    )
+                                }
+                                Text(
+                                    app.platforms.joinToString(" · ") { it.label() },
+                                    style = NyawitType.Caption,
+                                    color = c.Faint,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                        StatusChip(status)
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        app.description,
+                        style = NyawitType.Body,
+                        color = c.Muted,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+
+                    // Optional progress indicator when downloading
+                    if (busy && progress != null) {
+                        Spacer(Modifier.height(10.dp))
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "MENGUNDUH PAKET",
+                                style = NyawitType.Overline,
+                                color = accent,
+                            )
+                            Text(
+                                "${(progress * 100).toInt()}%",
+                                style = NyawitType.Overline,
+                                color = c.Text,
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth().height(4.dp),
+                            color = accent,
+                            trackColor = c.SurfaceRaised,
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Action Row
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Button(
+                            onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
+                            enabled = !busy,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = when (status) {
+                                    AppStatus.INSTALLED -> c.SurfaceRaised
+                                    AppStatus.UPDATE_AVAILABLE -> c.Warning
+                                    else -> accent
+                                },
+                                contentColor = when (status) {
+                                    AppStatus.UPDATE_AVAILABLE -> c.OnPrimary
+                                    AppStatus.INSTALLED -> c.Text
+                                    else -> c.OnPrimary
+                                },
+                            ),
+                            shape = RoundedCornerShape(11.dp),
+                            modifier = Modifier
+                                .height(44.dp)
+                                .weight(1f)
+                                .tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                        ) {
+                            if (busy) {
+                                CircularProgressIndicator(
+                                    Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = c.OnPrimary,
+                                )
+                                Spacer(Modifier.width(8.dp))
+                            } else if (status == AppStatus.INSTALLED) {
+                                ArrowIcon(Modifier.size(16.dp), c.Text)
+                                Spacer(Modifier.width(8.dp))
+                            } else if (progress == null) {
+                                DownloadIcon(Modifier.size(16.dp), c.OnPrimary)
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text(
+                                when {
+                                    busy && progress != null -> "Mengunduh ${(progress * 100).toInt()}%"
+                                    busy -> "Memproses…"
+                                    status == AppStatus.INSTALLED -> "Buka aplikasi"
+                                    status == AppStatus.UPDATE_AVAILABLE -> "Perbarui"
+                                    else -> "Pasang"
+                                },
+                                fontWeight = FontWeight.Bold,
+                                style = NyawitType.Caption,
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Surface(
+                            color = c.SurfaceRaised,
+                            shape = RoundedCornerShape(11.dp),
+                            border = BorderStroke(1.dp, c.Border),
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clickable { onDetail() }
+                                .focusable()
+                                .tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                        ) {
+                            Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                Text(
+                                    "i",
+                                    color = c.Muted,
+                                    fontWeight = FontWeight.Bold,
+                                    style = NyawitType.Caption,
+                                )
+                            }
                         }
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(app.name, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            app.platforms.joinToString(" · ") { it.label() } + " · " + app.category,
-                            color = Color(app.accent),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
-                    StatusChip(status)
-                }
-                Spacer(Modifier.height(14.dp))
-                Text(app.description, color = Color(0xFF9BA7B4), style = MaterialTheme.typography.bodySmall, maxLines = 2)
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
-                    enabled = !busy,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = when (status) {
-                            AppStatus.INSTALLED -> Color(0xFF25313A)
-                            AppStatus.UPDATE_AVAILABLE -> Color(0xFFFFB454)
-                            else -> Color(app.accent)
-                        },
-                        contentColor = when (status) {
-                            AppStatus.UPDATE_AVAILABLE -> Color(0xFF0B0F14)
-                            else -> Color.White
-                        },
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
-                ) {
-                    if (busy) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = if (status == AppStatus.UPDATE_AVAILABLE) Color(0xFF0B0F14) else Color.White,
-                        )
-                        Spacer(Modifier.width(10.dp))
-                    }
-                    Text(
-                        when {
-                            busy && progress != null -> "Mengunduh ${(progress * 100).toInt()}%"
-                            busy -> "Mengunduh…"
-                            status == AppStatus.INSTALLED -> "Buka Aplikasi"
-                            status == AppStatus.UPDATE_AVAILABLE -> "Perbarui"
-                            else -> "Pasang"
-                        },
-                        fontWeight = FontWeight.SemiBold,
-                    )
                 }
             }
         }
@@ -140,23 +264,40 @@ fun AppCard(
 
 @Composable
 private fun StatusChip(status: AppStatus) {
+    val c = LocalNyawitColors.current
     val pulse by rememberInfiniteTransition().animateFloat(
         initialValue = 0.85f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(900)),
+        animationSpec = infiniteRepeatable(tween(1000)),
     )
     val (label, color) = when (status) {
-        AppStatus.NOT_INSTALLED -> "Belum dipasang" to Color(0xFF8E9BA8)
-        AppStatus.INSTALLED -> "Terpasang" to Color(0xFF3DDC97)
-        AppStatus.UPDATE_AVAILABLE -> "Ada pembaruan" to Color(0xFFFFB454)
-        AppStatus.UNKNOWN -> "Status unknown" to Color(0xFF8E9BA8)
+        AppStatus.NOT_INSTALLED -> "Tersedia" to c.Faint
+        AppStatus.INSTALLED -> "Terpasang" to c.Primary
+        AppStatus.UPDATE_AVAILABLE -> "Update" to c.Warning
+        AppStatus.UNKNOWN -> "Unknown" to c.Faint
     }
-    Surface(color = color.copy(alpha = 0.16f), shape = RoundedCornerShape(10.dp)) {
-        Text(
-            label,
-            color = color,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).scale(if (status == AppStatus.UPDATE_AVAILABLE) pulse else 1f),
-        )
+    Surface(
+        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.35f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                .scale(if (status == AppStatus.UPDATE_AVAILABLE) pulse else 1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Box(
+                Modifier
+                    .size(6.dp)
+                    .background(color, CircleShape),
+            )
+            Text(
+                label.uppercase(),
+                style = NyawitType.Overline,
+                color = color,
+                maxLines = 1,
+            )
+        }
     }
 }

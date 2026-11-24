@@ -1,6 +1,53 @@
 {
   "sources": [
-    { "type": "user", "name": "nyawit-dev" },
-    { "type": "repo", "name": "owner/nama-aplikasi-android" }
+    {
+      "owner": {
+        "name": "nyawit-dev",
+        "web": "https://nyawit-dev.github.io/"
+      },
+      "repo": [
+        {
+          "type": "app",
+          "name": "nyawit-dev/nyawit-music",
+          "url": "https://github.com/ringga-dev/portfolio-v2",
+          "label": "Nyawit Music",
+          "description": "Pemutar musik dengan dukungan Android TV.",
+          "category": "Musik",
+          "platforms": [
+            "android",
+            "tv"
+          ],
+          "packageName": "dev.nyawit.music",
+          "accent": "#5AA9E6"
+        },
+        {
+          "type": "repo",
+          "name": "nyawit-dev/nyawit-launcher",
+          "label": "Nyawit Launcher",
+          "description": "Launcher aplikasi Nyawit untuk Android, TV, dan desktop.",
+          "category": "Launcher",
+          "platforms": [
+            "android",
+            "tv",
+            "desktop"
+          ],
+          "packageName": "dev.nyawit.launcher",
+          "accent": "#3DDC97",
+          "pinned": true
+        },
+        {
+          "type": "app",
+          "name": "aplikasi-manual",
+          "label": "Aplikasi Manual",
+          "description": "Entri manual tanpa perlu repo terdeteksi otomatis.",
+          "category": "Aplikasi",
+          "platforms": [
+            "desktop"
+          ],
+          "packageName": "dev.nyawit.aplikasimanual",
+          "accent": "#9B8CFF"
+        }
+      ]
+    }
   ]
 }

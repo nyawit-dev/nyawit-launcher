@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.isTvPlatform
 import kotlinx.coroutines.launch
 
-enum class ScreenKind { PHONE, TABLET, TV }
+enum class ScreenKind { PHONE, TABLET, DESKTOP, TV }
 
 data class DeviceProfile(val kind: ScreenKind, val widthDp: Float)
 
@@ -31,7 +31,8 @@ fun rememberDeviceProfile(): DeviceProfile {
     val width = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }
     val kind = when {
         isTvPlatform() -> ScreenKind.TV
-        width >= 840 -> ScreenKind.TABLET
+        width >= 1200 -> ScreenKind.DESKTOP
+        width >= 600 -> ScreenKind.TABLET
         else -> ScreenKind.PHONE
     }
     return DeviceProfile(kind, width)

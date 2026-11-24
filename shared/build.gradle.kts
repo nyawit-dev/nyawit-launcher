@@ -6,6 +6,23 @@ plugins {
     alias(libs.plugins.android.kmp.library)
 }
 
+val releaseVersion = providers.gradleProperty("releaseVersion").getOrElse("1.3.0")
+val generatedVersionDir = layout.buildDirectory.dir("generated/version/commonMain/kotlin")
+
+val generateVersion = tasks.register("generateVersion") {
+    val version = releaseVersion
+    val outputFile = generatedVersionDir.get()
+        .file("dev/nyawit/launcher/core/platform/GeneratedVersion.kt").asFile
+    outputs.file(outputFile)
+    doLast {
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+            "package dev.nyawit.launcher.core.platform\n" +
+                "internal object GeneratedVersion { const val VERSION = \"${version}\" }\n",
+        )
+    }
+}
+
 kotlin {
     android {
         namespace = "dev.nyawit.launcher.shared"
@@ -20,6 +37,7 @@ kotlin {
 
     sourceSets {
         getByName("commonMain") {
+            kotlin.srcDir(generatedVersionDir)
             dependencies {
                 implementation(libs.runtime)
                 implementation(libs.foundation)
@@ -29,6 +47,7 @@ kotlin {
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.json)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.compose.resources)
             }
         }
         getByName("androidMain") {
@@ -40,8 +59,13 @@ kotlin {
         getByName("desktopMain") {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
-                implementation(libs.core.ktx)
             }
         }
+    }
+}
+
+tasks.configureEach {
+    if (name.startsWith("compile") && (name.contains("Kotlin") || name.endsWith("Main"))) {
+        dependsOn(generateVersion)
     }
 }

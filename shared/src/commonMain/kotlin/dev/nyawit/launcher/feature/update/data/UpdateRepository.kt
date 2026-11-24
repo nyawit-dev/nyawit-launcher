@@ -29,17 +29,35 @@ class UpdateRepository(
 
     fun close() { client.close() }
 
+    /**
+     * Memilih installer bawaan platform: .msi/.exe (Windows), .deb/.rpm (Linux),
+     * .dmg/.pkg (macOS), .apk (Android).
+     * File .jar tidak didukung — hanya installer native resmi platform yang dipilih.
+     */
     fun pickAsset(release: ReleaseInfo): ReleaseAsset? {
         val key = platformKey()
         val candidates = release.assets.filter {
             val n = it.name.lowercase()
             when (key) {
-                "windows" -> n.contains("windows") || n.endsWith(".msi")
-                "mac" -> n.contains("mac") || n.endsWith(".dmg")
-                "linux" -> n.contains("linux") || n.endsWith(".deb")
+                "windows" -> n.endsWith(".msi") || n.endsWith(".exe")
+                "mac" -> n.endsWith(".dmg") || n.endsWith(".pkg")
+                "linux" -> n.endsWith(".deb") || n.endsWith(".rpm")
                 else -> n.endsWith(".apk")
             }
         }
-        return candidates.firstOrNull { it.name.endsWith(".jar") } ?: candidates.firstOrNull()
+        val primary = when (key) {
+            "windows" -> ".msi"
+            "mac" -> ".dmg"
+            "linux" -> ".deb"
+            else -> ".apk"
+        }
+        val secondary = when (key) {
+            "windows" -> ".exe"
+            "mac" -> ".pkg"
+            "linux" -> ".rpm"
+            else -> null
+        }
+        return candidates.firstOrNull { it.name.endsWith(primary, true) }
+            ?: secondary?.let { ext -> candidates.firstOrNull { it.name.endsWith(ext, true) } }
     }
 }

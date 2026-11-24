@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F2C38" />
+      <stop offset="100%" stop-color="#141C24" />
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4EEDB0" />
+      <stop offset="100%" stop-color="#2EC484" />
+    </linearGradient>
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#3DDC97" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Base container squircle -->
+  <rect x="20" y="20" width="472" height="472" rx="104" fill="url(#bgGrad)" stroke="#273741" stroke-width="14" />
+
+  <!-- Inner accent ring / circular core -->
+  <circle cx="256" cy="256" r="148" fill="url(#primaryGrad)" filter="url(#subtleGlow)" />
+
+  <!-- Iconic 'N' mark -->
+  <polyline
+    points="176,340 176,172 336,340 336,172"
+    fill="none"
+    stroke="#07130E"
+    stroke-width="36"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

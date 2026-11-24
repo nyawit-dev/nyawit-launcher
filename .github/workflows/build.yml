@@ -24,15 +24,19 @@ jobs:
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
       - name: Make gradlew executable
         run: chmod +x gradlew
-      - name: Build Android and JVM
-        run: ./gradlew --no-daemon :androidApp:assembleDebug :desktopApp:desktopJar --stacktrace
+      - name: Install Linux packaging tools
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      - name: Build Android and desktop
+        run: ./gradlew --no-daemon :androidApp:assembleDebug :desktopApp:packageDistributionForCurrentOS --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nyawit-launcher-android-debug
           path: androidApp/build/outputs/apk/debug/*.apk
-      - name: Upload JVM jar
+      - name: Upload desktop installers
         uses: actions/upload-artifact@v4
         with:
-          name: nyawit-launcher-jvm
-          path: desktopApp/build/libs/*.jar
+          name: nyawit-launcher-desktop
+          path: |
+            desktopApp/build/compose/binaries/**/*.deb
+            desktopApp/build/compose/binaries/**/*.rpm

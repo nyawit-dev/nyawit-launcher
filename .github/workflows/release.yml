@@ -1,12 +1,15 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.0.0)'
-        required: true
-        default: 'v1.0.0'
+        description: 'Release tag (format vX.Y.Z, mis. v1.3.0)'
+        required: false
+        default: 'v1.3.0'
         type: string
 
 permissions:
@@ -17,7 +20,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag harus berformat vX.Y.Z (mis. v1.3.0), got: $TAG"
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release dengan tag $TAG sudah ada"
+            exit 1
+          fi
+          echo "Tag $TAG valid"
+
   android:
+    needs: [validate]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -27,8 +50,22 @@ jobs:
       - name: Accept SDK licenses
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
       - run: chmod +x gradlew
+      - name: Resolve version from tag
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          MAJOR=$((10#$MAJOR)); MINOR=$((10#$MINOR)); PATCH=$((10#$PATCH))
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))" >> "$GITHUB_ENV"
+          echo "Building Android $VERSION (code $ANDROID_VERSION_CODE)"
       - name: Build Android release APK
-        run: ./gradlew --no-daemon :androidApp:assembleRelease --stacktrace
+        run: >-
+          ./gradlew --no-daemon :androidApp:assembleRelease
+          -PreleaseVersion=$RELEASE_VERSION
+          -PandroidVersionCode=$ANDROID_VERSION_CODE
+          --stacktrace
       - name: Verify Android TV launcher category
         shell: bash
         run: |
@@ -38,12 +75,28 @@ jobs:
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -i 'LEANBACK_LAUNCHER' || {
             echo "::error::Android TV launcher category missing"; exit 1;
           }
+      - name: Verify APK signature and version
+        shell: bash
+        run: |
+          APK=$(find androidApp/build/outputs/apk/release -name '*.apk' -type f | head -n1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | head -n1)
+          test -n "$APKSIGNER" || { echo "::error::apksigner not found"; exit 1; }
+          "$APKSIGNER" verify --print-certs "$APK" || { echo "::error::APK signature invalid"; exit 1; }
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | head -n1)
+          BADGING=$("$AAPT" dump badging "$APK")
+          echo "$BADGING" | grep -q "versionCode='$ANDROID_VERSION_CODE'" || {
+            echo "::error::APK versionCode tidak sesuai tag"; exit 1;
+          }
+          echo "$BADGING" | grep -q "versionName='$RELEASE_VERSION'" || {
+            echo "::error::APK versionName tidak sesuai tag"; exit 1;
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: android-release
           path: androidApp/build/outputs/apk/release/*.apk
 
   desktop:
+    needs: [validate]
     strategy:
       fail-fast: false
       matrix:
@@ -54,9 +107,12 @@ jobs:
           - os: windows-latest
             name: windows
             native_task: ':desktopApp:packageDistributionForCurrentOS'
+          - os: macos-15-intel
+            name: mac-x64
+            native_task: ':desktopApp:packageDistributionForCurrentOS'
           - os: macos-latest
-            name: mac
-            native_task: ''
+            name: mac-arm64
+            native_task: ':desktopApp:packageDistributionForCurrentOS'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -67,25 +123,32 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: chmod +x gradlew
-      - name: Build JVM artifacts for ${{ matrix.name }}
+      - name: Install Linux packaging tools
+        if: matrix.name == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      - name: Resolve version from tag
         shell: bash
-        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS ${{ matrix.native_task }} --stacktrace
-      - name: Collect JVM artifacts
+        run: echo "RELEASE_VERSION=${{ inputs.tag || github.ref_name }}" | sed 's/^v//' >> "$GITHUB_ENV"
+      - name: Build native installer for ${{ matrix.name }}
+        shell: bash
+        run: >-
+          ./gradlew --no-daemon ${{ matrix.native_task }}
+          -PreleaseVersion=$RELEASE_VERSION
+          --stacktrace
+      - name: Collect native installer
         shell: bash
         run: |
-          mkdir -p dist-${{ matrix.name }}
-          find desktopApp/build -type f \( -name 'nyawit-launcher-*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' -o -name '*.zip' \) -exec cp {} dist-${{ matrix.name }}/ \;
-          APP_DIR=$(find desktopApp/build/compose/binaries -maxdepth 5 -type d -name 'nyawit-launcher*' -print -quit || true)
-          if [ -n "$APP_DIR" ]; then
-            (
-              if [ "${{ runner.os }}" = "Windows" ]; then
-                powershell -Command "Compress-Archive -Path '$APP_DIR' -DestinationPath 'dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip'"
-              else
-                cd "$(dirname "$APP_DIR")" && zip -qr "$GITHUB_WORKSPACE/dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip" "$(basename "$APP_DIR")"
-              fi
-            ) || echo "::warning::Portable zip dilewati"
-          fi
-          ls -lh dist-${{ matrix.name }}/
+          set -e
+          OUT="dist-${{ matrix.name }}"
+          mkdir -p "$OUT"
+          find desktopApp/build -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.msi' -o -name '*.dmg' \) -exec cp {} "$OUT"/ \;
+          test -n "$(ls -A "$OUT")" || { echo "::error::Tidak ada installer native untuk ${{ matrix.name }}"; exit 1; }
+          # Awali nama dengan platform agar artifact macOS x64/arm64 tidak saling menimpa.
+          for f in "$OUT"/*; do
+            [ -f "$f" ] || continue
+            mv "$f" "$OUT/${{ matrix.name }}-$(basename "$f")"
+          done
+          ls -lh "$OUT"/
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
@@ -99,12 +162,20 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: List release artifacts
-        run: ls -lh dist/
+      - name: Generate SHA-256 checksums
+        shell: bash
+        run: |
+          cd dist
+          for f in *; do
+            [ -f "$f" ] || continue
+            case "$f" in *.sha256) continue;; esac
+            sha256sum "$f" | awk '{print $1}' > "$f.sha256"
+          done
+          ls -lh
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
           target_commitish: ${{ github.sha }}
           files: dist/*
           generate_release_notes: true

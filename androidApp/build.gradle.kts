@@ -4,6 +4,11 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val releaseVersion = providers.gradleProperty("releaseVersion").getOrElse("1.3.0")
+val releaseVersionCode = providers.gradleProperty("androidVersionCode")
+    .map { it.toIntOrNull() ?: 7 }
+    .getOrElse(7)
+
 android {
     namespace = "dev.nyawit.launcher"
     compileSdk {
@@ -23,8 +28,8 @@ android {
         applicationId = "dev.nyawit.launcher"
         minSdk = 26
         targetSdk = 37
-        versionCode = 7
-        versionName = "1.2.7"
+        versionCode = releaseVersionCode
+        versionName = releaseVersion
     }
 
     buildTypes {
