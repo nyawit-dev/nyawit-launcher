@@ -6,7 +6,8 @@ actual fun applyUpdate(
     url: String,
     fileName: String,
     platformContext: Any?,
+    registryKey: String,
     onProgress: (Float) -> Unit,
     shouldCancel: () -> Boolean,
     onResult: (Boolean, String) -> Unit,
-) = installApp(url, fileName, platformContext, onProgress, shouldCancel, onResult)
+) = installApp(url, fileName, platformContext, registryKey, onProgress, shouldCancel, onResult)
