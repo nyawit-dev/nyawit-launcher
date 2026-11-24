@@ -21,8 +21,10 @@ class UpdateRepository(
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     },
 ) {
-    suspend fun latest(): ReleaseInfo? = try {
-        client.get("https://api.github.com/repos/nyawit-dev/nyawit-launcher/releases/latest").body()
+    suspend fun latest(): ReleaseInfo? = latestFor("nyawit-dev/nyawit-launcher")
+
+    suspend fun latestFor(fullName: String): ReleaseInfo? = try {
+        client.get("https://api.github.com/repos/$fullName/releases/latest").body()
     } catch (_: Throwable) { null }
 
     fun close() { client.close() }
