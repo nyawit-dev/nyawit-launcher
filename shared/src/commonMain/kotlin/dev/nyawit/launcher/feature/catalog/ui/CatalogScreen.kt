@@ -120,6 +120,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var reloadKey by remember { mutableStateOf(0) }
     val searchFocus = remember { FocusRequester() }
     var updateCount by remember { mutableStateOf(0) }
+    var detailApp by remember { mutableStateOf<CatalogApp?>(null) }
 
     LaunchedEffect(notice) {
         if (notice != null) {
@@ -387,8 +388,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 filtered.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Text("Tidak ada aplikasi untuk platform ini.", color = MUTED)
                 }
-                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, appPhase, appProgress, ::requestInstall, ::openApp)
-                else -> TabletGrid(filtered, statuses, appPhase, appProgress, ::requestInstall, ::openApp)
+                profile.kind == ScreenKind.PHONE -> PhoneList(filtered, statuses, appPhase, appProgress, { detailApp = it }, ::requestInstall, ::openApp)
+                else -> TabletGrid(filtered, statuses, appPhase, appProgress, { detailApp = it }, ::requestInstall, ::openApp)
             }
         }
     }
@@ -441,6 +442,7 @@ private fun PhoneList(
     statuses: Map<String, AppStatus>,
     appPhase: Pair<String, FlowPhase>?,
     appProgress: Pair<String, Float>?,
+    onDetail: (CatalogApp) -> Unit,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
 ) {
@@ -455,6 +457,7 @@ private fun PhoneList(
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
                 busy = appPhase?.first == app.fullName && (appPhase?.second == FlowPhase.DOWNLOADING || appPhase?.second == FlowPhase.CHECKING),
                 progress = if (appPhase?.first == app.fullName) appProgress?.second else null,
+                onDetail = { onDetail(app) },
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
@@ -468,6 +471,7 @@ private fun TabletGrid(
     statuses: Map<String, AppStatus>,
     appPhase: Pair<String, FlowPhase>?,
     appProgress: Pair<String, Float>?,
+    onDetail: (CatalogApp) -> Unit,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
 ) {
@@ -484,9 +488,13 @@ private fun TabletGrid(
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
                 busy = appPhase?.first == app.fullName && (appPhase?.second == FlowPhase.DOWNLOADING || appPhase?.second == FlowPhase.CHECKING),
                 progress = if (appPhase?.first == app.fullName) appProgress?.second else null,
+                onDetail = { onDetail(app) },
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
+        }
+        detailApp?.let { app ->
+            AppDetailDialog(app, statuses[app.fullName] ?: AppStatus.NOT_INSTALLED) { detailApp = null }
         }
     }
 }
