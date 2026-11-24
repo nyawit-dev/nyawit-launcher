@@ -22,6 +22,18 @@
         },
         {
           "type": "repo",
+          "name": "nyawit-dev/nyawit-api",
+          "label": "Nyawit API",
+          "description": "API IDE dan testing environment lokal-first yang git-friendly.",
+          "category": "Aplikasi",
+          "platforms": [
+            "desktop"
+          ],
+          "packageName": "dev.nyawit.api",
+          "accent": "#54C5EB"
+        },
+        {
+          "type": "repo",
           "name": "nyawit-dev/garis-arcade",
           "label": "Garis Arcade",
           "description": "Kumpulan game klasik: Snake, 2048, dan Tetris.",
