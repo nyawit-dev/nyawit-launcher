@@ -17,6 +17,12 @@ data class InstallRequest(
 /** Path tempat installer disimpan. Dipakai UI untuk melanjutkan pemasangan tanpa mengunduh ulang. */
 expect fun downloadedInstallerPath(request: InstallRequest): String
 
+/** true bila sistem mengizinkan pemasangan paket (Android: izin "Install unknown apps"). */
+expect fun canInstallPackages(platformContext: Any?): Boolean
+
+/** Membuka pengaturan izin pemasangan; true bila Activity pengaturan berhasil dibuka. */
+expect fun openInstallPermissionSettings(platformContext: Any?): Boolean
+
 /** All callbacks are invoked on the main thread. */
 expect fun installApp(
     request: InstallRequest,
