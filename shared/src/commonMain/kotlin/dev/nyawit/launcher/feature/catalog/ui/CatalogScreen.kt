@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,6 +36,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.AppPlatform
@@ -273,6 +277,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
     val c = LocalNyawitColors.current
 
+    // Android TV: beri fokus awal ke kartu pertama agar remote/DPAD langsung bisa navigasi.
+    LaunchedEffect(visibleApps.size, profile.kind) {
+        if (profile.kind == ScreenKind.TV && visibleApps.isNotEmpty()) {
+            runCatching { firstCardFocus.requestFocus() }
+        }
+    }
+
     Box(modifier.fillMaxSize().background(c.Background)) {
         Column(
             Modifier
@@ -335,6 +346,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     onInstall = ::install,
                     onOpen = ::open,
                     onDetail = { detailApp = it },
+                    focusRequester = firstCardFocus,
                 )
                 else -> AppGrid(
                     columns = when (profile.kind) {
@@ -348,6 +360,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     onInstall = ::install,
                     onOpen = ::open,
                     onDetail = { detailApp = it },
+                    focusRequester = firstCardFocus,
                 )
             }
         }
@@ -374,13 +387,14 @@ private fun AppList(
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
     onDetail: (CatalogApp) -> Unit,
+    focusRequester: FocusRequester? = null,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps) { app ->
+        itemsIndexed(apps) { index, app ->
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
@@ -389,6 +403,7 @@ private fun AppList(
                 onDetail = { onDetail(app) },
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
+                modifier = if (index == 0 && focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
             )
         }
     }
@@ -404,6 +419,7 @@ private fun AppGrid(
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
     onDetail: (CatalogApp) -> Unit,
+    focusRequester: FocusRequester? = null,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
@@ -412,7 +428,7 @@ private fun AppGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps) { app ->
+        itemsIndexed(apps) { index, app ->
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
@@ -421,6 +437,7 @@ private fun AppGrid(
                 onDetail = { onDetail(app) },
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
+                modifier = if (index == 0 && focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
             )
         }
     }
