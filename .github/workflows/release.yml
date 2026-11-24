@@ -69,12 +69,20 @@ jobs:
         run: chmod +x gradlew
       - name: Build JVM artifacts for ${{ matrix.name }}
         shell: bash
-        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS ${{ matrix.native_task }} :desktopApp:packageZip --stacktrace
+        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS ${{ matrix.native_task }} --stacktrace
       - name: Collect JVM artifacts
         shell: bash
         run: |
           mkdir -p dist-${{ matrix.name }}
           find desktopApp/build -type f \( -name 'nyawit-launcher-*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' -o -name '*.zip' \) -exec cp {} dist-${{ matrix.name }}/ \;
+          APP_DIR=$(find desktopApp/build/compose/binaries -maxdepth 5 -type d -name 'nyawit-launcher*' -print -quit || true)
+          if [ -n "$APP_DIR" ]; then
+            if [ "${{ runner.os }}" = "Windows" ]; then
+              powershell -Command "Compress-Archive -Path '$APP_DIR' -DestinationPath 'dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip'"
+            else
+              (cd "$(dirname "$APP_DIR")" && zip -qr "$GITHUB_WORKSPACE/dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip" "$(basename "$APP_DIR")")
+            fi
+          fi
           ls -lh dist-${{ matrix.name }}/
       - uses: actions/upload-artifact@v4
         with:
