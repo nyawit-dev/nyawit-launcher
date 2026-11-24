@@ -120,7 +120,7 @@ private fun fileProviderAuthority(context: Context): String {
         @Suppress("DEPRECATION")
         context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PROVIDERS).providers
     }.getOrNull()
-    return providers?.firstOrNull { it.providerClass == FileProvider::class.java.name }?.authority ?: primary
+    return providers?.firstOrNull { it.name == FileProvider::class.java.name }?.authority ?: primary
 }
 
 private class InstallResultReceiver(
