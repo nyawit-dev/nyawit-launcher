@@ -69,12 +69,12 @@ jobs:
         run: chmod +x gradlew
       - name: Build JVM artifacts for ${{ matrix.name }}
         shell: bash
-        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS ${{ matrix.native_task }} --stacktrace
+        run: ./gradlew --no-daemon :desktopApp:packageUberJarForCurrentOS ${{ matrix.native_task }} :desktopApp:packageZip --stacktrace
       - name: Collect JVM artifacts
         shell: bash
         run: |
           mkdir -p dist-${{ matrix.name }}
-          find desktopApp/build -type f \( -name 'nyawit-launcher-*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' \) -exec cp {} dist-${{ matrix.name }}/ \;
+          find desktopApp/build -type f \( -name 'nyawit-launcher-*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' -o -name '*.zip' \) -exec cp {} dist-${{ matrix.name }}/ \;
           ls -lh dist-${{ matrix.name }}/
       - uses: actions/upload-artifact@v4
         with:
