@@ -35,6 +35,17 @@ Semua build berjalan di GitHub Actions:
 ./gradlew :androidApp:assembleDebug :desktopApp:packageDistributionForCurrentOS
 ```
 
+## Konfigurasi & versi
+
+Satu sumber nilai ada di [`gradle.properties`](gradle.properties): versi, identitas aplikasi (`appId`, `appName`, vendor, dll.), URL katalog/GitHub, dan level SDK. Nilai-nilai ini dibaca oleh plugin `dev.nyawit.buildconfig` di [`build-logic/`](build-logic/) lalu:
+
+- ditulis ke `BuildConfig.kt` di source set `shared/commonMain`, sehingga bisa dipakai kode Android, desktop, **dan UI Compose**;
+- dipakai langsung oleh DSL `androidApp` (`applicationId`, `versionName`, `versionCode`, SDK) dan `desktopApp` (`packageName`, `packageVersion`, `bundleID`, dll.).
+
+Untuk mengubah versi atau konfigurasi, edit `gradle.properties` — jangan mengubah hardcode di source. Rilis CI menimpa nilai lewat `-PreleaseVersion=... -PandroidVersionCode=...` sehingga hasil build tetap mengikuti tag.
+
+`BuildConfig.kt` adalah file hasil generasi di `shared/build/generated/`; jangan diedit manual. Objek `AppMetadata` tetap ada sebagai fasad versi untuk kode lama.
+
 ## Rilis
 
 Rilis dipicu lewat **Actions → Release → Run workflow** dengan tag berformat `vX.Y.Z` (mis. `v1.3.0`). Tag divalidasi (format & belum dipakai), lalu versi artifact diambil otomatis dari tag:

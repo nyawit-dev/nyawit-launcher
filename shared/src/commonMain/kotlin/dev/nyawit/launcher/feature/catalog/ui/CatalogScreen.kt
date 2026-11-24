@@ -65,6 +65,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.appVersion
 import dev.nyawit.launcher.core.platform.localCatalogOverride
@@ -278,7 +279,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 url = pending.url,
                 fileName = pending.assetName,
                 version = pending.version,
-                registryKey = "dev.nyawit.launcher",
+                registryKey = BuildConfig.APP_ID,
                 platformContext = platformContext,
                 restartAfterInstall = true,
             ),

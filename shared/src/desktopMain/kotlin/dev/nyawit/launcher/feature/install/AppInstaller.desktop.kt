@@ -1,5 +1,6 @@
 package dev.nyawit.launcher.feature.install
 
+import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.checksumMatches
 import dev.nyawit.launcher.core.platform.launcherHome
 import java.awt.Desktop
@@ -40,7 +41,7 @@ actual fun installApp(
     if (ext == "jar" || safeName.endsWith(".jar", true)) {
         onResult(
             false,
-            "File .jar tidak didukung. Nyawit Launcher hanya memasang installer native platform (.msi, .exe, .dmg, .pkg, .deb, .rpm)."
+            "File .jar tidak didukung. ${BuildConfig.APP_NAME} hanya memasang installer native platform (.msi, .exe, .dmg, .pkg, .deb, .rpm)."
         )
         return
     }

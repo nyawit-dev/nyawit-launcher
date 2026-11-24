@@ -1,43 +1,35 @@
+import dev.nyawit.gradle.NyawitBuildConfigExtension
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.kmp.library)
+    id("dev.nyawit.buildconfig")
 }
 
-val releaseVersion = providers.gradleProperty("releaseVersion").getOrElse("1.3.0")
-val generatedVersionDir = layout.buildDirectory.dir("generated/version/commonMain/kotlin")
-
-val generateVersion = tasks.register("generateVersion") {
-    val version = releaseVersion
-    val outputFile = generatedVersionDir.get()
-        .file("dev/nyawit/launcher/core/platform/GeneratedVersion.kt").asFile
-    outputs.file(outputFile)
-    doLast {
-        outputFile.parentFile.mkdirs()
-        outputFile.writeText(
-            "package dev.nyawit.launcher.core.platform\n" +
-                "internal object GeneratedVersion { const val VERSION = \"${version}\" }\n",
-        )
-    }
-}
+val config = extensions.getByType<NyawitBuildConfigExtension>()
+val buildConfigDir = config.outputDirectory
 
 kotlin {
     android {
-        namespace = "dev.nyawit.launcher.shared"
+        namespace = "${config.appId.get()}.shared"
         compileSdk {
-            version = release(37) { minorApiLevel = 1 }
+            version = release(config.androidCompileSdk.get()) {
+                minorApiLevel = config.androidCompileSdkMinor.get()
+            }
         }
-        minSdk = 26
+        minSdk = config.androidMinSdk.get()
         androidResources.enable = true
     }
     jvm("desktop")
-    jvmToolchain(21)
+    jvmToolchain(config.jvmToolchain.get())
 
     sourceSets {
         getByName("commonMain") {
-            kotlin.srcDir(generatedVersionDir)
+            // BuildConfig hasil generasi ikut terkompilasi di semua platform.
+            kotlin.srcDir(buildConfigDir)
             dependencies {
                 implementation(libs.runtime)
                 implementation(libs.foundation)
@@ -66,6 +58,6 @@ kotlin {
 
 tasks.configureEach {
     if (name.startsWith("compile") && (name.contains("Kotlin") || name.endsWith("Main"))) {
-        dependsOn(generateVersion)
+        dependsOn(tasks.named("generateNyawitBuildConfig"))
     }
 }

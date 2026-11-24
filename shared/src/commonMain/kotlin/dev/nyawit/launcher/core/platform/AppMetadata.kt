@@ -1,6 +1,8 @@
 package dev.nyawit.launcher.core.platform
 
-/** Versi launcher, dihasilkan dari property Gradle `releaseVersion`. */
+import dev.nyawit.launcher.BuildConfig
+
+/** Versi launcher, dihasilkan dari `gradle.properties` lewat plugin build-config. */
 object AppMetadata {
-    const val VERSION = GeneratedVersion.VERSION
+    const val VERSION = BuildConfig.VERSION
 }

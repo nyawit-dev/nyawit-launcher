@@ -1,18 +1,20 @@
+import dev.nyawit.gradle.NyawitBuildConfigExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
+    id("dev.nyawit.buildconfig")
 }
 
-val releaseVersion = providers.gradleProperty("releaseVersion").getOrElse("1.3.0")
-val releaseVersionCode = providers.gradleProperty("androidVersionCode")
-    .map { it.toIntOrNull() ?: 7 }
-    .getOrElse(7)
+val config = extensions.getByType<NyawitBuildConfigExtension>()
 
 android {
-    namespace = "dev.nyawit.launcher"
+    namespace = config.appId.get()
     compileSdk {
-        version = release(37) { minorApiLevel = 1 }
+        version = release(config.androidCompileSdk.get()) {
+            minorApiLevel = config.androidCompileSdkMinor.get()
+        }
     }
 
     signingConfigs {
@@ -25,11 +27,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.nyawit.launcher"
-        minSdk = 26
-        targetSdk = 37
-        versionCode = releaseVersionCode
-        versionName = releaseVersion
+        applicationId = config.appId.get()
+        minSdk = config.androidMinSdk.get()
+        targetSdk = config.androidTargetSdk.get()
+        versionCode = config.versionCode.get()
+        versionName = config.version.get()
     }
 
     buildTypes {
@@ -48,7 +50,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
     kotlin {
-        jvmToolchain(21)
+        jvmToolchain(config.jvmToolchain.get())
     }
 }
 

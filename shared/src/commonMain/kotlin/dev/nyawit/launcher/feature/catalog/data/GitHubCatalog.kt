@@ -1,5 +1,6 @@
 package dev.nyawit.launcher.feature.catalog.data
 
+import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.readCatalogCache
 import dev.nyawit.launcher.core.platform.writeCatalogCache
@@ -16,9 +17,8 @@ import kotlinx.serialization.json.Json
 private val catalogJson = Json { ignoreUnknownKeys = true }
 
 object CatalogSources {
-    const val PRIMARY_USER = "nyawit-dev"
-    const val CONFIG_URL =
-        "https://raw.githubusercontent.com/nyawit-dev/nyawit-launcher/main/catalog.json"
+    const val PRIMARY_USER = BuildConfig.GITHUB_OWNER
+    const val CONFIG_URL = BuildConfig.CATALOG_URL
 }
 
 /** Informasi pemilik/grup katalog. */
@@ -228,7 +228,7 @@ private fun platformsOf(fullName: String, description: String): List<AppPlatform
 }
 
 private val PACKAGE_OVERRIDES = mapOf(
-    "nyawit-dev/nyawit-launcher" to "dev.nyawit.launcher",
+    BuildConfig.GITHUB_REPO_FULL to BuildConfig.APP_ID,
     "nyawit-dev/nyawit-music" to "dev.nyawit.music",
     "nyawit-dev/garis_game" to "ngga.ring.garisgame",
     "nyawit-dev/garis-arcade" to "dev.nyawit.arcade",

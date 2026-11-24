@@ -1,5 +1,6 @@
 package dev.nyawit.launcher.feature.update.data
 
+import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.platformKey
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -21,7 +22,7 @@ class UpdateRepository(
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     },
 ) {
-    suspend fun latest(): ReleaseInfo? = latestFor("nyawit-dev/nyawit-launcher")
+    suspend fun latest(): ReleaseInfo? = latestFor(BuildConfig.GITHUB_REPO_FULL)
 
     suspend fun latestFor(fullName: String): ReleaseInfo? = try {
         client.get("https://api.github.com/repos/$fullName/releases/latest").body()

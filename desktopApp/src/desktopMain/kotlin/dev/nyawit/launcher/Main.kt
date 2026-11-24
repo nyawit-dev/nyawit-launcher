@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.LauncherApp
 import org.jetbrains.skia.Image
 
@@ -13,7 +14,7 @@ private fun windowIcon() =
         ?.let { BitmapPainter(it) }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "Nyawit Launcher", icon = windowIcon()) {
+    Window(onCloseRequest = ::exitApplication, title = BuildConfig.APP_NAME, icon = windowIcon()) {
         LauncherApp()
     }
 }

@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import dev.nyawit.launcher.BuildConfig
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
@@ -111,7 +112,7 @@ actual fun installApp(
                             context.startActivity(settings)
                             onResult(false, "Izinkan pemasangan aplikasi tidak dikenal, lalu coba lagi")
                         } else {
-                            onResult(false, "Izinkan Install unknown apps untuk Nyawit Launcher")
+                            onResult(false, "Izinkan Install unknown apps untuk ${BuildConfig.APP_NAME}")
                         }
                         return@post
                     }

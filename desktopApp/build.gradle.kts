@@ -1,16 +1,17 @@
+import dev.nyawit.gradle.NyawitBuildConfigExtension
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
-val releaseVersion = providers.gradleProperty("releaseVersion").getOrElse("1.3.0")
-val appId = "dev.nyawit.launcher"
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
+    id("dev.nyawit.buildconfig")
 }
 
+val config = extensions.getByType<NyawitBuildConfigExtension>()
+
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(config.jvmToolchain.get())
     jvm("desktop")
 
     sourceSets {
@@ -29,15 +30,15 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "dev.nyawit.launcher.MainKt"
+        mainClass = config.desktopMainClass.get()
         jvmArgs("--enable-native-access=ALL-UNNAMED")
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Dmg)
-            packageName = "nyawit-launcher"
-            packageVersion = releaseVersion
-            description = "Nyawit Launcher ($releaseVersion)"
-            vendor = "Nyawit"
-            copyright = "© 2026 Nyawit. All rights reserved."
+            packageName = config.desktopPackageName.get()
+            packageVersion = config.version.get()
+            description = "${config.appName.get()} (${config.version.get()})"
+            vendor = config.vendor.get()
+            copyright = config.copyright.get()
 
             val iconsDir = project.file("icons")
             val windowsIcon = iconsDir.resolve("windows/nyawit.ico")
@@ -49,14 +50,14 @@ compose.desktop {
                 iconFile.set(if (windowsIcon.exists()) windowsIcon else fallbackIcon)
                 // UUID stabil agar MSI rilis baru meng-upgrade instalasi lama, bukan membuat entri baru.
                 upgradeUuid = "66A5709F-69D3-46F2-BB89-6617A0DB6B64"
-                menuGroup = "Nyawit"
+                menuGroup = config.vendor.get()
                 shortcut = true
                 menu = true
                 dirChooser = true
             }
             macOS {
                 iconFile.set(if (macIcon.exists()) macIcon else fallbackIcon)
-                bundleID = appId
+                bundleID = config.appId.get()
             }
             linux {
                 iconFile.set(if (linuxIcon.exists()) linuxIcon else fallbackIcon)
