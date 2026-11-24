@@ -43,3 +43,20 @@ Launcher mengambil daftar aplikasi dari GitHub tanpa server. Sumber diatur di [`
 - Hanya repo yang terdeteksi sebagai aplikasi yang ditampilkan, dan hanya untuk platform yang didukungnya (Android, Android TV, Desktop)
 
 Edit `catalog.json` di `main`, lalu launcher akan membaca otomatis saat dibuka.
+
+
+## Menjalankan di JVM / Desktop
+
+Dua cara:
+
+1. **JAR portabel (paling gampang)**
+   ```
+   java -jar nyawit-launcher-linux-x64-1.2.6.jar
+   ```
+2. **Installer native** dari rilis (`.deb`, `.msi`, `.dmg`)
+
+Setelah install/update lewat launcher, status & jalur JAR disimpan di:
+```
+~/.nyawit-launcher/installed/
+```
+Jika ikon menu tidak muncul, cari biner `nyawit-launcher` atau jalankan JAR-nya — JAR selalu bisa dijalankan mandiri.
