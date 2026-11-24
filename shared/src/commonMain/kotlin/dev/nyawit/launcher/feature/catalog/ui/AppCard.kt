@@ -57,6 +57,7 @@ fun AppCard(
     status: AppStatus,
     busy: Boolean,
     progress: Float? = null,
+    onDetail: () -> Unit,
     onInstall: () -> Unit,
     onOpen: () -> Unit,
 ) {
