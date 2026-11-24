@@ -82,6 +82,7 @@ import dev.nyawit.launcher.feature.catalog.ui.AppStatus
 import dev.nyawit.launcher.feature.install.InstallRequest
 import dev.nyawit.launcher.feature.install.downloadedInstallerPath
 import dev.nyawit.launcher.feature.install.installApp
+import dev.nyawit.launcher.feature.install.uninstallApp
 import dev.nyawit.launcher.feature.update.applyUpdate
 import dev.nyawit.launcher.feature.update.ui.UpdateConfirmDialog
 import dev.nyawit.launcher.feature.update.ui.UpdateDialog
@@ -223,6 +224,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         updateCount = statuses.count { it.value == AppStatus.UPDATE_AVAILABLE }
         if (updateCount > 0 && launcherUpdateTag == null) {
             notice = Notice("$updateCount aplikasi memiliki pembaruan")
+        }
+    }
+
+    fun uninstall(app: CatalogApp) {
+        uninstallApp(app.packageName, app.name, platformContext) { ok, msg ->
+            notice = Notice("${app.name}: $msg", error = !ok)
+            if (ok) reloadKey++
         }
     }
 
