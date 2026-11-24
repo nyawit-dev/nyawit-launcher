@@ -241,7 +241,7 @@ function getPhoneScreenshot1() {
       </div>
     </div>
     <div style="background:#1B2630; border:2px solid #273741; border-radius:16px; padding:16px 24px; font-size:22px; font-weight:700; color:#3DDC97;">
-      v1.3.0
+      v1.3.1
     </div>
   </div>
 
@@ -750,7 +750,7 @@ function getPhoneScreenshot4() {
 <body>
   <div class="dialog">
     <div class="tag">PEMBARUAN TERSEDIA</div>
-    <div class="title">Perbarui ke v1.3.0?</div>
+    <div class="title">Perbarui ke v1.3.1?</div>
     <div class="cur-ver">Versi terpasang saat ini: v1.2.0</div>
 
     <div class="installer-box">
@@ -930,7 +930,7 @@ function getTabletScreenshot1() {
       <div class="nav-item">Pengaturan</div>
     </div>
     <div class="side-footer">
-      <div>Nyawit Hub v1.3.0</div>
+      <div>Nyawit Hub v1.3.1</div>
       <div>Sumber: GitHub REST API</div>
       <div style="color:#3DDC97;margin-top:4px;">● Siap Digunakan</div>
     </div>
@@ -1444,7 +1444,7 @@ function getDesktopReleaseHtml(osType) {
         <div class="tl-btn tl-max"></div>
       </div>
     ` : ""}
-    <div class="window-title">Nyawit Launcher — v1.3.0 (${osType.toUpperCase()})</div>
+    <div class="window-title">Nyawit Launcher — v1.3.1 (${osType.toUpperCase()})</div>
     ${isWin ? `
       <div class="win-controls">
         <div class="win-btn">&minus;</div>

@@ -514,7 +514,7 @@ function getSocialPreviewHtml() {
         <div class="gc-icon" style="background:#3DDC97; color:#07130E;">N</div>
         <div>
           <div style="font-size:16px;font-weight:800;color:#F1F5F7;">Nyawit Launcher</div>
-          <div style="font-size:12px;color:#94A3B0;margin-top:2px;">v1.3.0 &bull; Multiplatform Release</div>
+          <div style="font-size:12px;color:#94A3B0;margin-top:2px;">v1.3.1 &bull; Multiplatform Release</div>
         </div>
       </div>
       <div class="glass-card" style="border-left: 5px solid #5AA9E6;">

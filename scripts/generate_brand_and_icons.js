@@ -461,7 +461,7 @@ function getHeroDesktopHtml() {
       </div>
       <div class="card-title">Nyawit Launcher</div>
       <div class="card-sub">Multiplatform Hub</div>
-      <div class="card-btn" style="background:#3DDC97; color:#07130E;">Terbaru v1.3.0</div>
+      <div class="card-btn" style="background:#3DDC97; color:#07130E;">Terbaru v1.3.1</div>
     </div>
     <div class="card-preview card-3">
       <div class="card-icon" style="background:#FFB45420; border:1px solid #FFB454;">

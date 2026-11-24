@@ -48,7 +48,7 @@ Untuk mengubah versi atau konfigurasi, edit `gradle.properties` — jangan mengu
 
 ## Rilis
 
-Rilis dipicu lewat **Actions → Release → Run workflow** dengan tag berformat `vX.Y.Z` (mis. `v1.3.0`). Tag divalidasi (format & belum dipakai), lalu versi artifact diambil otomatis dari tag:
+Rilis dipicu lewat **Actions → Release → Run workflow** dengan tag berformat `vX.Y.Z` (mis. `v1.3.1`). Tag divalidasi (format & belum dipakai), lalu versi artifact diambil otomatis dari tag:
 
 - Android: `versionName = X.Y.Z`, `versionCode = X*10000 + Y*100 + Z`
 - Desktop: `packageVersion = X.Y.Z` dan nama installer mengikuti versi
