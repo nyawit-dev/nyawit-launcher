@@ -41,7 +41,7 @@
           "platforms": [
             "android"
           ],
-          "packageName": "dev.nyawit.arcade",
+          "packageName": "dev.nyawit.garisarcade",
           "accent": "#FFB454"
         },
         {
@@ -65,6 +65,7 @@
           "platforms": [
             "android"
           ],
+          "packageName": "com.unknown.unknownapp",
           "accent": "#9B8CFF"
         }
       ]
