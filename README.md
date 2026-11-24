@@ -27,7 +27,7 @@ Tata letak:
 - **HP** — header brand, pencarian, chip kategori, daftar vertikal.
 - **TV** — header brand, grid 3 kolom dengan fokus D-pad.
 
-State dimuat memakai skeleton placeholder, bukan spinner; dialog konfirmasi/update memakai bahasa yang jelas dan tombol yang eksplisit.
+State dimuat memakai skeleton placeholder, bukan spinner. Navigasi memakai sidebar (desktop/tablet) atau drawer (HP) dengan menu **Aplikasi** dan **Tentang**; pencarian memfilter nama/deskripsi tanpa kategori. Halaman **Tentang** menampilkan versi, identifier, platform, lisensi, dan tautan resmi. Tombol aksi pada kartu dan dialog detail memakai bahasa yang jelas (Pasang / Perbarui / Buka / Hapus).
 
 ## Build
 Semua build berjalan di GitHub Actions:

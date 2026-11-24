@@ -23,7 +23,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.AppPlatform
@@ -105,8 +110,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var notice by remember { mutableStateOf<Notice?>(null) }
     var selfBusy by remember { mutableStateOf(false) }
     var selfUpdateDone by remember { mutableStateOf(false) }
+    var updateTag by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableStateOf(0) }
     var detailApp by remember { mutableStateOf<CatalogApp?>(null) }
+    var page by remember { mutableStateOf(AppPage.APPS) }
+    var query by remember { mutableStateOf("") }
+    val searchFocus = remember { FocusRequester() }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     DisposableEffect(Unit) {
         onDispose {
@@ -146,6 +156,23 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 else "Gagal memperbarui launcher: $msg",
                 error = !ok,
             )
+        }
+    }
+
+    fun checkUpdates() {
+        if (selfBusy) return
+        scope.launch {
+            val release = withContext(Dispatchers.Default) { updater.latest() }
+            if (release == null) {
+                notice = Notice("Gagal mengecek rilis terbaru", error = true)
+                return@launch
+            }
+            if (isNewer(release.tag, version)) {
+                updateTag = release.tag
+                autoUpdate(release)
+            } else {
+                notice = Notice("Aplikasi sudah versi terbaru (v$version)")
+            }
         }
     }
 
@@ -241,29 +268,47 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         val release = withContext(Dispatchers.Default) { updater.latest() }
         if (!selfUpdateDone && release != null && isNewer(release.tag, version)) {
             selfUpdateDone = true
+            updateTag = release.tag
             autoUpdate(release)
         }
     }
 
+    val updateCount = statuses.values.count { it == AppStatus.UPDATE_AVAILABLE }
     val visibleApps = apps.filter { app ->
-        when (currentPlatform) {
+        val matchPlatform = when (currentPlatform) {
             AppPlatform.DESKTOP -> AppPlatform.DESKTOP in app.platforms
             else -> AppPlatform.ANDROID in app.platforms || AppPlatform.TV in app.platforms
         }
+        val matchQuery = query.isBlank() ||
+            app.name.contains(query, true) || app.description.contains(query, true)
+        matchPlatform && matchQuery
     }
+    val isPhone = profile.kind == ScreenKind.PHONE
     val c = LocalNyawitColors.current
 
-    Box(modifier.fillMaxSize().background(c.Background)) {
+    val content = @Composable {
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = if (profile.kind == ScreenKind.PHONE) 16.dp else 24.dp,
-                    vertical = if (profile.kind == ScreenKind.PHONE) 14.dp else 20.dp,
+                    horizontal = if (isPhone) 16.dp else 24.dp,
+                    vertical = if (isPhone) 14.dp else 20.dp,
                 ),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandMark(36)
+                if (isPhone) {
+                    Button(
+                        onClick = { scope.launch { drawerState.open() } },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Text,
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(38.dp),
+                    ) { Text("☰", style = NyawitType.Caption) }
+                    Spacer(Modifier.width(10.dp))
+                }
+                BrandMark(34)
                 Spacer(Modifier.width(10.dp))
                 Text("NYAWIT LAUNCHER", style = NyawitType.Wordmark, color = c.Text)
                 Spacer(Modifier.width(8.dp))
@@ -285,60 +330,105 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     )
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            when {
-                loading -> LoadingPlaceholder()
-                error != null -> Column(
-                    Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text("Katalog tidak dapat dimuat", style = NyawitType.Title, color = c.Text)
-                    Spacer(Modifier.height(6.dp))
-                    Text(error ?: "", style = NyawitType.Caption, color = c.Muted)
-                    Spacer(Modifier.height(18.dp))
-                    Button(
-                        onClick = { error = null; loading = true; reloadKey++ },
-                        colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
-                        shape = RoundedCornerShape(10.dp),
-                    ) { Text("Coba lagi") }
+            Spacer(Modifier.height(10.dp))
+            when (page) {
+                AppPage.APPS -> {
+                    CatalogSearchBar(query, { query = it }, searchFocus)
+                    Spacer(Modifier.height(12.dp))
+                    when {
+                        loading -> LoadingPlaceholder()
+                        error != null -> Column(
+                            Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text("Katalog tidak dapat dimuat", style = NyawitType.Title, color = c.Text)
+                            Spacer(Modifier.height(6.dp))
+                            Text(error ?: "", style = NyawitType.Caption, color = c.Muted)
+                            Spacer(Modifier.height(18.dp))
+                            Button(
+                                onClick = { error = null; loading = true; reloadKey++ },
+                                colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
+                                shape = RoundedCornerShape(10.dp),
+                            ) { Text("Coba lagi") }
+                        }
+                        visibleApps.isEmpty() -> EmptyState()
+                        isPhone -> AppList(
+                            apps = visibleApps,
+                            statuses = statuses,
+                            busyApps = busyApps,
+                            progress = progress,
+                            onInstall = ::install,
+                            onOpen = ::open,
+                            onDetail = { detailApp = it },
+                        )
+                        else -> AppGrid(
+                            columns = if (profile.kind == ScreenKind.TABLET) 2 else 3,
+                            apps = visibleApps,
+                            statuses = statuses,
+                            busyApps = busyApps,
+                            progress = progress,
+                            onInstall = ::install,
+                            onOpen = ::open,
+                            onDetail = { detailApp = it },
+                        )
+                    }
                 }
-                visibleApps.isEmpty() -> EmptyState()
-                profile.kind == ScreenKind.PHONE -> AppList(
-                    apps = visibleApps,
-                    statuses = statuses,
-                    busyApps = busyApps,
-                    progress = progress,
-                    onInstall = ::install,
-                    onOpen = ::open,
-                    onDetail = { detailApp = it },
-                )
-                else -> AppGrid(
-                    columns = when (profile.kind) {
-                        ScreenKind.TABLET -> 2
-                        else -> 3
-                    },
-                    apps = visibleApps,
-                    statuses = statuses,
-                    busyApps = busyApps,
-                    progress = progress,
-                    onInstall = ::install,
-                    onOpen = ::open,
-                    onDetail = { detailApp = it },
-                )
+                AppPage.ABOUT -> AboutScreen(version, platformContext)
             }
         }
-        detailApp?.let { app ->
-            AppDetailDialog(
-                app = app,
-                status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
-                onInstall = { install(app) },
-                onUpdate = { update(app) },
-                onOpen = { open(app) },
-                onUninstall = { uninstall(app) },
-                onDismiss = { detailApp = null },
+    }
+
+    if (isPhone) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet(
+                    drawerContainerColor = c.Surface,
+                    drawerContentColor = c.Text,
+                    modifier = Modifier.width(280.dp),
+                ) {
+                    AppSidebar(
+                        page = page,
+                        version = version,
+                        updateTag = updateTag,
+                        total = visibleApps.size,
+                        updateCount = updateCount,
+                        selfBusy = selfBusy,
+                        onNavigate = { page = it },
+                        onUpdate = ::checkUpdates,
+                        onClose = { scope.launch { drawerState.close() } },
+                    )
+                }
+            },
+        ) { content() }
+    } else {
+        Row(Modifier.fillMaxSize().background(c.Background)) {
+            AppSidebar(
+                page = page,
+                version = version,
+                updateTag = updateTag,
+                total = visibleApps.size,
+                updateCount = updateCount,
+                selfBusy = selfBusy,
+                onNavigate = { page = it },
+                onUpdate = ::checkUpdates,
+                modifier = Modifier.width(216.dp),
             )
+            Box(Modifier.weight(1f).fillMaxSize().background(c.Background)) { content() }
         }
+    }
+
+    detailApp?.let { app ->
+        AppDetailDialog(
+            app = app,
+            status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
+            onInstall = { install(app) },
+            onUpdate = { update(app) },
+            onOpen = { open(app) },
+            onUninstall = { uninstall(app) },
+            onDismiss = { detailApp = null },
+        )
     }
 }
 
