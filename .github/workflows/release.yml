@@ -77,11 +77,13 @@ jobs:
           find desktopApp/build -type f \( -name 'nyawit-launcher-*.jar' -o -name '*.deb' -o -name '*.msi' -o -name '*.dmg' -o -name '*.zip' \) -exec cp {} dist-${{ matrix.name }}/ \;
           APP_DIR=$(find desktopApp/build/compose/binaries -maxdepth 5 -type d -name 'nyawit-launcher*' -print -quit || true)
           if [ -n "$APP_DIR" ]; then
-            if [ "${{ runner.os }}" = "Windows" ]; then
-              powershell -Command "Compress-Archive -Path '$APP_DIR' -DestinationPath 'dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip'"
-            else
-              (cd "$(dirname "$APP_DIR")" && zip -qr "$GITHUB_WORKSPACE/dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip" "$(basename "$APP_DIR")")
-            fi
+            (
+              if [ "${{ runner.os }}" = "Windows" ]; then
+                powershell -Command "Compress-Archive -Path '$APP_DIR' -DestinationPath 'dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip'"
+              else
+                cd "$(dirname "$APP_DIR")" && zip -qr "$GITHUB_WORKSPACE/dist-${{ matrix.name }}/nyawit-launcher-${{ matrix.name }}-portable.zip" "$(basename "$APP_DIR")"
+              fi
+            ) || echo "::warning::Portable zip dilewati"
           fi
           ls -lh dist-${{ matrix.name }}/
       - uses: actions/upload-artifact@v4
