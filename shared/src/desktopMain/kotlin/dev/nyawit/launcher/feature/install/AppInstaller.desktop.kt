@@ -11,7 +11,6 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import java.util.concurrent.TimeUnit
 
 private val NATIVE_EXTENSIONS = setOf("msi", "exe", "dmg", "pkg", "deb", "rpm", "apk")
 
@@ -23,57 +22,30 @@ private fun downloadDir(): File = launcherHome().resolve("downloads").apply { mk
 actual fun downloadedInstallerPath(request: InstallRequest): String =
     File(downloadDir(), safeFileName(request.fileName)).absolutePath
 
-private data class InstallerResult(val ok: Boolean, val manual: Boolean = false)
-
-/** Menjalankan perintah installer dan menunggu hasilnya. */
-private fun runInstaller(file: File, vararg command: String): InstallerResult = try {
-    val process = ProcessBuilder(*command).start()
-    if (!process.waitFor(120, TimeUnit.SECONDS)) {
-        // Masih berjalan (mis. wizard) — dianggap berhasil dimulai.
-        InstallerResult(true)
-    } else {
-        InstallerResult(process.exitValue() == 0)
-    }
-} catch (_: Throwable) {
-    try {
-        Desktop.getDesktop().open(file)
-        InstallerResult(true, manual = true)
-    } catch (_: Throwable) {
-        InstallerResult(false)
-    }
-}
-
-/**
- * Menjalankan installer native. Di Windows dijalankan silent agar langsung terpasang.
- * Bila silent gagal (mis. UAC ditolak), wizard ditampilkan sebagai fallback.
- */
-private fun openNativeInstaller(file: File): InstallerResult {
+/** Menjalankan installer native. Di Windows dijalankan silent agar langsung terpasang. */
+private fun openNativeInstaller(file: File) {
     val os = System.getProperty("os.name").lowercase()
     val ext = file.extension.lowercase()
-    val path = file.absolutePath
 
-    return when {
+    fun launch(vararg command: String) {
+        try {
+            ProcessBuilder(*command).start()
+        } catch (_: Throwable) {
+            // Fallback bila perintah tidak tersedia: biarkan asosiasi file yang membuka installer.
+            Desktop.getDesktop().open(file)
+        }
+    }
+
+    when {
         // /quiet: tanpa wizard, /norestart: jangan reboot otomatis.
         os.contains("win") && ext == "msi" ->
-            runInstaller(file, "msiexec", "/i", path, "/quiet", "/norestart")
-
-        os.contains("win") && ext == "exe" -> {
-            // NSIS memakai /S, Inno Setup memakai /VERYSILENT.
-            val nsis = runInstaller(file, path, "/S", "/NORESTART")
-            if (nsis.ok) nsis else {
-                val inno = runInstaller(file, path, "/VERYSILENT", "/NORESTART")
-                if (inno.ok) inno else runInstaller(file, path)
-            }
-        }
-
-        os.contains("mac") -> runInstaller(file, "open", path)
-        os.contains("linux") -> runInstaller(file, "xdg-open", path)
-        else -> try {
-            Desktop.getDesktop().open(file)
-            InstallerResult(true, manual = true)
-        } catch (_: Throwable) {
-            InstallerResult(false)
-        }
+            launch("msiexec", "/i", file.absolutePath, "/quiet", "/norestart")
+        // Akhiran NSIS (/S) dan Inno Setup (/VERYSILENT) diabaikan bila tidak didukung.
+        os.contains("win") && ext == "exe" ->
+            launch(file.absolutePath, "/S", "/VERYSILENT", "/NORESTART")
+        os.contains("mac") -> launch("open", file.absolutePath)
+        os.contains("linux") -> launch("xdg-open", file.absolutePath)
+        else -> Desktop.getDesktop().open(file)
     }
 }
 
@@ -152,16 +124,16 @@ actual fun installApp(
             }
 
             // Installer native (.msi/.exe/.deb/.rpm/.dmg/.pkg/.apk): serahkan ke OS.
-            val result = openNativeInstaller(target)
+            openNativeInstaller(target)
             EventQueue.invokeLater {
-                val message = when {
-                    !result.ok -> "Installer ${target.name} gagal dijalankan — periksa izin admin atau unduh ulang"
-                    result.manual -> "Installer ${target.name} dibuka — ikuti proses pemasangan"
-                    request.restartAfterInstall ->
+                onResult(
+                    true,
+                    if (request.restartAfterInstall) {
                         "Pembaruan ${target.name} sedang dipasang otomatis — restart launcher setelah selesai"
-                    else -> "Installer ${target.name} sedang dipasang otomatis — tunggu hingga selesai"
-                }
-                onResult(result.ok, message)
+                    } else {
+                        "Installer ${target.name} sedang dipasang otomatis — tunggu hingga selesai"
+                    },
+                )
             }
         } catch (t: Throwable) {
             EventQueue.invokeLater { onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}") }
@@ -170,3 +142,7 @@ actual fun installApp(
         }
     }.start()
 }
+
+
+actual fun canInstallPackages(platformContext: Any?): Boolean = true
+actual fun openInstallPermissionSettings(platformContext: Any?): Boolean = false
