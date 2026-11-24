@@ -15,6 +15,11 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.security.MessageDigest
 
+actual fun downloadedInstallerPath(request: InstallRequest): String {
+    val context = request.platformContext as? Context ?: return ""
+    return File(context.filesDir, request.fileName).absolutePath
+}
+
 private fun sha256Of(file: File): String {
     val digest = MessageDigest.getInstance("SHA-256")
     file.inputStream().use { input ->
@@ -57,34 +62,37 @@ actual fun installApp(
     }
     val main = Handler(Looper.getMainLooper())
     Thread {
-        val file = File(context.filesDir, request.fileName)
+        val file = request.filePath?.let(::File)?.takeIf { it.isFile && it.length() > 1024 }
+            ?: File(context.filesDir, request.fileName)
         var connection: HttpURLConnection? = null
         try {
-            connection = URI(request.url).toURL().openConnection() as HttpURLConnection
-            connection.instanceFollowRedirects = true
-            connection.connectTimeout = 15000
-            connection.readTimeout = 60000
-            val code = connection.responseCode
-            if (code !in 200..299) {
-                throw IllegalStateException("HTTP $code")
-            }
-            val total = connection.contentLengthLong
-            connection.inputStream.use { input ->
-                FileOutputStream(file).use { output ->
-                    val buffer = ByteArray(16 * 1024)
-                    var read: Int
-                    var written = 0L
-                    while (input.read(buffer).also { read = it } != -1) {
-                        if (shouldCancel()) {
-                            file.delete()
-                            main.post { onResult(false, "Unduhan dibatalkan") }
-                            return@Thread
-                        }
-                        output.write(buffer, 0, read)
-                        written += read
-                        if (total > 0) {
-                            val fraction = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
-                            main.post { onProgress(fraction) }
+            if (request.filePath == null || !file.exists()) {
+                connection = URI(request.url).toURL().openConnection() as HttpURLConnection
+                connection.instanceFollowRedirects = true
+                connection.connectTimeout = 15000
+                connection.readTimeout = 60000
+                val code = connection.responseCode
+                if (code !in 200..299) {
+                    throw IllegalStateException("HTTP $code")
+                }
+                val total = connection.contentLengthLong
+                connection.inputStream.use { input ->
+                    FileOutputStream(file).use { output ->
+                        val buffer = ByteArray(16 * 1024)
+                        var read: Int
+                        var written = 0L
+                        while (input.read(buffer).also { read = it } != -1) {
+                            if (shouldCancel()) {
+                                file.delete()
+                                main.post { onResult(false, "Unduhan dibatalkan") }
+                                return@Thread
+                            }
+                            output.write(buffer, 0, read)
+                            written += read
+                            if (total > 0) {
+                                val fraction = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                                main.post { onProgress(fraction) }
+                            }
                         }
                     }
                 }
@@ -93,6 +101,8 @@ actual fun installApp(
                 file.delete()
                 throw IllegalStateException("Checksum SHA-256 tidak cocok — unduhan dibatalkan")
             }
+            if (file.length() < 1024) throw IllegalStateException("File installer kosong atau rusak")
+
             main.post {
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
@@ -110,27 +120,26 @@ actual fun installApp(
                         }
                         if (settings.resolveActivity(context.packageManager) != null) {
                             context.startActivity(settings)
-                            onResult(false, "Izinkan pemasangan aplikasi tidak dikenal, lalu coba lagi")
+                            onResult(false, "Izinkan pemasangan aplikasi tidak dikenal, lalu ketuk Lanjutkan")
                         } else {
-                            onResult(false, "Izinkan Install unknown apps untuk ${BuildConfig.APP_NAME}")
+                            onResult(false, "Izinkan Install unknown apps untuk ${BuildConfig.APP_NAME}, lalu ketuk Lanjutkan")
                         }
                         return@post
                     }
                     val uri: Uri = FileProvider.getUriForFile(
                         context, "${context.packageName}.fileprovider", file,
                     )
-                    val intent = Intent(Intent.ACTION_VIEW)
+                    @Suppress("DEPRECATION")
+                    val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
                         .setDataAndType(uri, "application/vnd.android.package-archive")
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                     onResult(true, "Installer dibuka — konfirmasi pemasangan diperlukan")
                 } catch (t: Throwable) {
-                    file.delete()
                     onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}")
                 }
             }
         } catch (t: Throwable) {
-            file.delete()
             main.post { onResult(false, "Gagal mengunduh: ${t.message ?: "unknown"}") }
         } finally {
             connection?.disconnect()

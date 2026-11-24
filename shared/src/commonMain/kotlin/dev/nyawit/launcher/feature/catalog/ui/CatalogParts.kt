@@ -155,6 +155,9 @@ fun NoticeBanner(
     busy: Boolean,
     progress: Float?,
     onCancel: () -> Unit,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {},
+    onDismiss: () -> Unit = {},
 ) {
     val c = LocalNyawitColors.current
     val tone = if (isError) c.Danger else c.Primary
@@ -177,6 +180,15 @@ fun NoticeBanner(
                         color = tone,
                         trackColor = c.Border,
                     )
+                }
+            }
+            if (actionLabel != null && !busy) {
+                Spacer(Modifier.width(8.dp))
+                TextButton(onClick = onAction, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
+                    Text(actionLabel, style = NyawitType.Caption, color = c.Primary, fontWeight = FontWeight.Bold)
+                }
+                TextButton(onClick = onDismiss, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
+                    Text("Tutup", style = NyawitType.Caption, color = c.Muted)
                 }
             }
             if (busy && progress != null) {

@@ -10,7 +10,12 @@ data class InstallRequest(
     val platformContext: Any? = null,
     /** true hanya untuk pembaruan launcher sendiri (proses lama akan keluar). */
     val restartAfterInstall: Boolean = false,
+    /** Path installer yang sudah terunduh; bila ada, unduhan dilewati (dipakai tombol Lanjutkan). */
+    val filePath: String? = null,
 )
+
+/** Path tempat installer disimpan. Dipakai UI untuk melanjutkan pemasangan tanpa mengunduh ulang. */
+expect fun downloadedInstallerPath(request: InstallRequest): String
 
 /** All callbacks are invoked on the main thread. */
 expect fun installApp(

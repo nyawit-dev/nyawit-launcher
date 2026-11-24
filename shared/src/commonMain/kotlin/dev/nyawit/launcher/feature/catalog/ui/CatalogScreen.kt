@@ -80,6 +80,7 @@ import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.feature.catalog.data.GitHubCatalog
 import dev.nyawit.launcher.feature.catalog.ui.AppStatus
 import dev.nyawit.launcher.feature.install.InstallRequest
+import dev.nyawit.launcher.feature.install.downloadedInstallerPath
 import dev.nyawit.launcher.feature.install.installApp
 import dev.nyawit.launcher.feature.update.applyUpdate
 import dev.nyawit.launcher.feature.update.ui.UpdateConfirmDialog
@@ -113,7 +114,13 @@ private fun isNewer(latest: String, installed: String): Boolean {
 }
 
 enum class FlowPhase { IDLE, CHECKING, DOWNLOADING, DONE, ERROR }
-private data class Notice(val text: String, val error: Boolean = false)
+private data class Notice(
+    val text: String,
+    val error: Boolean = false,
+    /** Tombol aksi membuat notifikasi bertahan sampai ditutup, tidak hilang dalam 5 detik. */
+    val actionLabel: String? = null,
+    val onAction: () -> Unit = {},
+)
 private data class PendingUpdate(
     val tag: String,
     val version: String,
@@ -158,7 +165,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var pendingUpdate by remember { mutableStateOf<PendingUpdate?>(null) }
 
     LaunchedEffect(notice) {
-        if (notice != null) {
+        val current = notice
+        if (current != null && current.actionLabel == null) {
             delay(5000)
             notice = null
         }
@@ -297,10 +305,37 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         }
     }
 
+    /** Menjalankan unduhan/instalasi. Bila `filePath` diisi, unduhan dilewati dan installer dibuka lagi. */
+    fun startInstall(app: CatalogApp, request: InstallRequest) {
+        if (appPhase?.first == app.fullName && appPhase?.second == FlowPhase.DOWNLOADING) return
+        cancelApp = false
+        appPhase = app.fullName to FlowPhase.DOWNLOADING
+        appProgress = app.fullName to 0f
+        notice = Notice(if (request.filePath != null) "Membuka installer ${app.name}…" else "Mengunduh ${app.name}…")
+        installApp(
+            request,
+            onProgress = { appProgress = app.fullName to it },
+            shouldCancel = { cancelApp },
+        ) { ok, msg ->
+            appProgress = null
+            appPhase = app.fullName to if (ok) FlowPhase.DONE else FlowPhase.ERROR
+            if (ok) scope.launch {
+                val installed = withContext(Dispatchers.Default) { installedVersion(app.packageName, platformContext, app.name) }
+                statuses = statuses + (app.fullName to if (installed != null) AppStatus.INSTALLED else AppStatus.NOT_INSTALLED)
+                updateCount = statuses.count { it.value == AppStatus.UPDATE_AVAILABLE }
+            }
+            val path = downloadedInstallerPath(request)
+            notice = Notice(
+                text = "${app.name}: $msg",
+                error = !ok,
+                actionLabel = if (path.isNotBlank()) "Lanjutkan" else null,
+                onAction = { startInstall(app, request.copy(filePath = path)) },
+            )
+        }
+    }
+
     fun requestInstall(app: CatalogApp) {
         if (appPhase?.first == app.fullName && appPhase?.second != FlowPhase.DONE) return
-        appPhase = app.fullName to FlowPhase.DOWNLOADING
-        notice = Notice("Mengunduh ${app.name}…")
         scope.launch {
             val selected = withContext(Dispatchers.Default) {
                 if (currentPlatform == AppPlatform.DESKTOP) {
@@ -319,9 +354,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 notice = Notice("Rilis ${app.name} tidak menyediakan installer untuk platform ini", error = true)
                 return@launch
             }
-            cancelApp = false
-            appProgress = app.fullName to 0f
-            installApp(
+            startInstall(
+                app,
                 InstallRequest(
                     url = url,
                     fileName = fileName,
@@ -330,18 +364,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     platformContext = platformContext,
                     restartAfterInstall = false,
                 ),
-                onProgress = { appProgress = app.fullName to it },
-                shouldCancel = { cancelApp },
-            ) { ok, msg ->
-                appProgress = null
-                appPhase = app.fullName to if (ok) FlowPhase.DONE else FlowPhase.ERROR
-                if (ok) scope.launch {
-                    val installed = withContext(Dispatchers.Default) { installedVersion(app.packageName, platformContext, app.name) }
-                    statuses = statuses + (app.fullName to if (installed != null) AppStatus.INSTALLED else AppStatus.NOT_INSTALLED)
-                    updateCount = statuses.count { it.value == AppStatus.UPDATE_AVAILABLE }
-                }
-                notice = Notice("${app.name}: $msg", error = !ok)
-            }
+            )
         }
     }
 
@@ -473,6 +496,9 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                                 busy = selfBusy || appPhase?.second == FlowPhase.DOWNLOADING,
                                 progress = noticeProgress,
                                 onCancel = { if (selfProgress != null) cancelSelf = true else cancelApp = true },
+                                actionLabel = n.actionLabel,
+                                onAction = n.onAction,
+                                onDismiss = { notice = null },
                             )
                         }
                     }

@@ -14,6 +14,14 @@ import java.nio.file.StandardCopyOption
 
 private val NATIVE_EXTENSIONS = setOf("msi", "exe", "dmg", "pkg", "deb", "rpm", "apk")
 
+private fun safeFileName(fileName: String) =
+    fileName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+
+private fun downloadDir(): File = launcherHome().resolve("downloads").apply { mkdirs() }
+
+actual fun downloadedInstallerPath(request: InstallRequest): String =
+    File(downloadDir(), safeFileName(request.fileName)).absolutePath
+
 /** Menyerahkan file installer ke sistem operasi (msiexec, open, xdg-open). */
 private fun openNativeInstaller(file: File) {
     val os = System.getProperty("os.name").lowercase()
@@ -34,7 +42,7 @@ actual fun installApp(
     shouldCancel: () -> Boolean,
     onResult: (Boolean, String) -> Unit,
 ) {
-    val safeName = request.fileName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+    val safeName = safeFileName(request.fileName)
     val ext = safeName.substringAfterLast('.', "").lowercase()
 
     // Tolak jika file berupa JAR atau bukan installer native resmi
@@ -56,60 +64,66 @@ actual fun installApp(
 
     Thread {
         var connection: HttpURLConnection? = null
-        val downloadDir = launcherHome().resolve("downloads").apply { mkdirs() }
-        val temp = File(downloadDir, "$safeName.part")
         try {
-            connection = URI(request.url).toURL().openConnection() as HttpURLConnection
-            connection.instanceFollowRedirects = true
-            connection.connectTimeout = 15000
-            connection.readTimeout = 60000
-            val code = connection.responseCode
-            if (code !in 200..299) {
-                throw IllegalStateException("HTTP $code")
-            }
-            connection.inputStream.use { input ->
-                FileOutputStream(temp).use { output ->
-                    val buffer = ByteArray(16 * 1024)
-                    var read: Int
-                    var written = 0L
-                    val total = connection.contentLengthLong
-                    while (input.read(buffer).also { read = it } != -1) {
-                        if (shouldCancel()) {
-                            temp.delete()
-                            EventQueue.invokeLater { onResult(false, "Dibatalkan") }
-                            return@Thread
-                        }
-                        output.write(buffer, 0, read)
-                        written += read
-                        if (total > 0) {
-                            val p = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
-                            EventQueue.invokeLater { onProgress(p) }
+            val installer = File(downloadDir(), safeName)
+            val reusable = request.filePath?.let(::File)
+                ?.takeIf { it.isFile && it.length() > 1024 }
+
+            if (reusable == null) {
+                val temp = File(downloadDir(), "$safeName.part")
+                connection = URI(request.url).toURL().openConnection() as HttpURLConnection
+                connection.instanceFollowRedirects = true
+                connection.connectTimeout = 15000
+                connection.readTimeout = 60000
+                val code = connection.responseCode
+                if (code !in 200..299) {
+                    throw IllegalStateException("HTTP $code")
+                }
+                connection.inputStream.use { input ->
+                    FileOutputStream(temp).use { output ->
+                        val buffer = ByteArray(16 * 1024)
+                        var read: Int
+                        var written = 0L
+                        val total = connection.contentLengthLong
+                        while (input.read(buffer).also { read = it } != -1) {
+                            if (shouldCancel()) {
+                                temp.delete()
+                                EventQueue.invokeLater { onResult(false, "Dibatalkan") }
+                                return@Thread
+                            }
+                            output.write(buffer, 0, read)
+                            written += read
+                            if (total > 0) {
+                                val p = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                                EventQueue.invokeLater { onProgress(p) }
+                            }
                         }
                     }
                 }
+                if (temp.length() < 1024) throw IllegalStateException("File installer kosong atau rusak")
+                Files.move(temp.toPath(), installer.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }
-            if (!checksumMatches(request.url, temp)) {
+
+            val target = reusable ?: installer
+            if (!checksumMatches(request.url, target)) {
+                target.delete()
                 throw IllegalStateException("Checksum SHA-256 tidak cocok — unduhan dibatalkan")
             }
 
             // Installer native (.msi/.exe/.deb/.rpm/.dmg/.pkg/.apk): serahkan ke OS.
-            if (temp.length() < 1024) throw IllegalStateException("File installer kosong atau rusak")
-            val installer = File(downloadDir, safeName)
-            Files.move(temp.toPath(), installer.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            openNativeInstaller(installer)
+            openNativeInstaller(target)
             EventQueue.invokeLater {
                 onResult(
                     true,
                     if (request.restartAfterInstall) {
-                        "Installer native ${installer.name} dibuka — selesaikan pembaruan lalu restart launcher"
+                        "Installer ${target.name} dibuka — selesaikan pembaruan lalu restart launcher"
                     } else {
-                        "Installer native ${installer.name} dibuka — ikuti proses pemasangan"
+                        "Installer ${target.name} dibuka — ikuti proses pemasangan. Jika jendela installer tidak muncul, ketuk Lanjutkan."
                     },
                 )
             }
         } catch (t: Throwable) {
-            temp.delete()
-            EventQueue.invokeLater { onResult(false, "Gagal: ${t.message ?: "unknown"}") }
+            EventQueue.invokeLater { onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}") }
         } finally {
             connection?.disconnect()
         }

@@ -44,7 +44,7 @@ Satu sumber nilai ada di [`gradle.properties`](gradle.properties): versi, identi
 
 Untuk mengubah versi atau konfigurasi, edit `gradle.properties` — jangan mengubah hardcode di source. Rilis CI menimpa nilai lewat `-PreleaseVersion=... -PandroidVersionCode=...` sehingga hasil build tetap mengikuti tag.
 
-`BuildConfig.kt` adalah file hasil generasi di `shared/build/generated/`; jangan diedit manual. Objek `AppMetadata` tetap ada sebagai fasad versi untuk kode lama.
+`BuildConfig.kt` adalah file hasil generasi di `shared/build/generated/`; jangan diedit manual. Objek `AppMetadata` tetap ada sebagai fasad versi untuk kode lama. Versi yang ditampilkan UI untuk launcher sendiri selalu diambil dari `BuildConfig`, sehingga entri lama di `~/.nyawit-launcher/installed/` tidak bisa membuat versi tampak "nyangkut".
 
 ## Rilis
 
@@ -158,7 +158,9 @@ Agar perubahan langsung berlaku untuk pengguna rilis, tetap push `catalog.json` 
 
 Installer native tersedia di halaman rilis: `.msi`/`.exe` (Windows), `.deb`/`.rpm` (Linux), dan `.dmg` (macOS, x64 & arm64). Untuk pengembangan, gunakan `./gradlew :desktopApp:run` atau konfigurasi **desktopApp** di Android Studio.
 
-Saat memasang dari katalog, launcher memilih installer bawaan platform (`.msi`/`.exe`, `.deb`/`.rpm`, `.dmg`/`.pkg`, atau `.apk`). File diunduh ke `~/.nyawit-launcher/downloads/`, diverifikasi checksum SHA-256 bila tersedia, lalu diserahkan ke sistem operasi. Pemasangan hanya mendukung installer native sesuai platform; file format JAR tidak didukung.
+Saat memasang dari katalog, launcher memilih installer bawaan platform (`.msi`/`.exe`, `.deb`/`.rpm`, `.dmg`/`.pkg`, atau `.apk`). File diunduh ke `~/.nyawit-launcher/downloads/` (Android: `filesDir`), diverifikasi checksum SHA-256 bila tersedia, lalu diserahkan ke sistem operasi. Pemasangan hanya mendukung installer native sesuai platform; file format JAR tidak didukung.
+
+Notifikasi hasil unduhan **bertahan** dan menyediakan tombol **Lanjutkan**: jika jendela installer tidak muncul atau izin pemasangan belum diberikan, tombol ini membuka kembali installer dari file yang sudah terunduh tanpa mengunduh ulang. Di Android, berikan izin *Install unknown apps* bila diminta, lalu ketuk **Lanjutkan** setelah kembali ke launcher.
 
 Jika rilis aplikasi tidak menyediakan installer untuk platform Anda, launcher menampilkan pesan "tidak menyediakan installer untuk platform ini" — misalnya `Nyawit Music` saat ini hanya memiliki `.apk`, sehingga bisa dipasang di Android tetapi bukan di desktop.
 
