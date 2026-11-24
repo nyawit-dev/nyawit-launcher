@@ -28,7 +28,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Zip)
             packageName = "nyawit-launcher"
-            packageVersion = "1.2.6"
+            packageVersion = "1.2.7"
             windows { iconFile = file("icons/windows/nyawit.ico") }
             linux { iconFile = file("icons/linux/nyawit.png") }
         }
