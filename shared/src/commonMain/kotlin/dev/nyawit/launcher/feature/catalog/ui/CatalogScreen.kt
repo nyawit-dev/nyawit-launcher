@@ -124,6 +124,15 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val searchFocus = remember { FocusRequester() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
+    // Pengaman: jangan biarkan tombol "Cek pembaruan" nyangkut loading bila callback installer hilang.
+    LaunchedEffect(selfBusy) {
+        if (selfBusy) {
+            delay(180_000)
+            selfBusy = false
+            notice = Notice("Pembaruan tidak merespons — coba lagi", error = true)
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             catalog.close()
@@ -170,17 +179,27 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
 
     fun checkUpdates() {
         if (selfBusy) return
+        selfBusy = true
         scope.launch {
-            val release = withContext(Dispatchers.Default) { updater.latest() }
-            if (release == null) {
-                notice = Notice("Gagal mengecek rilis terbaru", error = true)
-                return@launch
-            }
-            if (isNewer(release.tag, version)) {
-                updateTag = release.tag
-                autoUpdate(release)
-            } else {
-                notice = Notice("Aplikasi sudah versi terbaru (v$version)")
+            try {
+                val release = withContext(Dispatchers.Default) { updater.latest() }
+                if (release == null) {
+                    notice = Notice("Gagal mengecek rilis terbaru", error = true)
+                    selfBusy = false
+                    return@launch
+                }
+                if (isNewer(release.tag, version)) {
+                    updateTag = release.tag
+                    // Serahkan status "busy" ke autoUpdate, yang akan mematikan lagi lewat callback installer.
+                    selfBusy = false
+                    autoUpdate(release)
+                } else {
+                    notice = Notice("Aplikasi sudah versi terbaru (v$version)")
+                    selfBusy = false
+                }
+            } catch (t: Throwable) {
+                notice = Notice("Gagal mengecek pembaruan: ${t.message ?: "unknown"}", error = true)
+                selfBusy = false
             }
         }
     }
