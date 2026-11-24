@@ -392,6 +392,9 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 else -> TabletGrid(filtered, statuses, appPhase, appProgress, { detailApp = it }, ::requestInstall, ::openApp)
             }
         }
+        detailApp?.let { app ->
+            AppDetailDialog(app, statuses[app.fullName] ?: AppStatus.NOT_INSTALLED) { detailApp = null }
+        }
     }
 }
 
@@ -492,9 +495,6 @@ private fun TabletGrid(
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
             )
-        }
-        detailApp?.let { app ->
-            AppDetailDialog(app, statuses[app.fullName] ?: AppStatus.NOT_INSTALLED) { detailApp = null }
-        }
+         }
     }
 }
