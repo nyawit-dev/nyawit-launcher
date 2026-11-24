@@ -47,6 +47,7 @@ import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.feature.catalog.data.GitHubCatalog
 import dev.nyawit.launcher.feature.install.InstallRequest
+import dev.nyawit.launcher.feature.install.downloadedInstallerPath
 import dev.nyawit.launcher.feature.install.installApp
 import dev.nyawit.launcher.feature.install.uninstallApp
 import dev.nyawit.launcher.feature.update.applyUpdate
@@ -63,7 +64,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nyawit_launcher.shared.generated.resources.Res
 
-private data class Notice(val text: String, val error: Boolean = false)
+private data class Notice(
+    val text: String,
+    val error: Boolean = false,
+    val actionLabel: String? = null,
+    val onAction: () -> Unit = {},
+)
 
 private fun isNewer(latest: String, installed: String): Boolean {
     fun parse(v: String) = v.removePrefix("v").trim().split(".").mapNotNull { it.toIntOrNull() }
@@ -116,7 +122,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
 
     LaunchedEffect(notice) {
-        if (notice != null) {
+        if (notice != null && notice?.actionLabel == null) {
             delay(5000)
             notice = null
         }
@@ -149,6 +155,38 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         }
     }
 
+    /** Menjalankan unduhan/pemasangan dari request yang sudah disiapkan. */
+    fun startInstall(app: CatalogApp, request: InstallRequest) {
+        if (app.fullName in busyApps) return
+        busyApps = busyApps + app.fullName
+        progress = progress + (app.fullName to 0f)
+        notice = Notice("Memproses ${app.name}…")
+        val cachedPath = downloadedInstallerPath(request)
+        installApp(
+            request,
+            onProgress = { progress = progress + (app.fullName to it) },
+            shouldCancel = { false },
+        ) { ok, msg ->
+            busyApps = busyApps - app.fullName
+            progress = progress - app.fullName
+            scope.launch {
+                val installed = withContext(Dispatchers.Default) {
+                    installedVersion(app.packageName, platformContext, app.name)
+                }
+                statuses = statuses + (
+                    app.fullName to if (installed != null) AppStatus.INSTALLED else AppStatus.NOT_INSTALLED
+                )
+            }
+            notice = Notice(
+                text = "${app.name}: $msg",
+                error = !ok,
+                actionLabel = if (!ok && cachedPath.isNotBlank()) "Lanjutkan" else null,
+                onAction = { startInstall(app, request.copy(filePath = cachedPath)) },
+            )
+            reloadKey++
+        }
+    }
+
     /** Unduh lalu pasang aplikasi sekali ketuk. */
     fun install(app: CatalogApp) {
         if (app.fullName in busyApps) return
@@ -168,10 +206,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 notice = Notice("${app.name} tidak menyediakan installer untuk platform ini", error = true)
                 return@launch
             }
-            busyApps = busyApps + app.fullName
-            progress = progress + (app.fullName to 0f)
-            notice = Notice("Mengunduh ${app.name}…")
-            installApp(
+            startInstall(
+                app,
                 InstallRequest(
                     url = url,
                     fileName = fileName,
@@ -179,23 +215,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     registryKey = app.packageName,
                     platformContext = platformContext,
                 ),
-                onProgress = { progress = progress + (app.fullName to it) },
-                shouldCancel = { false },
-            ) { ok, msg ->
-                busyApps = busyApps - app.fullName
-                progress = progress - app.fullName
-                scope.launch {
-                    val installed = withContext(Dispatchers.Default) {
-                        installedVersion(app.packageName, platformContext, app.name)
-                    }
-                    statuses = statuses + (
-                        app.fullName to if (installed != null) AppStatus.INSTALLED else AppStatus.NOT_INSTALLED
-                        )
-                }
-                notice = Notice("${app.name}: $msg", error = !ok)
-                // Segarkan status setelah instalasi/ pembaruan berhasil.
-                if (ok) reloadKey++
-            }
+            )
         }
     }
 
@@ -282,6 +302,9 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                         busy = false,
                         progress = null,
                         onCancel = {},
+                        actionLabel = n.actionLabel,
+                        onAction = n.onAction,
+                        onDismiss = { notice = null },
                     )
                 }
             }
