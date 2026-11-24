@@ -128,7 +128,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y rpm
       - name: Resolve version from tag
         shell: bash
-        run: echo "RELEASE_VERSION=${{ inputs.tag || github.ref_name }}" | sed 's/^v//' >> "$GITHUB_ENV"
+        run: |
+          VERSION="${{ inputs.tag || github.ref_name }}"
+          echo "RELEASE_VERSION=${VERSION#v}" >> "$GITHUB_ENV"
       - name: Build native installer for ${{ matrix.name }}
         shell: bash
         run: >-
