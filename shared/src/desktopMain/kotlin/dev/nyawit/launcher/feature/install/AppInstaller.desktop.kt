@@ -142,3 +142,7 @@ actual fun installApp(
         }
     }.start()
 }
+
+
+actual fun canInstallPackages(platformContext: Any?): Boolean = true
+actual fun openInstallPermissionSettings(platformContext: Any?): Boolean = false
