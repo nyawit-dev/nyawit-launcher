@@ -141,7 +141,7 @@ jobs:
           set -e
           OUT="dist-${{ matrix.name }}"
           mkdir -p "$OUT"
-          find desktopApp/build -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.msi' -o -name '*.dmg' \) -exec cp {} "$OUT"/ \;
+          find desktopApp/build -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.msi' -o -name '*.exe' -o -name '*.dmg' \) -exec cp {} "$OUT"/ \;
           test -n "$(ls -A "$OUT")" || { echo "::error::Tidak ada installer native untuk ${{ matrix.name }}"; exit 1; }
           # Awali nama dengan platform agar artifact macOS x64/arm64 tidak saling menimpa.
           for f in "$OUT"/*; do

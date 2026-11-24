@@ -6,7 +6,7 @@ Dokumen ini adalah hasil audit fungsi inti launcher setelah perbaikan. Status: �
 
 | Fungsi inti | Android | Desktop (Win/Linux/Mac) | Android TV |
 |---|---|---|---|
-| Memuat katalog (grup `owner + repo`) | ✅ URL GitHub | ✅ file lokal → URL GitHub → fallback | ✅ |
+| Memuat katalog (grup `owner + repo`) | ✅ GitHub → cache lokal | ✅ GitHub → cache lokal | ✅ |
 | Filter platform & kategori & pencarian | ✅ | ✅ | ✅ |
 | Deteksi aplikasi terpasang | ✅ resolve package dari label/ID | ✅ registry JAR + installer native | ✅ |
 | Cek versi/update aplikasi | ✅ `versionName` | ✅ registry / `dpkg` / registry Windows / `Info.plist` | ✅ |
@@ -23,14 +23,19 @@ Dokumen ini adalah hasil audit fungsi inti launcher setelah perbaikan. Status: �
 ```
 [Buka launcher]
    ↓
-Desktop: cari catalog.json di cwd + 6 induk → pakai jika ada
-Android: langsung ke CONFIG_URL (GitHub raw)
+1. Ambil catalog.json dari GitHub raw (online)
+   ├─ Berhasil → simpan ke cache lokal
+   │             Desktop: ~/.nyawit-launcher/cache/catalog.json
+   │             Android: <filesDir>/catalog.json
+   └─ Gagal → baca cache lokal
+              ├─ ada → pakai cache (offline tetap berfungsi)
+              └─ tidak ada → file lokal project (dev) → katalog bawaan aplikasi
    ↓
 Parsing CatalogConfig { sources: [ grup owner+repo | entri type+name ] }
    ↓
 resolveSources(): grup diubah jadi daftar sumber dengan owner/url/detail
    ↓
-Ambil repo dari GitHub (type user/org/repo) + entri manual (type app)
+Entri dengan detail dibangun langsung dari config; user/org diambil dari GitHub API
    ↓
 Terapkan detail (label, description, category, platforms, packageName, accent, pinned)
    ↓
@@ -99,7 +104,7 @@ native installer saja: .apk, .msi, .deb, .rpm, .dmg
    ↓
 checksum .sha256 per artifact
    ↓
-publish GitHub Release (tanpa JAR / portable zip)
+publish GitHub Release (hanya installer native; tidak ada JAR)
 ```
 
 ## Keterbatasan yang masih ada

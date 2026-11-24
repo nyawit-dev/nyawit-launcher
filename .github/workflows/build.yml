@@ -40,3 +40,5 @@ jobs:
           path: |
             desktopApp/build/compose/binaries/**/*.deb
             desktopApp/build/compose/binaries/**/*.rpm
+            desktopApp/build/compose/binaries/**/*.msi
+            desktopApp/build/compose/binaries/**/*.exe

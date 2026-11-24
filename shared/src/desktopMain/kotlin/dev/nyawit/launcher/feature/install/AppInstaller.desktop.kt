@@ -18,7 +18,8 @@ private fun openNativeInstaller(file: File) {
     val os = System.getProperty("os.name").lowercase()
     val ext = file.extension.lowercase()
     when {
-        os.contains("win") && ext == "msi" -> ProcessBuilder("msiexec", "/i", file.absolutePath).start()
+        os.contains("win") && ext == "msi" ->
+            ProcessBuilder("msiexec", "/i", file.absolutePath, "/norestart", "/passive").start()
         os.contains("win") && ext == "exe" -> ProcessBuilder(file.absolutePath).start()
         os.contains("mac") -> ProcessBuilder("open", file.absolutePath).start()
         os.contains("linux") -> ProcessBuilder("xdg-open", file.absolutePath).start()

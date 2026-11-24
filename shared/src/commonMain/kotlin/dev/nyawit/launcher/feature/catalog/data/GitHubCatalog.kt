@@ -1,6 +1,8 @@
 package dev.nyawit.launcher.feature.catalog.data
 
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.platform.readCatalogCache
+import dev.nyawit.launcher.core.platform.writeCatalogCache
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -276,61 +278,12 @@ private fun buildApp(
     )
 }
 
-private fun fallbackApps(): List<CatalogApp> = listOf(
-    buildApp(
-        fullName = "nyawit-dev/nyawit-launcher",
-        label = "Nyawit Launcher",
-        description = "Launcher aplikasi Nyawit untuk Android, TV, dan desktop",
-        category = "Launcher",
-        platforms = listOf("android", "tv", "desktop"),
-        packageName = "dev.nyawit.launcher",
-        accent = "#3DDC97",
-        pinned = true,
-        seed = "nyawit-launcher",
-    ),
-    buildApp(
-        fullName = "nyawit-dev/nyawit-music",
-        label = "Nyawit Music",
-        description = "Pemutar musik dengan dukungan Android TV",
-        category = "Musik",
-        platforms = listOf("android", "tv"),
-        packageName = "dev.nyawit.music",
-        accent = "#5AA9E6",
-        seed = "nyawit-music",
-    ),
-    buildApp(
-        fullName = "nyawit-dev/garis-arcade",
-        label = "Garis Arcade",
-        description = "Kumpulan game klasik: Snake, 2048, Tetris",
-        category = "Game",
-        platforms = listOf("android"),
-        packageName = "dev.nyawit.arcade",
-        accent = "#FFB454",
-        seed = "garis-arcade",
-    ),
-    buildApp(
-        fullName = "nyawit-dev/garis_game",
-        label = "Garis Game",
-        description = "Tetris Kotlin Compose",
-        category = "Game",
-        platforms = listOf("android"),
-        packageName = "ngga.ring.garisgame",
-        accent = "#F2789F",
-        seed = "garis_game",
-    ),
-    buildApp(
-        fullName = "nyawit-dev/monopoly-kmp",
-        label = "Monopoly KMP",
-        description = "Game monopoli Kotlin Multiplatform",
-        category = "Game",
-        platforms = listOf("android"),
-        accent = "#9B8CFF",
-        seed = "monopoly-kmp",
-    ),
-)
 
 class GitHubCatalog(
     private val localCatalogJson: String? = null,
+    /** Katalog bawaan yang dipakai bila GitHub dan cache tidak tersedia. */
+    private val bundledCatalog: suspend () -> String? = { null },
+    private val platformContext: Any? = null,
     private val client: HttpClient = HttpClient {
         install(ContentNegotiation) { json(catalogJson) }
     },
@@ -345,24 +298,39 @@ class GitHubCatalog(
     } catch (_: Throwable) { emptyList() }
 
     suspend fun loadApps(): List<CatalogApp> {
-        val config: CatalogConfig = localCatalogJson?.let {
-            runCatching { catalogJson.decodeFromString<CatalogConfig>(it) }.getOrNull()
-        } ?: try {
-            client.get(CatalogSources.CONFIG_URL).body()
+        // 1) Unduh dari GitHub. 2) Simpan ke cache. 3) Saat offline baca cache.
+        val remoteJson = try {
+            client.get(CatalogSources.CONFIG_URL).body<String>().takeIf { it.isNotBlank() }
         } catch (_: Throwable) {
-            CatalogConfig(listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)))
+            null
         }
-        val entries = config.sources.ifEmpty { listOf(CatalogSource("user", CatalogSources.PRIMARY_USER)) }
-        val sources = resolveSources(entries)
+        val configJson = if (remoteJson != null) {
+            writeCatalogCache(remoteJson, platformContext)
+            remoteJson
+        } else {
+            readCatalogCache(platformContext)
+                ?: localCatalogJson
+                ?: bundledCatalog()?.takeIf { it.isNotBlank() }
+        }
+        val config = configJson?.let {
+            runCatching { catalogJson.decodeFromString<CatalogConfig>(it) }.getOrNull()
+        } ?: CatalogConfig(emptyList())
+        val sources = resolveSources(config.sources)
         val primaryOwner = sources.firstNotNullOfOrNull { it.ownerName } ?: CatalogSources.PRIMARY_USER
 
         val details = sources.filter { it.hasDetail }.associateBy { it.name.lowercase() }
         val hidden = (config.exclude + sources.filter { it.hidden }.map { it.name })
             .map { it.lowercase() }.toSet()
 
+        // Entri dengan detail lengkap dibangun langsung dari konfigurasi — tidak perlu
+        // memanggil GitHub API hanya untuk membuat daftar aplikasi.
+        fun canBuildDirectly(source: ResolvedSource) =
+            source.type.equals("app", ignoreCase = true) ||
+                (source.type.equals("repo", ignoreCase = true) && source.hasDetail)
+
         val discovered = sources
             .filterNot { it.hidden && it.type.lowercase() in setOf("user", "org") }
-            .filterNot { it.type.equals("app", ignoreCase = true) }
+            .filterNot { canBuildDirectly(it) }
             .fold(emptyList<GithubRepo>()) { acc, source -> acc + reposFrom(source) }
             .filter { !it.archived && (isAppRepo(it) || details.containsKey(it.fullName.lowercase())) }
             .distinctBy { it.fullName }
@@ -386,7 +354,7 @@ class GitHubCatalog(
             }
 
         val manual = sources
-            .filter { it.type.equals("app", ignoreCase = true) }
+            .filter { canBuildDirectly(it) }
             .mapNotNull { source ->
                 if (source.name.lowercase() in hidden) return@mapNotNull null
                 buildApp(
@@ -413,7 +381,8 @@ class GitHubCatalog(
                     { it.name },
                 ),
             )
-        return combined.ifEmpty { fallbackApps() }
+        // Tidak ada daftar cadangan hardcode: hanya aplikasi yang tertulis di katalog yang tampil.
+        return combined
     }
 
     fun close() { client.close() }

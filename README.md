@@ -48,11 +48,11 @@ Artifact yang dipublikasikan — **hanya installer native**:
 | Platform | Artifact |
 |---|---|
 | Android | `.apk` release (ditandatangani, diverifikasi `apksigner`) |
-| Windows | `.msi` |
+| Windows | `.msi` dan `.exe` |
 | Linux | `.deb` dan `.rpm` |
 | macOS | `.dmg` untuk **Intel (x64)** dan **Apple Silicon (arm64)** |
 
-Tidak ada uber JAR maupun arsip portabel yang dirilis. Setiap artifact dibuatkan file `.sha256`; launcher memverifikasi checksum sebelum menyerahkan installer ke sistem operasi. Versi lintas platform dijamin sinkron karena berasal dari satu tag.
+Hanya installer native yang dirilis. Setiap artifact dibuatkan file `.sha256`; launcher memverifikasi checksum sebelum menyerahkan installer ke sistem operasi. Versi lintas platform dijamin sinkron karena berasal dari satu tag.
 
 Alur pembaruan launcher: launcher mengecek rilis → **dialog konfirmasi** → mengunduh installer native → menyerahkan ke OS (`msiexec`, `xdg-open`, `open`, atau installer Android) → pengguna menyelesaikan pemasangan dan me-restart launcher.
 
@@ -136,14 +136,16 @@ Entri `user`/`org` dan `exclude` bersifat opsional untuk auto-discovery; `catalo
 
 Urutan prioritas: entri `pinned` → repo `nyawit-dev` → sisanya berurutan berdasarkan nama. Entri `app` manual menimpa entri terdeteksi dengan `owner/repo` yang sama.
 
-**Sumber konfigurasi saat runtime:** launcher mengambil katalog dari `https://raw.githubusercontent.com/nyawit-dev/nyawit-launcher/main/catalog.json`. Untuk desktop, jika file `catalog.json` ditemukan di direktori kerja atau salah satu induknya (maks. 6 level — berlaku saat menjalankan dari Android Studio/root project maupun instalasi native), file lokal itu **didahulukan**. Jadi perubahan platform/detail bisa langsung diuji tanpa push. Di Android selalu memakai URL GitHub.
+**Sumber konfigurasi saat runtime:** launcher selalu mencoba `https://raw.githubusercontent.com/nyawit-dev/nyawit-launcher/main/catalog.json` lebih dulu. Hasil unduhan disimpan ke cache lokal (`~/.nyawit-launcher/cache/catalog.json` di desktop, `<filesDir>/catalog.json` di Android). Saat Github tidak terjangkau, launcher membaca cache tersebut sehingga daftar aplikasi tetap muncul. Jika cache belum ada, launcher memakai katalog bawaan yang dibundel di aplikasi.
+
+Untuk pengembangan desktop, file `catalog.json` di direktori kerja/induknya dipakai sebagai cadangan terakhir sebelum katalog bawaan — bukan menggantikan unduhan GitHub.
 
 Agar perubahan langsung berlaku untuk pengguna rilis, tetap push `catalog.json` ke `main`.
 
 
 ## Menjalankan di Desktop
 
-Installer native tersedia di halaman rilis: `.msi` (Windows), `.deb`/`.rpm` (Linux), dan `.dmg` (macOS, x64 & arm64). Untuk pengembangan, gunakan `./gradlew :desktopApp:run` atau konfigurasi **desktopApp** di Android Studio. Tidak ada JAR portabel yang dirilis.
+Installer native tersedia di halaman rilis: `.msi`/`.exe` (Windows), `.deb`/`.rpm` (Linux), dan `.dmg` (macOS, x64 & arm64). Untuk pengembangan, gunakan `./gradlew :desktopApp:run` atau konfigurasi **desktopApp** di Android Studio.
 
 Saat memasang dari katalog, launcher memilih installer bawaan platform (`.msi`/`.exe`, `.deb`/`.rpm`, `.dmg`/`.pkg`, atau `.apk`). File diunduh ke `~/.nyawit-launcher/downloads/`, diverifikasi checksum SHA-256 bila tersedia, lalu diserahkan ke sistem operasi. Pemasangan hanya mendukung installer native sesuai platform; file format JAR tidak didukung.
 

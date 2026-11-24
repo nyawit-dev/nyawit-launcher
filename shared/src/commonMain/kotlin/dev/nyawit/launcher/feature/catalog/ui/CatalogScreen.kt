@@ -126,7 +126,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
     val currentPlatform = remember { currentAppPlatform() }
     var version by remember { mutableStateOf(appVersion(platformContext)) }
-    val catalog = remember { GitHubCatalog(localCatalogOverride()) }
+    val catalog = remember {
+        GitHubCatalog(
+            localCatalogJson = localCatalogOverride(),
+            bundledCatalog = { Res.readBytes("files/catalog.json").decodeToString() },
+            platformContext = platformContext,
+        )
+    }
     val updater = remember { UpdateRepository() }
     val scope = rememberCoroutineScope()
     var apps by remember { mutableStateOf<List<CatalogApp>>(emptyList()) }
