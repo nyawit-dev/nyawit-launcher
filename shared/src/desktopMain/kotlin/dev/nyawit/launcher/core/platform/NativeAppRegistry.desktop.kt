@@ -3,7 +3,11 @@ package dev.nyawit.launcher.core.platform
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-internal data class NativeAppInfo(val version: String?, val executable: String?)
+internal data class NativeAppInfo(
+    val version: String?,
+    val executable: String?,
+    val uninstallString: String? = null,
+)
 
 private fun runCommand(vararg command: String): String? = try {
     val process = ProcessBuilder(*command).redirectErrorStream(true).start()
@@ -34,12 +38,14 @@ private fun windowsApp(displayName: String): NativeAppInfo? {
             ?.groupValues?.get(1)?.trim()?.removeSurrounding("\"")
         val location = Regex("InstallLocation\\s+REG_SZ\\s+(.+)").find(block)
             ?.groupValues?.get(1)?.trim()?.removeSurrounding("\"")
+        val uninstall = Regex("UninstallString\\s+REG_SZ\\s+(.+)").find(block)
+            ?.groupValues?.get(1)?.trim()
         val executable = icon?.takeIf { it.endsWith(".exe", true) }
             ?: location?.let { path ->
                 File(path).listFiles { f -> f.isFile && f.extension.equals("exe", true) }
                     ?.firstOrNull()?.absolutePath
             }
-        return NativeAppInfo(version, executable)
+        return NativeAppInfo(version, executable, uninstall)
     }
     return null
 }

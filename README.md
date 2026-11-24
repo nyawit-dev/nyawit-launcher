@@ -160,7 +160,7 @@ Installer native tersedia di halaman rilis: `.msi`/`.exe` (Windows), `.deb`/`.rp
 
 Saat memasang dari katalog, launcher memilih installer bawaan platform (`.msi`/`.exe`, `.deb`/`.rpm`, `.dmg`/`.pkg`, atau `.apk`). File diunduh ke `~/.nyawit-launcher/downloads/` (Android: `filesDir`), diverifikasi checksum SHA-256 bila tersedia, lalu diserahkan ke sistem operasi. Pemasangan hanya mendukung installer native sesuai platform; file format JAR tidak didukung.
 
-Notifikasi hasil unduhan **bertahan** dan menyediakan tombol **Lanjutkan**: jika jendela installer tidak muncul atau izin pemasangan belum diberikan, tombol ini membuka kembali installer dari file yang sudah terunduh tanpa mengunduh ulang. Di Android, berikan izin *Install unknown apps* bila diminta, lalu ketuk **Lanjutkan** setelah kembali ke launcher.
+Setelah unduhan selesai, installer **langsung dijalankan otomatis** (Windows: `msiexec /quiet` untuk MSI dan mode silent untuk EXE) tanpa perlu konfirmasi tambahan. Tombol **Lanjutkan** hanya muncul bila proses peluncuran installer gagal, untuk mencoba lagi dari file yang sudah terunduh tanpa mengunduh ulang. Di Android, berikan izin *Install unknown apps* bila diminta, lalu konfirmasi di installer sistem.
 
 Jika rilis aplikasi tidak menyediakan installer untuk platform Anda, launcher menampilkan pesan "tidak menyediakan installer untuk platform ini" — misalnya `Nyawit Music` saat ini hanya memiliki `.apk`, sehingga bisa dipasang di Android tetapi bukan di desktop.
 

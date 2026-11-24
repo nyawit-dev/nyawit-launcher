@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 
-private fun resolvePackage(
+internal fun resolvePackage(
     packageName: String,
     displayName: String?,
     context: Context,

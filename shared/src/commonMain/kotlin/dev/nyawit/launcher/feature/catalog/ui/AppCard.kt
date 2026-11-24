@@ -65,7 +65,7 @@ fun AppCard(
     status: AppStatus,
     busy: Boolean,
     progress: Float? = null,
-    onDetail: () -> Unit,
+    onDetail: (() -> Unit)? = null,
     onInstall: () -> Unit,
     onOpen: () -> Unit,
 ) {
@@ -242,7 +242,7 @@ fun AppCard(
                             border = BorderStroke(1.dp, c.Border),
                             modifier = Modifier
                                 .size(44.dp)
-                                .clickable { onDetail() }
+                                .clickable { onDetail?.invoke() }
                                 .focusable()
                                 .tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
                         ) {

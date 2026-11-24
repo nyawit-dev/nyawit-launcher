@@ -22,16 +22,29 @@ private fun downloadDir(): File = launcherHome().resolve("downloads").apply { mk
 actual fun downloadedInstallerPath(request: InstallRequest): String =
     File(downloadDir(), safeFileName(request.fileName)).absolutePath
 
-/** Menyerahkan file installer ke sistem operasi (msiexec, open, xdg-open). */
+/** Menjalankan installer native. Di Windows dijalankan silent agar langsung terpasang. */
 private fun openNativeInstaller(file: File) {
     val os = System.getProperty("os.name").lowercase()
     val ext = file.extension.lowercase()
+
+    fun launch(vararg command: String) {
+        try {
+            ProcessBuilder(*command).start()
+        } catch (_: Throwable) {
+            // Fallback bila perintah tidak tersedia: biarkan asosiasi file yang membuka installer.
+            Desktop.getDesktop().open(file)
+        }
+    }
+
     when {
+        // /quiet: tanpa wizard, /norestart: jangan reboot otomatis.
         os.contains("win") && ext == "msi" ->
-            ProcessBuilder("msiexec", "/i", file.absolutePath, "/norestart", "/passive").start()
-        os.contains("win") && ext == "exe" -> ProcessBuilder(file.absolutePath).start()
-        os.contains("mac") -> ProcessBuilder("open", file.absolutePath).start()
-        os.contains("linux") -> ProcessBuilder("xdg-open", file.absolutePath).start()
+            launch("msiexec", "/i", file.absolutePath, "/quiet", "/norestart")
+        // Akhiran NSIS (/S) dan Inno Setup (/VERYSILENT) diabaikan bila tidak didukung.
+        os.contains("win") && ext == "exe" ->
+            launch(file.absolutePath, "/S", "/VERYSILENT", "/NORESTART")
+        os.contains("mac") -> launch("open", file.absolutePath)
+        os.contains("linux") -> launch("xdg-open", file.absolutePath)
         else -> Desktop.getDesktop().open(file)
     }
 }
@@ -116,9 +129,9 @@ actual fun installApp(
                 onResult(
                     true,
                     if (request.restartAfterInstall) {
-                        "Installer ${target.name} dibuka — selesaikan pembaruan lalu restart launcher"
+                        "Pembaruan ${target.name} sedang dipasang otomatis — restart launcher setelah selesai"
                     } else {
-                        "Installer ${target.name} dibuka — ikuti proses pemasangan. Jika jendela installer tidak muncul, ketuk Lanjutkan."
+                        "Installer ${target.name} sedang dipasang otomatis — tunggu hingga selesai"
                     },
                 )
             }

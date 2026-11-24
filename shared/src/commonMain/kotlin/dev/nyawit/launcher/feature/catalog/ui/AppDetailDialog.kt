@@ -34,7 +34,15 @@ import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 
 @Composable
-fun AppDetailDialog(app: CatalogApp, status: AppStatus, onDismiss: () -> Unit) {
+fun AppDetailDialog(
+    app: CatalogApp,
+    status: AppStatus,
+    onInstall: () -> Unit,
+    onUpdate: () -> Unit,
+    onOpen: () -> Unit,
+    onUninstall: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     val c = LocalNyawitColors.current
     val accent = Color(app.accent)
 
@@ -135,18 +143,59 @@ fun AppDetailDialog(app: CatalogApp, status: AppStatus, onDismiss: () -> Unit) {
 
                     Spacer(Modifier.height(22.dp))
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        when (status) {
+                            AppStatus.INSTALLED -> Button(
+                                onClick = { onOpen(); onDismiss() },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                            ) { Text("Buka", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+
+                            AppStatus.UPDATE_AVAILABLE -> Button(
+                                onClick = { onUpdate(); onDismiss() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = c.Warning,
+                                    contentColor = c.OnPrimary,
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                            ) { Text("Perbarui", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+
+                            else -> Button(
+                                onClick = { onInstall(); onDismiss() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = c.Primary,
+                                    contentColor = c.OnPrimary,
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                            ) { Text("Pasang", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                        }
+                        if (status == AppStatus.INSTALLED || status == AppStatus.UPDATE_AVAILABLE) {
+                            Button(
+                                onClick = { onUninstall(); onDismiss() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = c.Danger.copy(alpha = 0.15f),
+                                    contentColor = c.Danger,
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                            ) { Text("Hapus", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                        }
+                        Spacer(Modifier.weight(1f))
                         Button(
                             onClick = onDismiss,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = c.Primary,
-                                contentColor = c.OnPrimary,
+                                containerColor = c.SurfaceRaised,
+                                contentColor = c.Text,
                             ),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                        ) {
-                            Text("Tutup", style = NyawitType.Caption, fontWeight = FontWeight.Bold)
-                        }
+                        ) { Text("Tutup", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
                     }
                 }
             }
