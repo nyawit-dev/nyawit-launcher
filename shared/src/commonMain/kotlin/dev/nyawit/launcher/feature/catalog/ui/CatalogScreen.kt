@@ -202,6 +202,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 asset.downloadUrl,
                 asset.name,
                 platformContext,
+                registryKey = "dev.nyawit.launcher",
                 onProgress = { selfProgress = it },
                 shouldCancel = { cancelSelf },
             ) { ok, msg ->
@@ -222,18 +223,28 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         appPhase = app.fullName to FlowPhase.DOWNLOADING
         notice = Notice("Mengunduh ${app.name}…")
         scope.launch {
-            val url = withContext(Dispatchers.Default) { catalog.latestApkUrl(app.fullName) }
-            if (url == null) {
+            val selected = withContext(Dispatchers.Default) {
+                if (currentPlatform == AppPlatform.DESKTOP) {
+                    val asset = updater.latestFor(app.fullName)?.let { updater.pickAsset(it) }
+                    Pair(asset?.downloadUrl, asset?.name)
+                } else {
+                    Pair(catalog.latestApkUrl(app.fullName), "${app.fullName.replace('/', '_')}.apk")
+                }
+            }
+            val url = selected.first
+            val fileName = selected.second
+            if (url == null || fileName == null) {
                 appPhase = app.fullName to FlowPhase.ERROR
-                notice = Notice("Belum ada APK untuk ${app.name}", error = true)
+                notice = Notice("Belum ada paket untuk ${app.name} di platform ini", error = true)
                 return@launch
             }
             cancelApp = false
             appProgress = app.fullName to 0f
             installApp(
                 url,
-                "${app.fullName.replace('/', '_')}.apk",
+                fileName,
                 platformContext,
+                registryKey = app.packageName,
                 onProgress = { appProgress = app.fullName to it },
                 shouldCancel = { cancelApp },
             ) { ok, msg ->
