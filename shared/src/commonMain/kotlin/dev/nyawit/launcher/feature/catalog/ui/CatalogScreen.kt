@@ -315,7 +315,22 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     fun uninstall(app: CatalogApp) {
         uninstallApp(app.packageName, app.name, platformContext) { ok, msg ->
             notice = Notice("${app.name}: $msg", error = !ok)
-            if (ok) statusKey++
+            if (ok) {
+                statusKey++
+                scope.launch {
+                    repeat(12) {
+                        delay(600)
+                        val installed = withContext(Dispatchers.Default) {
+                            installedVersion(app.packageName, platformContext, app.name)
+                        }
+                        if (installed == null) {
+                            statuses = statuses + (app.fullName to AppStatus.NOT_INSTALLED)
+                            statusKey++
+                            return@launch
+                        }
+                    }
+                }
+            }
         }
     }
 
