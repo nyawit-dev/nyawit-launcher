@@ -595,8 +595,8 @@ private fun AppList(
     onDetail: (CatalogApp) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         items(count = apps.size, key = { apps[it].fullName }) { index ->
@@ -627,9 +627,9 @@ private fun AppGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         items(count = apps.size, key = { apps[it].fullName }) { index ->
