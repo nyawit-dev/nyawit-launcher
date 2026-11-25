@@ -50,7 +50,10 @@ private fun checksumMatches(downloadUrl: String, file: File): Boolean {
         connection = URI("$downloadUrl.sha256").toURL().openConnection() as HttpURLConnection
         connection.connectTimeout = 10000
         connection.readTimeout = 10000
-        if (connection.responseCode !in 200..299) return true
+        if (connection.responseCode !in 200..299) {
+            connection.errorStream?.close()
+            return true
+        }
         val expected = connection.inputStream.bufferedReader().use { it.readText() }
             .trim().split(Regex("\\s+")).firstOrNull().orEmpty()
         if (!Regex("^[a-fA-F0-9]{64}$").matches(expected)) return true
@@ -58,6 +61,8 @@ private fun checksumMatches(downloadUrl: String, file: File): Boolean {
     } catch (_: Throwable) {
         true
     } finally {
+        runCatching { connection?.errorStream?.close() }
+        runCatching { connection?.inputStream?.close() }
         connection?.disconnect()
     }
 }
@@ -75,8 +80,14 @@ actual fun openInstallPermissionSettings(platformContext: Any?): Boolean {
     var settings = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, uri)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     if (settings.resolveActivity(context.packageManager) == null) {
-        settings = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)
+        // Fallback untuk Android TV: buka daftar tanpa URI
+        settings = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (settings.resolveActivity(context.packageManager) == null) {
+            // Fallback detail aplikasi
+            settings = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
     }
     return try { context.startActivity(settings); true } catch (_: Throwable) { false }
 }
@@ -193,7 +204,7 @@ private fun installWithPackageInstaller(context: Context, file: File, onDone: (B
             context,
             sessionId,
             Intent(action).setPackage(context.packageName),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0),
         )
         session.commit(pendingIntent.intentSender)
         committed = true
@@ -206,14 +217,37 @@ private fun installWithPackageInstaller(context: Context, file: File, onDone: (B
     }
 }
 
-@Suppress("DEPRECATION")
 private fun installWithIntent(context: Context, file: File, onDone: (Boolean, String) -> Unit) {
-    val uri = FileProvider.getUriForFile(context, fileProviderAuthority(context), file)
-    val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-        .setDataAndType(uri, "application/vnd.android.package-archive")
-        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-    context.startActivity(intent)
-    onDone(true, "Installer sistem dibuka — ikuti konfirmasi pemasangan")
+    try {
+        val authority = fileProviderAuthority(context)
+        val uri = FileProvider.getUriForFile(context, authority, file)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        // Berikan izin URI eksplisit ke calon package installer di sistem (TV & Mobile)
+        val pm = context.packageManager
+        val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.queryIntentActivities(
+                intent,
+                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        }
+        for (info in resolveInfos) {
+            val pkg = info.activityInfo.packageName
+            context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(intent)
+        onDone(true, "Installer sistem dibuka — ikuti konfirmasi pemasangan")
+    } catch (t: Throwable) {
+        onDone(false, "Gagal membuka installer: ${t.message ?: "unknown"}")
+    }
 }
 
 private fun installDownloadedFile(
@@ -230,17 +264,20 @@ private fun installDownloadedFile(
             }
         }
     }
-    Thread {
+    // Menggunakan Intent ACTION_VIEW di Main Thread agar dialog installer Android TV langsung tampil tanpa terblokir BAL
+    onMain {
         try {
-            installWithPackageInstaller(context, file, deliver)
+            installWithIntent(context, file, deliver)
         } catch (_: Throwable) {
-            try {
-                installWithIntent(context, file, deliver)
-            } catch (t: Throwable) {
-                onMain { onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}") }
-            }
+            Thread {
+                try {
+                    installWithPackageInstaller(context, file, deliver)
+                } catch (t: Throwable) {
+                    onMain { onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}") }
+                }
+            }.start()
         }
-    }.start()
+    }
 }
 
 actual fun installApp(
