@@ -164,7 +164,8 @@ fun CategoryFilterChips(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(categories, key = { it }) { cat ->
+        items(count = categories.size, key = { categories[it] }) { index ->
+            val cat = categories[index]
             val isSelected = cat == selectedCategory
             val count = counts[cat]
             Surface(

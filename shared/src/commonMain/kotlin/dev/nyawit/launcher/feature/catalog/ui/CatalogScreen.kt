@@ -599,7 +599,8 @@ private fun AppList(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps, key = { it.fullName }) { app ->
+        items(count = apps.size, key = { apps[it].fullName }) { index ->
+            val app = apps[index]
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
@@ -631,7 +632,8 @@ private fun AppGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps, key = { it.fullName }) { app ->
+        items(count = apps.size, key = { apps[it].fullName }) { index ->
+            val app = apps[index]
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
