@@ -394,6 +394,15 @@ class GitHubCatalog(
 
     suspend fun latestApkUrl(fullName: String): String? = try {
         val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
-        release.assets.firstOrNull { it.name.endsWith(".apk", true) }?.downloadUrl
+        val directApk = release.assets.firstOrNull { it.name.endsWith(".apk", true) }?.downloadUrl
+        if (directApk != null) {
+            directApk
+        } else {
+            // Jika rilis terbaru tidak memiliki file APK (misal rilis desktop saja), cari rilis sebelumnya yang memiliki APK
+            val allReleases: List<GithubRelease> = client.get("https://api.github.com/repos/$fullName/releases").body()
+            allReleases.firstNotNullOfOrNull { r ->
+                r.assets.firstOrNull { it.name.endsWith(".apk", true) }?.downloadUrl
+            }
+        }
     } catch (_: Throwable) { null }
 }
