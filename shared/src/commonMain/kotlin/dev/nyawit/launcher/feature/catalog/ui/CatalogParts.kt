@@ -52,8 +52,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.nyawit.launcher.core.ui.ComicActionBurst
+import dev.nyawit.launcher.core.ui.ComicArcadeIllustration
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
+import dev.nyawit.launcher.core.ui.ComicSpeechBubble
+import dev.nyawit.launcher.core.ui.ComicSpeedLines
 import dev.nyawit.launcher.core.ui.MenuIcon
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.SearchIcon
@@ -349,15 +354,34 @@ fun EmptyState() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Image(
-            painter = painterResource(Res.drawable.empty_state),
-            contentDescription = null,
-            modifier = Modifier.size(180.dp),
-            contentScale = ContentScale.Fit,
-        )
-        Spacer(Modifier.height(20.dp))
-        Text(NyawitStrings.EMPTY_APPS_TITLE, style = NyawitType.Title, color = c.Text)
-        Spacer(Modifier.height(6.dp))
+        Box(contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(Res.drawable.empty_state),
+                contentDescription = null,
+                modifier = Modifier.size(180.dp),
+                contentScale = ContentScale.Fit,
+            )
+            ComicActionBurst(
+                text = "ZAP!",
+                burstColor = Color(0xFFFF4757),
+                textColor = Color(0xFFFFFFFF),
+                size = 54.dp,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        ComicSpeechBubble(
+            backgroundColor = if (c.isDark) c.SurfaceRaised else Color(0xFFFFFFFF),
+            borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
+        ) {
+            Text(
+                "\"${NyawitStrings.EMPTY_APPS_TITLE.uppercase()}!\"",
+                style = NyawitType.Subtitle,
+                fontWeight = FontWeight.Black,
+                color = c.Text,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
         Text(NyawitStrings.EMPTY_APPS_DESC, style = NyawitType.Caption, color = c.Muted)
     }
 }
@@ -376,28 +400,51 @@ fun FeaturedApp(
             .fillMaxWidth()
             .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
         borderWidth = 2.5.dp,
-        borderColor = c.Primary,
+        borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
         shadowOffset = 5.dp,
         shape = RoundedCornerShape(12.dp),
     ) {
+        // Comic Halftone dots & Speed lines background
+        ComicHalftonePattern(
+            modifier = Modifier.matchParentSize(),
+            dotRadius = 1.8f,
+            spacing = 16f,
+            dotColor = if (c.isDark) c.Primary.copy(alpha = 0.12f) else Color(0xFF0F172A).copy(alpha = 0.06f),
+        )
+        ComicSpeedLines(
+            modifier = Modifier.matchParentSize(),
+            lineColor = if (c.isDark) c.Primary.copy(alpha = 0.16f) else Color(0xFF0F172A).copy(alpha = 0.05f),
+        )
+
         Column(Modifier.padding(20.dp)) {
-            // Header: Spotlight Classification & Live Status
+            // Header: Spotlight Classification & Comic Burst Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ComicBadge(
-                    text = "★ EPISODE SPESIAL // REKOMENDASI",
-                    containerColor = c.Primary,
-                    contentColor = c.OnPrimary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ComicActionBurst(
+                        text = "HOT!",
+                        burstColor = Color(0xFFFFDE00),
+                        textColor = Color(0xFF0F172A),
+                        size = 38.dp,
+                    )
+                    ComicBadge(
+                        text = "EPISODE SPESIAL // REKOMENDASI",
+                        containerColor = c.Primary,
+                        contentColor = c.OnPrimary,
+                    )
+                }
 
                 ComicBadge(
                     text = app.category.uppercase(),
                     containerColor = c.SurfaceRaised,
-                    contentColor = c.Muted,
-                    borderColor = c.Border,
+                    contentColor = c.Text,
+                    borderColor = if (c.isDark) c.Primary.copy(alpha = 0.6f) else Color(0xFF0F172A),
                 )
             }
 
@@ -411,14 +458,14 @@ fun FeaturedApp(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = c.SurfaceRaised,
-                    border = BorderStroke(2.dp, c.BorderHighlight),
-                    modifier = Modifier.size(68.dp),
+                    border = BorderStroke(2.5.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                    modifier = Modifier.size(72.dp),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
                         AppIcon(
                             fullName = app.fullName,
                             fallbackName = app.name,
-                            size = 58.dp,
+                            size = 60.dp,
                             shape = RoundedCornerShape(8.dp),
                         )
                     }
@@ -442,9 +489,9 @@ fun FeaturedApp(
                             app.fullName.substringBefore('/'),
                             style = NyawitType.Caption,
                             color = c.Primary,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Black,
                         )
-                        Box(Modifier.size(4.dp).background(c.Border, CircleShape))
+                        Box(Modifier.size(4.dp).background(c.Primary, CircleShape))
                         Text(
                             app.packageName,
                             style = NyawitType.Caption,
@@ -452,16 +499,29 @@ fun FeaturedApp(
                         )
                     }
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        app.description,
-                        style = NyawitType.Body,
-                        color = c.Muted,
-                        maxLines = 2,
-                    )
+                    ComicSpeechBubble(
+                        backgroundColor = if (c.isDark) c.SurfaceHighlight else Color(0xFFF8FAFC),
+                        borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
+                    ) {
+                        Text(
+                            "\"${app.description}\"",
+                            style = NyawitType.Body,
+                            color = c.Text,
+                            maxLines = 2,
+                        )
+                    }
                 }
+
+                // Comic Pop-Art Vector Gamepad Illustration
+                Spacer(Modifier.width(12.dp))
+                ComicArcadeIllustration(
+                    modifier = Modifier.size(76.dp),
+                    primaryColor = c.Primary,
+                    accentColor = Color(0xFFFFDE00),
+                )
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(18.dp))
 
             // Spotlight Action Command Deck
             Row(
@@ -485,8 +545,8 @@ fun FeaturedApp(
                         },
                     ),
                     border = BorderStroke(
-                        2.dp,
-                        if (isUpdate) (if (c.isDark) c.Warning else Color(0xFF0F172A)) else (if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                        2.5.dp,
+                        Color(0xFF0F172A),
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
@@ -510,7 +570,7 @@ fun FeaturedApp(
                         containerColor = c.SurfaceRaised,
                         contentColor = c.Text,
                     ),
-                    border = BorderStroke(2.dp, c.BorderHighlight),
+                    border = BorderStroke(2.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .height(44.dp)

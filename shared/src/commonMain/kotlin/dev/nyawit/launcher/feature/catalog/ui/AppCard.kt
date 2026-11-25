@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,7 +45,9 @@ import androidx.compose.ui.unit.sp
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.ArrowIcon
 import dev.nyawit.launcher.core.ui.CheckIcon
+import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.DownloadIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
@@ -80,7 +83,7 @@ fun AppCard(
         animationSpec = tween(140),
     )
     val borderColor by animateColorAsState(
-        targetValue = if (isCardFocused) c.Primary else if (c.isDark) c.BorderHighlight else Color(0xFF1E293B),
+        targetValue = if (isCardFocused) c.Primary else if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A),
         animationSpec = tween(140),
     )
 
@@ -93,11 +96,38 @@ fun AppCard(
             .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() },
         backgroundColor = containerColor,
         borderColor = borderColor,
-        shadowColor = if (isCardFocused) c.Primary.copy(alpha = 0.5f) else null,
+        shadowColor = if (isCardFocused) c.Primary.copy(alpha = 0.55f) else null,
         borderWidth = if (isCardFocused) 2.5.dp else 2.dp,
         shadowOffset = 4.dp,
         shape = RoundedCornerShape(10.dp),
     ) {
+        // Comic Halftone screentone texture
+        ComicHalftonePattern(
+            modifier = Modifier.matchParentSize(),
+            dotRadius = 1.2f,
+            spacing = 16f,
+            dotColor = if (c.isDark) c.Primary.copy(alpha = 0.08f) else Color(0xFF0F172A).copy(alpha = 0.04f),
+        )
+
+        // Comic Action Burst sticker on top corner
+        if (status == AppStatus.UPDATE_AVAILABLE) {
+            ComicActionBurst(
+                text = "UP!",
+                burstColor = Color(0xFFFF4757),
+                textColor = Color(0xFFFFFFFF),
+                size = 32.dp,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = (-2).dp),
+            )
+        } else if (status == AppStatus.INSTALLED) {
+            ComicActionBurst(
+                text = "GO!",
+                burstColor = Color(0xFFFFDE00),
+                textColor = Color(0xFF0F172A),
+                size = 28.dp,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = (-2).dp),
+            )
+        }
+
         Column(Modifier.padding(15.dp)) {
             // Upper Bay: Comic Category Caption & State Badge
             Row(
@@ -109,7 +139,7 @@ fun AppCard(
                     text = app.category.uppercase(),
                     containerColor = c.SurfaceHighlight,
                     contentColor = c.Primary,
-                    borderColor = c.BorderHighlight,
+                    borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
                 )
 
                 StatusBadge(status)

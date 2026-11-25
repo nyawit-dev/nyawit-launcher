@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
@@ -55,7 +56,9 @@ import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
 import dev.nyawit.launcher.core.platform.lastLaunchError
 import dev.nyawit.launcher.core.platform.localCatalogOverride
+import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -416,6 +419,12 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 ) {
                     Column(Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ComicActionBurst(
+                                text = "BOOM!",
+                                burstColor = Color(0xFFFFDE00),
+                                textColor = Color(0xFF0F172A),
+                                size = 36.dp,
+                            )
                             Text(
                                 "ISSUE #1 // " + NyawitStrings.NAV_APPS.uppercase(),
                                 style = NyawitType.Wordmark,

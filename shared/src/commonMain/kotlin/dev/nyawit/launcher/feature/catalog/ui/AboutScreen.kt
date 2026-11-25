@@ -25,10 +25,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
+import dev.nyawit.launcher.core.ui.ComicActionBurst
+import dev.nyawit.launcher.core.ui.ComicArcadeIllustration
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -66,36 +70,56 @@ fun AboutScreen(
             ComicPanel(
                 modifier = Modifier.fillMaxWidth(),
                 borderWidth = 2.5.dp,
-                borderColor = c.Primary,
+                borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
                 shadowOffset = 5.dp,
                 shape = RoundedCornerShape(8.dp),
                 backgroundColor = c.Surface,
             ) {
+                // Comic Halftone dots screentone
+                ComicHalftonePattern(
+                    modifier = Modifier.matchParentSize(),
+                    dotRadius = 1.6f,
+                    spacing = 16f,
+                    dotColor = if (c.isDark) c.Primary.copy(alpha = 0.12f) else Color(0xFF0F172A).copy(alpha = 0.05f),
+                )
+
                 Column(Modifier.padding(22.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ComicBadge(
-                            text = "CORE RUNTIME // SYSTEM",
-                            containerColor = c.PrimaryMuted,
-                            contentColor = c.Primary,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ComicActionBurst(
+                                text = "CORE!",
+                                burstColor = Color(0xFFFFDE00),
+                                textColor = Color(0xFF0F172A),
+                                size = 36.dp,
+                            )
+                            ComicBadge(
+                                text = "CORE RUNTIME // SYSTEM",
+                                containerColor = c.PrimaryMuted,
+                                contentColor = c.Primary,
+                            )
+                        }
 
                         ComicBadge(
                             text = "EDISI STABIL",
                             containerColor = c.SurfaceRaised,
-                            contentColor = c.Muted,
+                            contentColor = c.Text,
+                            borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
                         )
                     }
 
                     Spacer(Modifier.height(18.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         BrandMark(56)
                         Spacer(Modifier.width(18.dp))
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 BuildConfig.APP_NAME.uppercase(),
                                 style = NyawitType.Wordmark,
@@ -116,6 +140,13 @@ fun AboutScreen(
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
+                        }
+
+                        if (!isNarrow) {
+                            ComicArcadeIllustration(
+                                modifier = Modifier.size(72.dp),
+                                primaryColor = c.Primary,
+                            )
                         }
                     }
 
