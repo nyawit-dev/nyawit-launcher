@@ -162,9 +162,6 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             notice = null
         }
     }
-    if (profile.kind == ScreenKind.TV) {
-        LaunchedEffect(Unit) { searchFocus.requestFocus() }
-    }
 
     /** Pembaruan launcher berjalan sendiri tanpa dialog konfirmasi. */
     fun autoUpdate(release: ReleaseInfo) {
@@ -385,7 +382,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         matchCategory && matchQuery
     }
 
-    val isCompactLayout = profile.kind == ScreenKind.PHONE || profile.widthDp < 860f
+    val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
     val isPhone = profile.kind == ScreenKind.PHONE
     val c = LocalNyawitColors.current
     val responsiveScale = LocalResponsiveScale.current
@@ -602,7 +599,7 @@ private fun AppList(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps) { app ->
+        items(apps, key = { it.fullName }) { app ->
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
@@ -634,7 +631,7 @@ private fun AppGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(apps) { app ->
+        items(apps, key = { it.fullName }) { app ->
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,

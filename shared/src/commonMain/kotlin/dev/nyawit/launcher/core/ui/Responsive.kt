@@ -1,5 +1,7 @@
 package dev.nyawit.launcher.core.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -13,7 +15,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.platform.isTvPlatform
+import dev.nyawit.launcher.theme.LocalNyawitColors
 import kotlinx.coroutines.launch
 
 enum class ScreenKind { PHONE, TABLET, DESKTOP, TV }
@@ -133,7 +135,7 @@ fun rememberResponsiveScale(
             ScreenKind.DESKTOP -> if (profile.widthDp >= 1600f) 248.dp else 224.dp
             else -> minOf(280.dp, (profile.widthDp * 0.82f).dp)
         }
-        val isCompactLayout = profile.kind == ScreenKind.PHONE || profile.widthDp < 860f
+        val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
         val availableWidth = if (isCompactLayout) profile.widthDp else (profile.widthDp - sidebarWidth.value)
 
         val columns = when {
@@ -172,21 +174,28 @@ fun rememberScaledDensity(scaleFactor: Float): Density {
 fun Modifier.tvFocusHighlight(
     shape: Shape = RoundedCornerShape(20.dp),
     scale: Float = 1.03f,
+    borderWidth: Dp = 2.dp,
 ): Modifier {
     var focused by remember { mutableStateOf(false) }
+    val animatedScale by animateFloatAsState(
+        targetValue = if (focused) scale else 1f,
+        animationSpec = tween(180),
+    )
     val requester = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
+    val c = LocalNyawitColors.current
     return this
         .bringIntoViewRequester(requester)
         .onFocusChanged { state ->
-            focused = state.isFocused
-            if (state.isFocused) scope.launch { requester.bringIntoView() }
+            focused = state.isFocused || state.hasFocus
+            if (focused) scope.launch { requester.bringIntoView() }
         }
         .graphicsLayer {
-            val s = if (focused) scale else 1f
-            scaleX = s
-            scaleY = s
+            scaleX = animatedScale
+            scaleY = animatedScale
         }
-        .clip(shape)
-        .then(if (focused) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
+        .then(
+            if (focused) Modifier.border(borderWidth, c.Primary, shape)
+            else Modifier
+        )
 }

@@ -35,9 +35,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +78,9 @@ fun AppCard(
     onOpen: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
+    var isCardFocused by remember { mutableStateOf(false) }
     val appear by animateFloatAsState(targetValue = 1f, animationSpec = tween(280))
+    val focusScale by animateFloatAsState(targetValue = if (isCardFocused) 1.025f else 1f, animationSpec = tween(180))
 
     AnimatedVisibility(
         visible = true,
@@ -82,13 +89,16 @@ fun AppCard(
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = c.Surface),
-            border = BorderStroke(1.dp, c.Border),
+            border = BorderStroke(
+                width = if (isCardFocused) 2.dp else 1.dp,
+                color = if (isCardFocused) c.Primary else c.Border,
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .scale(appear)
-                .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() }
-                .focusable()
-                .tvFocusHighlight(RoundedCornerShape(18.dp)),
+                .scale(appear * focusScale)
+                .onFocusChanged { state -> isCardFocused = state.hasFocus }
+                .focusProperties { canFocus = false }
+                .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() },
         ) {
             Column {
                 // Top-lit specular accent line
