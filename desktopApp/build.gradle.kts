@@ -33,7 +33,7 @@ compose.desktop {
         mainClass = config.desktopMainClass.get()
         jvmArgs("--enable-native-access=ALL-UNNAMED")
         nativeDistributions {
-            targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Dmg)
+            targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = config.desktopPackageName.get()
             packageVersion = config.version.get()
             description = "${config.appName.get()} (${config.version.get()})"
