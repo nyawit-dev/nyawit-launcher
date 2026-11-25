@@ -98,7 +98,7 @@ fun rememberDeviceProfile(): DeviceProfile {
  */
 fun calculateAutoScale(profile: DeviceProfile): Float {
     if (profile.kind == ScreenKind.TV) {
-        return 1.35f // 10-foot UI experience untuk TV
+        return 1.0f // Android TV sudah memiliki DisplayMetrics terkalibrasi untuk 10-foot UI
     }
     return when (profile.kind) {
         ScreenKind.PHONE -> when {
@@ -120,7 +120,7 @@ fun calculateAutoScale(profile: DeviceProfile): Float {
             profile.widthDp <= 2560f -> 1.15f
             else -> 1.25f // 4K UHD Ultra-wide
         }
-        ScreenKind.TV -> 1.35f
+        ScreenKind.TV -> 1.0f
     }
 }
 
@@ -136,15 +136,15 @@ fun rememberResponsiveScale(
         val factor = scalePreference.factor ?: calculateAutoScale(profile)
 
         val sidebarWidth = when (profile.kind) {
-            ScreenKind.TV -> (300 * factor.coerceIn(1.0f, 1.25f)).dp
+            ScreenKind.TV -> 250.dp
             ScreenKind.DESKTOP -> when {
-                profile.widthDp >= 2560f -> 360.dp
-                profile.widthDp >= 1920f -> 320.dp
-                profile.widthDp >= 1440f -> 300.dp
-                profile.widthDp >= 1100f -> 280.dp
-                else -> 260.dp
+                profile.widthDp >= 2560f -> 340.dp
+                profile.widthDp >= 1920f -> 300.dp
+                profile.widthDp >= 1440f -> 280.dp
+                profile.widthDp >= 1100f -> 260.dp
+                else -> 240.dp
             }
-            else -> minOf(320.dp, (profile.widthDp * 0.85f).dp)
+            else -> minOf(300.dp, (profile.widthDp * 0.82f).dp)
         }
         val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
         val availableWidth = if (isCompactLayout) profile.widthDp else (profile.widthDp - sidebarWidth.value)

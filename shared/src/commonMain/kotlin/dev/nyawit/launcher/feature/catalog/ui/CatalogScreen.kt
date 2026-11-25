@@ -439,9 +439,11 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             )
                             Text(
                                 "ISSUE #1 // " + NyawitStrings.NAV_APPS.uppercase(),
-                                style = NyawitType.Wordmark,
+                                style = NyawitType.Title,
                                 fontWeight = FontWeight.Black,
                                 color = c.Text,
+                                maxLines = 1,
+                                softWrap = false,
                             )
                             ComicBadge(
                                 text = "EDISI UTAMA",

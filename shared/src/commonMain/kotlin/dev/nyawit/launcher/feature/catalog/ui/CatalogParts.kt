@@ -419,7 +419,7 @@ fun FeaturedApp(
     val c = LocalNyawitColors.current
     val responsiveScale = LocalResponsiveScale.current
     val profile = rememberDeviceProfile()
-    val isCompact = profile.kind == ScreenKind.PHONE || profile.widthDp < 680f
+    val isCompact = profile.kind == ScreenKind.PHONE || profile.kind == ScreenKind.TV || profile.widthDp < 960f
 
     ComicPanel(
         modifier = Modifier

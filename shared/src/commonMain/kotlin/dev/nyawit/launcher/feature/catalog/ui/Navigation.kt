@@ -87,78 +87,192 @@ fun AppSidebar(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(responsiveScale.dp(16))
-                    .verticalScroll(rememberScrollState()),
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                // Comic Masthead & Brand Header
-                ComicPanel(
+                // Top Bay: Masthead + Section Title + 3 Chapter Nav Items
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    borderWidth = 2.dp,
-                    shadowOffset = 3.dp,
-                    backgroundColor = c.SurfaceRaised,
-                    shape = RoundedCornerShape(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Column(Modifier.padding(responsiveScale.dp(12))) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ComicBadge(
-                                    text = "VOL. 1",
-                                    containerColor = c.Primary,
-                                    contentColor = c.OnPrimary,
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    "ISSUE #01",
-                                    style = NyawitType.Overline,
-                                    color = c.Muted,
-                                    fontWeight = FontWeight.Black,
-                                )
-                            }
-                            if (onClose != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(responsiveScale.dp(28))
-                                        .background(
-                                            if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
-                                            RoundedCornerShape(6.dp)
-                                        )
-                                        .clickable { onClose() },
-                                    contentAlignment = Alignment.Center,
-                                ) {
+                    // Comic Masthead & Brand Header
+                    ComicPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderWidth = 2.dp,
+                        shadowOffset = 3.dp,
+                        backgroundColor = c.SurfaceRaised,
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    ComicBadge(
+                                        text = "VOL. 1",
+                                        containerColor = c.Primary,
+                                        contentColor = c.OnPrimary,
+                                    )
+                                    Spacer(Modifier.width(6.dp))
                                     Text(
-                                        "✕",
-                                        color = Color.White,
-                                        style = NyawitType.Caption,
+                                        "ISSUE #01",
+                                        style = NyawitType.Overline,
+                                        color = c.Muted,
                                         fontWeight = FontWeight.Black,
+                                    )
+                                }
+                                if (onClose != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .background(
+                                                if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
+                                                RoundedCornerShape(6.dp)
+                                            )
+                                            .clickable { onClose() },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            "✕",
+                                            color = Color.White,
+                                            style = NyawitType.Caption,
+                                            fontWeight = FontWeight.Black,
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                BrandMark(36)
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        NyawitStrings.BRAND_NAME,
+                                        style = NyawitType.Wordmark,
+                                        color = c.Text,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                    Text(
+                                        NyawitStrings.BRAND_SUBTITLE.uppercase(),
+                                        style = NyawitType.Overline,
+                                        color = c.Primary,
+                                        fontWeight = FontWeight.Black,
+                                        maxLines = 1,
+                                        softWrap = false,
                                     )
                                 }
                             }
                         }
+                    }
 
-                        Spacer(Modifier.height(10.dp))
+                    // Navigation Chapters Header
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            "CHAPTER NAVIGASI",
+                            style = NyawitType.Overline,
+                            color = if (c.isDark) c.Primary else Color(0xFF0F172A),
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                        Text(
+                            "INDEX 01-03",
+                            style = NyawitType.Overline,
+                            color = c.Muted,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
 
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            BrandMark(36)
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    NyawitStrings.BRAND_NAME,
-                                    style = NyawitType.Wordmark,
-                                    color = c.Text,
-                                    maxLines = 1,
-                                    softWrap = false,
+                    // Comic Chapter Navigation Items (All 3 items guaranteed visible)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        NavItem(
+                            chapter = "01",
+                            label = NyawitStrings.NAV_APPS,
+                            subtitle = "KATALOG & MODUL",
+                            selected = page == AppPage.APPS,
+                            icon = { iconColor -> GridIcon(Modifier.size(18.dp), iconColor) },
+                            onClick = { onNavigate(AppPage.APPS); onClose?.invoke() },
+                        )
+                        NavItem(
+                            chapter = "02",
+                            label = NyawitStrings.NAV_SETTINGS,
+                            subtitle = "TEMA & PREFERENSI",
+                            selected = page == AppPage.SETTINGS,
+                            icon = { iconColor -> SettingsIcon(Modifier.size(18.dp), iconColor) },
+                            onClick = { onNavigate(AppPage.SETTINGS); onClose?.invoke() },
+                        )
+                        NavItem(
+                            chapter = "03",
+                            label = NyawitStrings.NAV_ABOUT,
+                            subtitle = "INFO & KREDIT",
+                            selected = page == AppPage.ABOUT,
+                            icon = { iconColor -> InfoIcon(Modifier.size(18.dp), iconColor) },
+                            onClick = { onNavigate(AppPage.ABOUT); onClose?.invoke() },
+                        )
+                    }
+                }
+
+                // Bottom Bay: Telemetry Strip + Check Update Action Button
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    ComicPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderWidth = 2.dp,
+                        shadowOffset = 3.dp,
+                        backgroundColor = c.SurfaceRaised,
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Column(Modifier.padding(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
+                                            CircleShape,
+                                        ),
                                 )
+                                Spacer(Modifier.width(6.dp))
                                 Text(
-                                    NyawitStrings.BRAND_SUBTITLE.uppercase(),
+                                    "TELEMETRI // RADAR",
                                     style = NyawitType.Overline,
-                                    color = c.Primary,
+                                    color = if (c.isDark) c.Primary else Color(0xFF0F172A),
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Modul Aktif:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
+                            }
+                            Spacer(Modifier.height(2.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                Text(
+                                    if (updateCount > 0) "$updateCount Update!"
+                                    else if (updateTag != null) "Update $updateTag"
+                                    else "Terbaru ✦",
+                                    style = NyawitType.Caption,
+                                    color = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
                                     fontWeight = FontWeight.Black,
                                     maxLines = 1,
                                     softWrap = false,
@@ -166,167 +280,56 @@ fun AppSidebar(
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(responsiveScale.dp(18)))
+                    // Check Update Action Button with Comic Offset Shadow
+                    Box(Modifier.fillMaxWidth()) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                                .offset(3.dp, 3.dp)
+                                .background(
+                                    if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
+                                    RoundedCornerShape(8.dp),
+                                )
+                        )
 
-                // Navigation Chapters Header
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        "CHAPTER NAVIGASI",
-                        style = NyawitType.Overline,
-                        color = if (c.isDark) c.Primary else Color(0xFF0F172A),
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                    Text(
-                        "INDEX 01-03",
-                        style = NyawitType.Overline,
-                        color = c.Muted,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                }
-
-                Spacer(Modifier.height(responsiveScale.dp(8)))
-
-                // Comic Chapter Navigation Items
-                Column(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(responsiveScale.dp(8)),
-                ) {
-                    NavItem(
-                        chapter = "01",
-                        label = NyawitStrings.NAV_APPS,
-                        subtitle = "KATALOG & MODUL",
-                        selected = page == AppPage.APPS,
-                        icon = { iconColor -> GridIcon(Modifier.size(responsiveScale.dp(18)), iconColor) },
-                        onClick = { onNavigate(AppPage.APPS); onClose?.invoke() },
-                    )
-                    NavItem(
-                        chapter = "02",
-                        label = NyawitStrings.NAV_SETTINGS,
-                        subtitle = "TEMA & PREFERENSI",
-                        selected = page == AppPage.SETTINGS,
-                        icon = { iconColor -> SettingsIcon(Modifier.size(responsiveScale.dp(18)), iconColor) },
-                        onClick = { onNavigate(AppPage.SETTINGS); onClose?.invoke() },
-                    )
-                    NavItem(
-                        chapter = "03",
-                        label = NyawitStrings.NAV_ABOUT,
-                        subtitle = "INFO & KREDIT",
-                        selected = page == AppPage.ABOUT,
-                        icon = { iconColor -> InfoIcon(Modifier.size(responsiveScale.dp(18)), iconColor) },
-                        onClick = { onNavigate(AppPage.ABOUT); onClose?.invoke() },
-                    )
-                }
-
-                Spacer(Modifier.height(responsiveScale.dp(16)))
-
-                // Comic Telemetry Strip
-                ComicPanel(
-                    modifier = Modifier.fillMaxWidth(),
-                    borderWidth = 2.dp,
-                    shadowOffset = 3.dp,
-                    backgroundColor = c.SurfaceRaised,
-                    shape = RoundedCornerShape(8.dp),
-                ) {
-                    Column(Modifier.padding(responsiveScale.dp(12))) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(responsiveScale.dp(8))
-                                    .background(
-                                        if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
-                                        CircleShape,
-                                    ),
-                            )
-                            Spacer(Modifier.width(6.dp))
+                        Button(
+                            onClick = { onUpdate(); onClose?.invoke() },
+                            enabled = !selfBusy,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
+                                contentColor = if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(2.dp, if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                                .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                        ) {
+                            if (selfBusy) {
+                                CircularProgressIndicator(
+                                    Modifier.size(14.dp),
+                                    strokeWidth = 2.dp,
+                                    color = if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
+                                )
+                                Spacer(Modifier.width(8.dp))
+                            } else {
+                                SyncIcon(
+                                    Modifier.size(15.dp),
+                                    if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
+                                )
+                                Spacer(Modifier.width(8.dp))
+                            }
                             Text(
-                                "TELEMETRI // RADAR",
-                                style = NyawitType.Overline,
-                                color = if (c.isDark) c.Primary else Color(0xFF0F172A),
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Modul Aktif:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
-                            Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                        }
-                        Spacer(Modifier.height(3.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
-                            Text(
-                                if (updateCount > 0) "$updateCount Update!"
-                                else if (updateTag != null) "Update $updateTag"
-                                else "Terbaru ✦",
+                                "CEK PEMBARUAN! ➔",
                                 style = NyawitType.Caption,
-                                color = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
                                 fontWeight = FontWeight.Black,
                                 maxLines = 1,
                                 softWrap = false,
                             )
                         }
-                    }
-                }
-
-                Spacer(Modifier.height(responsiveScale.dp(12)))
-
-                // Check Update Action Button with Comic Offset Shadow
-                Box(Modifier.fillMaxWidth()) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(responsiveScale.dp(44))
-                            .offset(3.dp, 3.dp)
-                            .background(
-                                if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
-                                RoundedCornerShape(8.dp),
-                            )
-                    )
-
-                    Button(
-                        onClick = { onUpdate(); onClose?.invoke() },
-                        enabled = !selfBusy,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
-                            contentColor = if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(2.dp, if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(responsiveScale.dp(44))
-                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                    ) {
-                        if (selfBusy) {
-                            CircularProgressIndicator(
-                                Modifier.size(responsiveScale.dp(14)),
-                                strokeWidth = 2.dp,
-                                color = if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                        } else {
-                            SyncIcon(
-                                Modifier.size(responsiveScale.dp(15)),
-                                if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                        }
-                        Text(
-                            "CEK PEMBARUAN! ➔",
-                            style = NyawitType.Caption,
-                            fontWeight = FontWeight.Black,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
                     }
                 }
             }
