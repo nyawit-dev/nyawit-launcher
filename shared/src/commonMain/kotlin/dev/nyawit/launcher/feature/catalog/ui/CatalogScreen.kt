@@ -141,7 +141,15 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("__ALL__") }
     val searchFocus = remember { FocusRequester() }
+    val initialTvFocus = remember { FocusRequester() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+
+    LaunchedEffect(page) {
+        if (page == AppPage.APPS && profile.kind == ScreenKind.TV) {
+            delay(200)
+            runCatching { initialTvFocus.requestFocus() }
+        }
+    }
 
     // Pengaman: jangan biarkan tombol "Cek pembaruan" nyangkut loading bila callback installer hilang.
     LaunchedEffect(selfBusy) {
@@ -448,6 +456,47 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     updateAvailable = updateCount > 0 || updateTag != null,
                 )
                 Spacer(Modifier.height(14.dp))
+            } else if (page == AppPage.APPS && profile.kind == ScreenKind.TV) {
+                // TV Leanback: Single-line streamlined control bar (Hemat ruang vertikal layar 10-foot)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    if (categories.size > 1) {
+                        CategoryFilterChips(
+                            categories = categories,
+                            selectedCategory = selectedCategory,
+                            onSelectCategory = { selectedCategory = it },
+                            counts = categoryCounts,
+                            modifier = Modifier.weight(1f, fill = false),
+                            initialFocusRequester = initialTvFocus,
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Box(Modifier.width(220.dp)) {
+                            CatalogSearchBar(query, { query = it }, searchFocus)
+                        }
+                        ComicBadge(
+                            text = "${visibleApps.size} MODUL",
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Text,
+                            borderColor = c.BorderHighlight,
+                        )
+                        if (updateCount > 0) {
+                            ComicBadge(
+                                text = "⚡ $updateCount UPDATE!",
+                                containerColor = c.Warning,
+                                contentColor = c.OnWarning,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             } else if (page == AppPage.APPS) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -526,19 +575,21 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
 
             when (page) {
                 AppPage.APPS -> {
-                    CatalogSearchBar(query, { query = it }, searchFocus)
+                    if (profile.kind != ScreenKind.TV) {
+                        CatalogSearchBar(query, { query = it }, searchFocus)
 
-                    if (categories.size > 1) {
-                        Spacer(Modifier.height(12.dp))
-                        CategoryFilterChips(
-                            categories = categories,
-                            selectedCategory = selectedCategory,
-                            onSelectCategory = { selectedCategory = it },
-                            counts = categoryCounts,
-                        )
+                        if (categories.size > 1) {
+                            Spacer(Modifier.height(12.dp))
+                            CategoryFilterChips(
+                                categories = categories,
+                                selectedCategory = selectedCategory,
+                                onSelectCategory = { selectedCategory = it },
+                                counts = categoryCounts,
+                            )
+                        }
+
+                        Spacer(Modifier.height(14.dp))
                     }
-
-                    Spacer(Modifier.height(14.dp))
 
                     when {
                         loading -> LoadingPlaceholder()

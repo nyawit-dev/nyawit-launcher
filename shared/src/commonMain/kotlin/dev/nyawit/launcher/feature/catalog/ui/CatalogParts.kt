@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.nyawit.launcher.core.platform.AppPlatform
@@ -195,11 +196,12 @@ fun CategoryFilterChips(
     selectedCategory: String,
     onSelectCategory: (String) -> Unit,
     counts: Map<String, Int> = emptyMap(),
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    initialFocusRequester: FocusRequester? = null,
 ) {
     val c = LocalNyawitColors.current
     LazyRow(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(count = categories.size, key = { categories[it] }) { index ->
@@ -217,7 +219,12 @@ fun CategoryFilterChips(
                     .clip(RoundedCornerShape(6.dp))
                     .clickable { onSelectCategory(cat) }
                     .focusable()
-                    .tvFocusHighlight(RoundedCornerShape(6.dp), 1f),
+                    .tvFocusHighlight(RoundedCornerShape(6.dp), 1f)
+                    .then(
+                        if (index == 0 && initialFocusRequester != null) {
+                            Modifier.focusRequester(initialFocusRequester)
+                        } else Modifier
+                    ),
             ) {
                 Row(
                     Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
@@ -419,7 +426,8 @@ fun FeaturedApp(
     val c = LocalNyawitColors.current
     val responsiveScale = LocalResponsiveScale.current
     val profile = rememberDeviceProfile()
-    val isCompact = profile.kind == ScreenKind.PHONE || profile.kind == ScreenKind.TV || profile.widthDp < 960f
+    val isTv = profile.kind == ScreenKind.TV
+    val isCompact = profile.kind == ScreenKind.PHONE || (!isTv && profile.widthDp < 768f)
 
     ComicPanel(
         modifier = Modifier
@@ -427,13 +435,13 @@ fun FeaturedApp(
             .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
         borderWidth = 2.5.dp,
         borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
-        shadowOffset = 5.dp,
+        shadowOffset = if (isTv) 3.dp else 5.dp,
         shape = RoundedCornerShape(12.dp),
     ) {
         // Comic Halftone dots & Speed lines background
         ComicHalftonePattern(
             modifier = Modifier.matchParentSize(),
-            dotRadius = 1.8f,
+            dotRadius = 1.6f,
             spacing = 16f,
             dotColor = if (c.isDark) c.Primary.copy(alpha = 0.12f) else Color(0xFF0F172A).copy(alpha = 0.06f),
         )
@@ -442,6 +450,146 @@ fun FeaturedApp(
             lineColor = if (c.isDark) c.Primary.copy(alpha = 0.16f) else Color(0xFF0F172A).copy(alpha = 0.05f),
         )
 
+        if (isTv) {
+            // Android TV 10-Foot Horizontal Hero Spotlight (Ringkas, hemat vertikal ~115dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = c.SurfaceRaised,
+                        border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                        modifier = Modifier.size(52.dp),
+                    ) {
+                        Box(Modifier.fillMaxSize(), Alignment.Center) {
+                            AppIcon(
+                                fullName = app.fullName,
+                                fallbackName = app.name,
+                                size = 40.dp,
+                                shape = RoundedCornerShape(8.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(14.dp))
+
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            ComicActionBurst(
+                                text = "HOT!",
+                                burstColor = Color(0xFFFFDE00),
+                                textColor = Color(0xFF0F172A),
+                                size = 28.dp,
+                            )
+                            Text(
+                                app.name,
+                                style = NyawitType.Subtitle,
+                                fontWeight = FontWeight.Black,
+                                color = c.Text,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                            ComicBadge(
+                                text = app.category.uppercase(),
+                                containerColor = c.Primary,
+                                contentColor = c.OnPrimary,
+                            )
+                            Text(
+                                "${app.fullName.substringBefore('/')} • ${app.packageName}",
+                                style = NyawitType.Caption,
+                                color = c.Muted,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+
+                        Spacer(Modifier.height(5.dp))
+
+                        Text(
+                            "\"${app.description}\"",
+                            style = NyawitType.Body,
+                            color = c.Text,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(16.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val isInstalled = status == AppStatus.INSTALLED
+                    val isUpdate = status == AppStatus.UPDATE_AVAILABLE
+                    Button(
+                        onClick = if (isInstalled) onOpen else onInstall,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = when {
+                                isUpdate -> c.Warning
+                                isInstalled -> c.Primary
+                                else -> c.Primary
+                            },
+                            contentColor = when {
+                                isUpdate -> c.OnWarning
+                                else -> c.OnPrimary
+                            },
+                        ),
+                        border = BorderStroke(2.dp, Color(0xFF0F172A)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .height(42.dp)
+                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.05f),
+                    ) {
+                        Text(
+                            when {
+                                isInstalled -> "BUKA ➔"
+                                isUpdate -> "UPDATE ➔"
+                                else -> "PASANG ➔"
+                            },
+                            style = NyawitType.Caption,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+
+                    Button(
+                        onClick = onDetail,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Text,
+                        ),
+                        border = BorderStroke(1.5.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .height(42.dp)
+                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.05f),
+                    ) {
+                        Text(
+                            "DETAIL",
+                            style = NyawitType.Caption,
+                            color = c.Text,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+            }
+        } else {
         Column(Modifier.padding(if (isCompact) 14.dp else 20.dp)) {
             // Header: Spotlight Classification & Comic Burst Badge
             Row(
@@ -708,9 +856,9 @@ fun FeaturedApp(
                             ) {
                                 Text(
                                     when {
-                                        isInstalled -> "JALANKAN SEKARANG! ➔"
-                                        isUpdate -> "PERBARUI VERSI! ➔"
-                                        else -> "PASANG KE PERANGKAT! ➔"
+                                        isInstalled -> "BUKA SEKARANG ➔"
+                                        isUpdate -> "PERBARUI ➔"
+                                        else -> "PASANG ➔"
                                     },
                                     style = NyawitType.Caption,
                                     fontWeight = FontWeight.Black,
@@ -733,7 +881,7 @@ fun FeaturedApp(
                                     .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                             ) {
                                 Text(
-                                    "LIHAT SPESIFIKASI",
+                                    "DETAIL",
                                     style = NyawitType.Caption,
                                     color = c.Text,
                                     fontWeight = FontWeight.Bold,
@@ -802,6 +950,7 @@ fun FeaturedApp(
             }
         }
     }
+}
 }
 
 /** Header atas untuk ponsel dengan gaya Neo-Pop Comic. */

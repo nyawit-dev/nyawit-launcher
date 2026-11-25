@@ -26,6 +26,7 @@ import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.platform.isTvPlatform
 import dev.nyawit.launcher.core.ui.DeviceProfile
 import dev.nyawit.launcher.core.ui.LanguageController
+import dev.nyawit.launcher.core.ui.LocalDeviceProfile
 import dev.nyawit.launcher.core.ui.LocalLanguageController
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.LocalStrings
@@ -281,17 +282,21 @@ fun LauncherTheme(
 
     val profile = remember(effectiveWindowSize, isTv) {
         val minDim = minOf(effectiveWindowSize.widthDp, effectiveWindowSize.heightDp)
+        val isLandscape = effectiveWindowSize.widthDp > effectiveWindowSize.heightDp
+        val isDesktop = currentAppPlatform() == AppPlatform.DESKTOP
         val kind = when {
             isTv -> ScreenKind.TV
-            currentAppPlatform() == AppPlatform.DESKTOP -> ScreenKind.DESKTOP
-            minDim >= 600 -> ScreenKind.TABLET
+            effectiveWindowSize.widthDp < 600 || (!isLandscape && effectiveWindowSize.widthDp < 768) -> ScreenKind.PHONE
+            minDim in 600..899 -> ScreenKind.TABLET
+            isDesktop -> ScreenKind.DESKTOP
+            minDim >= 900 -> ScreenKind.DESKTOP
             else -> ScreenKind.PHONE
         }
         DeviceProfile(
             kind = kind,
             widthDp = effectiveWindowSize.widthDp.toFloat(),
             heightDp = effectiveWindowSize.heightDp.toFloat(),
-            isLandscape = effectiveWindowSize.widthDp > effectiveWindowSize.heightDp,
+            isLandscape = isLandscape,
         )
     }
 
@@ -358,6 +363,7 @@ fun LauncherTheme(
 
     CompositionLocalProvider(
         LocalWindowSize provides effectiveWindowSize,
+        LocalDeviceProfile provides profile,
         LocalUiScale provides scale,
         LocalDensity provides scaledDensity,
         LocalResponsiveScale provides responsiveScale,

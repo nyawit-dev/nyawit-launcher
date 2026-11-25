@@ -49,7 +49,9 @@ val LocalUiScale = staticCompositionLocalOf { 1f }
  * Menghitung skala density secara seragam di tingkat root aplikasi.
  */
 fun calculateUiScale(widthDp: Int, heightDp: Int, isTv: Boolean = false): Float {
-    if (isTv) return 1.0f
+    if (isTv) {
+        return if (heightDp <= 560) 0.92f else 1.0f
+    }
 
     val minDimension = minOf(widthDp, heightDp)
     val isLandscape = widthDp > heightDp
@@ -113,32 +115,17 @@ data class ResponsiveScale(
 }
 
 val LocalResponsiveScale = staticCompositionLocalOf { ResponsiveScale() }
+val LocalDeviceProfile = staticCompositionLocalOf {
+    DeviceProfile(
+        kind = ScreenKind.DESKTOP,
+        widthDp = 1280f,
+        heightDp = 720f,
+        isLandscape = true,
+    )
+}
 
 @Composable
-fun rememberDeviceProfile(): DeviceProfile {
-    val density = LocalDensity.current
-    val containerSize = LocalWindowInfo.current.containerSize
-    val width = with(density) { containerSize.width.toDp().value }
-    val height = with(density) { containerSize.height.toDp().value }
-    val minDimension = minOf(width, height)
-    val isLandscape = width > height
-    val platform = remember { currentAppPlatform() }
-
-    val kind = when {
-        isTvPlatform() || platform == AppPlatform.TV -> ScreenKind.TV
-        platform == AppPlatform.DESKTOP -> ScreenKind.DESKTOP
-        minDimension >= 600f -> ScreenKind.TABLET
-        else -> ScreenKind.PHONE
-    }
-    return remember(kind, width, height, isLandscape) {
-        DeviceProfile(
-            kind = kind,
-            widthDp = width,
-            heightDp = height,
-            isLandscape = isLandscape,
-        )
-    }
-}
+fun rememberDeviceProfile(): DeviceProfile = LocalDeviceProfile.current
 
 /**
  * Menghitung faktor skala otomatis yang adaptif dan mulus sesuai ukuran fisik & DPI layar.
