@@ -34,6 +34,7 @@ kotlin {
                 implementation(libs.runtime)
                 implementation(libs.foundation)
                 implementation(libs.material3)
+                implementation(compose.materialIconsExtended)
                 implementation(libs.ui)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
