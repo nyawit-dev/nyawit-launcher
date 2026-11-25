@@ -6,8 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,12 +25,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.LocalSettingsController
@@ -52,11 +53,13 @@ import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 import dev.nyawit.launcher.theme.ThemeMode
 import dev.nyawit.launcher.theme.colorsFor
+import kotlinx.coroutines.delay
 
 @Composable
 fun SettingsScreen(
     platformContext: Any? = null,
     onCatalogCacheCleared: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
@@ -64,6 +67,16 @@ fun SettingsScreen(
     val profile = rememberDeviceProfile()
     val isNarrow = profile.kind == ScreenKind.PHONE || profile.widthDp < 680f
     var cacheClearedNotice by remember { mutableStateOf(false) }
+    val initialFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        if (profile.kind == ScreenKind.TV) {
+            delay(150)
+            try {
+                initialFocusRequester.requestFocus()
+            } catch (_: Throwable) {}
+        }
+    }
 
     Column(
         modifier
@@ -119,6 +132,31 @@ fun SettingsScreen(
                         color = c.Muted,
                     )
                 }
+
+                if (onBack != null) {
+                    Spacer(Modifier.weight(1f))
+                    Surface(
+                        onClick = onBack,
+                        color = c.SurfaceRaised,
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.5.dp, c.BorderHighlight),
+                        modifier = Modifier.tvFocusHighlight(shape = RoundedCornerShape(8.dp), scale = 1.05f),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text("←", color = c.Primary, fontWeight = FontWeight.Black)
+                            Text(
+                                "KEMBALI",
+                                style = NyawitType.Caption,
+                                color = c.Text,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
             }
 
             // Section 1: Tema & Tampilan
@@ -129,17 +167,20 @@ fun SettingsScreen(
                 val modes = ThemeMode.entries
                 if (isNarrow) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        modes.chunked(2).forEach { rowModes ->
+                        modes.chunked(2).forEachIndexed { rowIndex, rowModes ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                rowModes.forEach { mode ->
+                                rowModes.forEachIndexed { colIndex, mode ->
+                                    val isInitial = rowIndex == 0 && colIndex == 0
                                     ThemeModeCard(
                                         mode = mode,
                                         selected = settingsController.themeController.mode == mode,
                                         onClick = { settingsController.setTheme(mode) },
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .then(if (isInitial) Modifier.focusRequester(initialFocusRequester) else Modifier),
                                     )
                                 }
                             }
@@ -150,12 +191,15 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        modes.forEach { mode ->
+                        modes.forEachIndexed { index, mode ->
+                            val isInitial = index == 0
                             ThemeModeCard(
                                 mode = mode,
                                 selected = settingsController.themeController.mode == mode,
                                 onClick = { settingsController.setTheme(mode) },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .then(if (isInitial) Modifier.focusRequester(initialFocusRequester) else Modifier),
                             )
                         }
                     }
@@ -202,14 +246,13 @@ fun SettingsScreen(
                 description = NyawitStrings.SETTINGS_SEC_UPDATES_DESC,
             ) {
                 Surface(
+                    onClick = { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) },
                     color = c.SurfaceRaised,
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.dp, c.BorderHighlight),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) }
-                        .focusable()
-                        .tvFocusHighlight(RoundedCornerShape(10.dp)),
+                        .tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.02f),
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -259,19 +302,17 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Surface(
-                        color = c.Danger.copy(alpha = 0.10f),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, c.Danger.copy(alpha = 0.45f)),
-                        modifier = Modifier
-                            .clickable {
-                                val success = clearCatalogCache(platformContext)
-                                if (success) {
-                                    cacheClearedNotice = true
-                                    onCatalogCacheCleared?.invoke()
-                                }
+                        onClick = {
+                            val success = clearCatalogCache(platformContext)
+                            if (success) {
+                                cacheClearedNotice = true
+                                onCatalogCacheCleared?.invoke()
                             }
-                            .focusable()
-                            .tvFocusHighlight(RoundedCornerShape(8.dp)),
+                        },
+                        color = c.Danger.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.5.dp, c.Danger.copy(alpha = 0.55f)),
+                        modifier = Modifier.tvFocusHighlight(shape = RoundedCornerShape(8.dp), scale = 1.05f),
                     ) {
                         Text(
                             text = NyawitStrings.SETTINGS_BTN_CLEAR_CACHE,
@@ -347,16 +388,14 @@ private fun ThemeModeCard(
     }
 
     Surface(
+        onClick = onClick,
         color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
+            width = if (selected) 2.dp else 1.dp,
             color = if (selected) c.Primary else c.BorderHighlight,
         ),
-        modifier = modifier
-            .focusable()
-            .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
-            .clickable { onClick() },
+        modifier = modifier.tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.04f),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
@@ -392,16 +431,14 @@ private fun LanguageCard(
 ) {
     val c = LocalNyawitColors.current
     Surface(
+        onClick = onClick,
         color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
+            width = if (selected) 2.dp else 1.dp,
             color = if (selected) c.Primary else c.BorderHighlight,
         ),
-        modifier = modifier
-            .focusable()
-            .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
-            .clickable { onClick() },
+        modifier = modifier.tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.04f),
     ) {
         Row(
             modifier = Modifier.padding(14.dp),

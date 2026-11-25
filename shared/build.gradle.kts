@@ -47,6 +47,7 @@ kotlin {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.core.ktx)
+                implementation(libs.activity.compose)
             }
         }
         getByName("desktopMain") {

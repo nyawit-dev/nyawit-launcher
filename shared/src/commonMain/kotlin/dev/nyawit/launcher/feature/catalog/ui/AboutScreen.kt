@@ -47,6 +47,7 @@ fun AboutScreen(
     version: String,
     platformContext: Any?,
     onOpenSettings: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
@@ -103,12 +104,40 @@ fun AboutScreen(
                             )
                         }
 
-                        ComicBadge(
-                            text = "EDISI STABIL",
-                            containerColor = c.SurfaceRaised,
-                            contentColor = c.Text,
-                            borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            ComicBadge(
+                                text = "EDISI STABIL",
+                                containerColor = c.SurfaceRaised,
+                                contentColor = c.Text,
+                                borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
+                            )
+                            if (onBack != null) {
+                                Surface(
+                                    onClick = onBack,
+                                    color = c.SurfaceRaised,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.5.dp, c.BorderHighlight),
+                                    modifier = Modifier.tvFocusHighlight(shape = RoundedCornerShape(8.dp), scale = 1.05f),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Text("←", color = c.Primary, fontWeight = FontWeight.Black)
+                                        Text(
+                                            "KEMBALI",
+                                            style = NyawitType.Caption,
+                                            color = c.Text,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     Spacer(Modifier.height(18.dp))

@@ -56,6 +56,7 @@ import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
 import dev.nyawit.launcher.core.platform.lastLaunchError
 import dev.nyawit.launcher.core.platform.localCatalogOverride
+import dev.nyawit.launcher.core.ui.BackHandler
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
@@ -168,6 +169,15 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         if (notice != null && notice?.actionLabel == null) {
             delay(5000)
             notice = null
+        }
+    }
+
+    // Handler tombol Back remote TV / Android: tidak menutup aplikasi jika sedang di halaman pengaturan/detail
+    BackHandler(enabled = detailApp != null || page != AppPage.APPS || drawerState.isOpen) {
+        when {
+            detailApp != null -> detailApp = null
+            drawerState.isOpen -> scope.launch { drawerState.close() }
+            page != AppPage.APPS -> page = AppPage.APPS
         }
     }
 
@@ -569,11 +579,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 AppPage.SETTINGS -> SettingsScreen(
                     platformContext = platformContext,
                     onCatalogCacheCleared = { reloadKey++ },
+                    onBack = { page = AppPage.APPS },
                 )
                 AppPage.ABOUT -> AboutScreen(
                     version = version,
                     platformContext = platformContext,
                     onOpenSettings = { page = AppPage.SETTINGS },
+                    onBack = { page = AppPage.APPS },
                 )
             }
         }

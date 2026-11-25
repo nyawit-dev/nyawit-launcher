@@ -384,7 +384,6 @@ private fun NavItem(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .focusable()
             .tvFocusHighlight(RoundedCornerShape(8.dp), 1f)
     ) {
         // Comic Hard Drop Shadow
