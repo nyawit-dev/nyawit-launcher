@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SettingsIcon
@@ -60,44 +62,32 @@ fun AboutScreen(
                 .widthIn(max = 840.dp)
                 .padding(horizontal = if (isNarrow) 16.dp else 24.dp, vertical = 20.dp),
         ) {
-            // App Hero Card (Neo-Industrial Deck)
-            Surface(
-                color = c.Surface,
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, c.BorderHighlight),
+            // App Hero Card (Comic Storyboard Panel)
+            ComicPanel(
                 modifier = Modifier.fillMaxWidth(),
+                borderWidth = 2.5.dp,
+                borderColor = c.Primary,
+                shadowOffset = 5.dp,
+                shape = RoundedCornerShape(8.dp),
+                backgroundColor = c.Surface,
             ) {
-                Column(Modifier.padding(24.dp)) {
+                Column(Modifier.padding(22.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Surface(
-                            color = c.PrimaryMuted,
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
-                        ) {
-                            Text(
-                                "CORE RUNTIME",
-                                style = NyawitType.Overline,
-                                color = c.Primary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
+                        ComicBadge(
+                            text = "CORE RUNTIME // SYSTEM",
+                            containerColor = c.PrimaryMuted,
+                            contentColor = c.Primary,
+                        )
 
-                        Surface(
-                            color = c.SurfaceRaised,
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, c.Border),
-                        ) {
-                            Text(
-                                "RELEASE STABLE",
-                                style = NyawitType.Overline,
-                                color = c.Muted,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
+                        ComicBadge(
+                            text = "EDISI STABIL",
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Muted,
+                        )
                     }
 
                     Spacer(Modifier.height(18.dp))
@@ -106,26 +96,24 @@ fun AboutScreen(
                         BrandMark(56)
                         Spacer(Modifier.width(18.dp))
                         Column {
-                            Text(BuildConfig.APP_NAME.uppercase(), style = NyawitType.Wordmark, color = c.Text)
+                            Text(
+                                BuildConfig.APP_NAME.uppercase(),
+                                style = NyawitType.Wordmark,
+                                color = c.Text,
+                                fontWeight = FontWeight.Black,
+                            )
                             Spacer(Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Surface(
-                                    color = c.SurfaceRaised,
-                                    shape = RoundedCornerShape(6.dp),
-                                    border = BorderStroke(1.dp, c.BorderHighlight),
-                                ) {
-                                    Text(
-                                        "v$version",
-                                        style = NyawitType.Caption,
-                                        color = c.Primary,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    )
-                                }
+                                ComicBadge(
+                                    text = "v$version",
+                                    containerColor = c.Primary,
+                                    contentColor = c.OnPrimary,
+                                )
                                 Text(
                                     "BUILD ${BuildConfig.VERSION_CODE}",
                                     style = NyawitType.Overline,
                                     color = c.Muted,
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
                         }
@@ -143,11 +131,12 @@ fun AboutScreen(
 
             if (onOpenSettings != null) {
                 Spacer(Modifier.height(18.dp))
-                Surface(
-                    color = c.Surface,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
+                ComicPanel(
                     modifier = Modifier.fillMaxWidth(),
+                    borderWidth = 2.dp,
+                    shadowOffset = 3.dp,
+                    shape = RoundedCornerShape(8.dp),
+                    backgroundColor = c.Surface,
                 ) {
                     Row(
                         modifier = Modifier.padding(18.dp),
@@ -157,21 +146,21 @@ fun AboutScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 color = c.PrimaryMuted,
-                                shape = RoundedCornerShape(10.dp),
-                                border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.4f)),
-                                modifier = Modifier.size(38.dp),
+                                shape = RoundedCornerShape(6.dp),
+                                border = BorderStroke(2.dp, c.Primary),
+                                modifier = Modifier.size(42.dp),
                             ) {
                                 Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                    SettingsIcon(Modifier.size(20.dp), color = c.Primary)
+                                    SettingsIcon(Modifier.size(22.dp), color = c.Primary)
                                 }
                             }
                             Spacer(Modifier.width(14.dp))
                             Column {
                                 Text(
-                                    text = NyawitStrings.SETTINGS_TITLE,
+                                    text = NyawitStrings.SETTINGS_TITLE.uppercase(),
                                     style = NyawitType.Subtitle,
                                     color = c.Text,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Black,
                                 )
                                 Text(
                                     text = NyawitStrings.SETTINGS_SUBTITLE,
@@ -184,24 +173,34 @@ fun AboutScreen(
                         Button(
                             onClick = onOpenSettings,
                             colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1.05f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(2.dp, c.BorderHighlight),
+                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1.05f),
                         ) {
-                            Text(NyawitStrings.SETTINGS_BTN_OPEN, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+                            Text(
+                                "${NyawitStrings.SETTINGS_BTN_OPEN.uppercase()} ➔",
+                                style = NyawitType.Caption,
+                                fontWeight = FontWeight.Black,
+                            )
                         }
                     }
                 }
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(NyawitStrings.ABOUT_TITLE.uppercase(), style = NyawitType.Overline, color = c.Primary)
-            Spacer(Modifier.height(8.dp))
+            ComicBadge(
+                text = "SPESIFIKASI ARSIP // ${NyawitStrings.ABOUT_TITLE.uppercase()}",
+                containerColor = c.PrimaryMuted,
+                contentColor = c.Primary,
+            )
+            Spacer(Modifier.height(10.dp))
 
-            Surface(
-                color = c.Surface,
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, c.BorderHighlight),
+            ComicPanel(
                 modifier = Modifier.fillMaxWidth(),
+                borderWidth = 2.dp,
+                shadowOffset = 3.dp,
+                shape = RoundedCornerShape(8.dp),
+                backgroundColor = c.Surface,
             ) {
                 Column(Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
                     MetaRow(NyawitStrings.ABOUT_LABEL_VERSION, "v$version (${BuildConfig.VERSION_CODE})")
@@ -219,15 +218,19 @@ fun AboutScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(NyawitStrings.ABOUT_LINKS_TITLE.uppercase(), style = NyawitType.Overline, color = c.Primary)
-            Spacer(Modifier.height(8.dp))
+            ComicBadge(
+                text = "KOMUNITAS & SUMBER DAYA",
+                containerColor = c.SurfaceRaised,
+                contentColor = c.Text,
+            )
+            Spacer(Modifier.height(10.dp))
 
             val repoUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}"
             val catalogUrl = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/main/catalog.json"
             val orgUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}"
 
             if (isNarrow) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.fillMaxWidth(), platformContext)
                     ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.fillMaxWidth(), platformContext)
                     ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.fillMaxWidth(), platformContext)
@@ -241,11 +244,13 @@ fun AboutScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Surface(
-                color = c.SurfaceRaised,
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, c.Border),
+            ComicPanel(
                 modifier = Modifier.fillMaxWidth(),
+                borderWidth = 1.5.dp,
+                borderColor = c.BorderHighlight,
+                shadowOffset = 2.dp,
+                shape = RoundedCornerShape(6.dp),
+                backgroundColor = c.SurfaceRaised,
             ) {
                 Text(
                     NyawitStrings.ABOUT_SECURITY_FOOTER,
@@ -269,8 +274,8 @@ private fun MetaRow(label: String, value: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = NyawitType.Caption, color = c.Muted)
-        Text(value, style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.SemiBold)
+        Text(label, style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold)
+        Text(value, style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Black)
     }
 }
 
@@ -280,26 +285,27 @@ private fun MetaDivider() {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(1.dp)
-            .background(c.Border),
+            .height(1.5.dp)
+            .background(c.BorderHighlight.copy(alpha = 0.5f)),
     )
 }
 
 @Composable
 private fun ExternalLinkCard(title: String, url: String, modifier: Modifier = Modifier, platformContext: Any?) {
     val c = LocalNyawitColors.current
-    Surface(
-        color = c.Surface,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, c.BorderHighlight),
+    ComicPanel(
         modifier = modifier
-            .tvFocusHighlight(RoundedCornerShape(12.dp), 1.02f)
+            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.02f)
             .clickable { openUrl(url, platformContext) },
+        borderWidth = 2.dp,
+        shadowOffset = 3.dp,
+        shape = RoundedCornerShape(8.dp),
+        backgroundColor = c.Surface,
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(title, style = NyawitType.Subtitle, color = c.Text, fontWeight = FontWeight.SemiBold)
+            Text(title, style = NyawitType.Subtitle, color = c.Text, fontWeight = FontWeight.Black)
             Spacer(Modifier.height(4.dp))
-            Text("github.com ↗", style = NyawitType.Overline, color = c.Primary, fontWeight = FontWeight.Bold)
+            Text("BUKA REPO ➔", style = NyawitType.Overline, color = c.Primary, fontWeight = FontWeight.Black)
         }
     }
 }

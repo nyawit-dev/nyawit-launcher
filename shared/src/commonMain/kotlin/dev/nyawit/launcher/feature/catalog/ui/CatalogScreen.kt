@@ -55,6 +55,7 @@ import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
 import dev.nyawit.launcher.core.platform.lastLaunchError
 import dev.nyawit.launcher.core.platform.localCatalogOverride
+import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -415,19 +416,17 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 ) {
                     Column(Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(NyawitStrings.NAV_APPS.uppercase(), style = NyawitType.Wordmark, color = c.Text)
-                            Surface(
-                                color = c.PrimaryMuted,
-                                shape = RoundedCornerShape(6.dp),
-                                border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
-                            ) {
-                                Text(
-                                    "DECK",
-                                    style = NyawitType.Overline,
-                                    color = c.Primary,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                                )
-                            }
+                            Text(
+                                "ISSUE #1 // " + NyawitStrings.NAV_APPS.uppercase(),
+                                style = NyawitType.Wordmark,
+                                fontWeight = FontWeight.Black,
+                                color = c.Text,
+                            )
+                            ComicBadge(
+                                text = "EDISI UTAMA",
+                                containerColor = c.Primary,
+                                contentColor = c.OnPrimary,
+                            )
                         }
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -438,39 +437,18 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(
-                            color = c.SurfaceRaised,
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, c.BorderHighlight),
-                        ) {
-                            Text(
-                                "${visibleApps.size} APLIKASI",
-                                style = NyawitType.Overline,
-                                color = c.Text,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            )
-                        }
+                        ComicBadge(
+                            text = "${visibleApps.size} MODUL",
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Text,
+                            borderColor = c.BorderHighlight,
+                        )
                         if (updateCount > 0) {
-                            Surface(
-                                color = c.Warning.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, c.Warning.copy(alpha = 0.5f)),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    Box(Modifier.size(6.dp).background(c.Warning, CircleShape))
-                                    Text(
-                                        "$updateCount UPDATE",
-                                        style = NyawitType.Overline,
-                                        color = c.Warning,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                }
-                            }
+                            ComicBadge(
+                                text = "⚡ $updateCount UPDATE!",
+                                containerColor = c.Warning,
+                                contentColor = c.OnWarning,
+                            )
                         }
                     }
                 }

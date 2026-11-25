@@ -39,6 +39,8 @@ import dev.nyawit.launcher.core.platform.LocalSettingsController
 import dev.nyawit.launcher.core.platform.clearCatalogCache
 import dev.nyawit.launcher.core.ui.AppLanguage
 import dev.nyawit.launcher.core.ui.CheckIcon
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.GlobeIcon
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
@@ -102,20 +104,14 @@ fun SettingsScreen(
                         Text(
                             text = NyawitStrings.SETTINGS_TITLE.uppercase(),
                             style = NyawitType.Wordmark,
+                            fontWeight = FontWeight.Black,
                             color = c.Text,
                         )
-                        Surface(
-                            color = c.PrimaryMuted,
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
-                        ) {
-                            Text(
-                                "KONFIG",
-                                style = NyawitType.Overline,
-                                color = c.Primary,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                            )
-                        }
+                        ComicBadge(
+                            text = "KONFIGURASI SISTEM",
+                            containerColor = c.Primary,
+                            contentColor = c.OnPrimary,
+                        )
                     }
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -522,14 +518,14 @@ private fun ScalePreferenceChip(
 
     Surface(
         color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(6.dp),
         border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
+            width = if (selected) 2.dp else 1.5.dp,
             color = if (selected) c.Primary else c.BorderHighlight,
         ),
         modifier = modifier
             .focusable()
-            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.02f)
+            .tvFocusHighlight(RoundedCornerShape(6.dp), 1.02f)
             .clickable { onClick() },
     ) {
         Column(
@@ -541,7 +537,7 @@ private fun ScalePreferenceChip(
                 text = label,
                 style = NyawitType.Caption,
                 color = if (selected) c.Primary else c.Text,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
             )
             if (selected) {
                 CheckIcon(Modifier.size(12.dp), color = c.Primary)
@@ -557,11 +553,12 @@ private fun SettingsSectionCard(
     content: @Composable () -> Unit,
 ) {
     val c = LocalNyawitColors.current
-    Surface(
-        color = c.Surface,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, c.BorderHighlight),
+    ComicPanel(
         modifier = Modifier.fillMaxWidth(),
+        borderWidth = 2.dp,
+        shadowOffset = 3.dp,
+        shape = RoundedCornerShape(8.dp),
+        backgroundColor = c.Surface,
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -572,7 +569,7 @@ private fun SettingsSectionCard(
                     text = title.uppercase(),
                     style = NyawitType.Subtitle,
                     color = c.Primary,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                 )
                 Text(
                     text = description,

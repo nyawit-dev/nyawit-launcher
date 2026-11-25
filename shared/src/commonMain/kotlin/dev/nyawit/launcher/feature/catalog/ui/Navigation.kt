@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.GlobeIcon
 import dev.nyawit.launcher.core.ui.GridIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
@@ -143,18 +145,18 @@ fun AppSidebar(
         }
 
 
-        // Ecosystem Status Card
-        Surface(
-            color = c.SurfaceRaised,
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, c.BorderHighlight),
+        // Comic Telemetry Strip
+        ComicPanel(
             modifier = Modifier.fillMaxWidth(),
+            borderWidth = 2.dp,
+            shadowOffset = 3.dp,
+            shape = RoundedCornerShape(8.dp),
         ) {
-            Column(Modifier.padding(14.dp)) {
+            Column(Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier
-                            .size(7.dp)
+                            .size(8.dp)
                             .background(
                                 if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
                                 CircleShape,
@@ -165,24 +167,24 @@ fun AppSidebar(
                         "STATUS TELEMETRI",
                         style = NyawitType.Overline,
                         color = c.Primary,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                     )
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Total Modul:", style = NyawitType.Caption, color = c.Muted)
-                    Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Bold)
+                    Text("Total Modul:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold)
+                    Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Black)
                 }
                 Spacer(Modifier.height(3.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted)
+                    Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold)
                     Text(
-                        if (updateCount > 0) "$updateCount Pembaruan"
+                        if (updateCount > 0) "$updateCount Update!"
                         else if (updateTag != null) "Update $updateTag"
                         else "Terbaru",
                         style = NyawitType.Caption,
                         color = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                     )
                 }
             }
@@ -190,7 +192,7 @@ fun AppSidebar(
 
         Spacer(Modifier.height(10.dp))
 
-        // Check Update Button
+        // Check Update Comic Button
         Button(
             onClick = { onUpdate(); onClose?.invoke() },
             enabled = !selfBusy,
@@ -198,18 +200,18 @@ fun AppSidebar(
                 containerColor = c.PrimaryMuted,
                 contentColor = c.Primary,
             ),
-            shape = RoundedCornerShape(10.dp),
-            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.45f)),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(42.dp)
-                .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
         ) {
             if (selfBusy) {
                 CircularProgressIndicator(
                     Modifier.size(14.dp),
                     strokeWidth = 2.dp,
-                    color = c.Primary
+                    color = c.Primary,
                 )
                 Spacer(Modifier.width(8.dp))
             } else {
@@ -217,13 +219,13 @@ fun AppSidebar(
                 Spacer(Modifier.width(8.dp))
             }
             Text(
-                NyawitStrings.BTN_CHECK_UPDATES.uppercase(),
+                "CEK PEMBARUAN! ➔",
                 style = NyawitType.Caption,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Black,
             )
         }
     }
-    Box(Modifier.fillMaxHeight().width(1.5.dp).background(c.BorderHighlight))
+    Box(Modifier.fillMaxHeight().width(2.dp).background(if (c.isDark) c.BorderHighlight else Color(0xFF0F172A)))
     }
 }
 
@@ -237,7 +239,7 @@ private fun NavItem(
     val c = LocalNyawitColors.current
     val itemBg by animateColorAsState(
         targetValue = if (selected) c.PrimaryMuted else Color.Transparent,
-        animationSpec = tween(180),
+        animationSpec = tween(140),
     )
     val contentColor = if (selected) c.Primary else c.Muted
 
@@ -245,34 +247,34 @@ private fun NavItem(
         Modifier
             .fillMaxWidth()
             .height(46.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(itemBg)
             .border(
                 BorderStroke(
-                    1.dp,
-                    if (selected) c.Primary.copy(alpha = 0.45f) else Color.Transparent,
+                    2.dp,
+                    if (selected) (if (c.isDark) c.Primary else Color(0xFF0F172A)) else Color.Transparent,
                 ),
-                RoundedCornerShape(10.dp),
+                RoundedCornerShape(8.dp),
             )
             .clickable(onClick = onClick)
             .focusable()
-            .tvFocusHighlight(RoundedCornerShape(10.dp), 1f)
+            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
             color = if (selected) c.Primary else c.SurfaceHighlight,
             shape = RoundedCornerShape(2.dp),
-            modifier = Modifier.width(3.dp).height(20.dp),
+            modifier = Modifier.width(4.dp).height(22.dp),
         ) {}
         Spacer(Modifier.width(10.dp))
         icon(contentColor)
         Spacer(Modifier.width(10.dp))
         Text(
-            label,
+            label.uppercase(),
             style = NyawitType.Subtitle,
             color = if (selected) c.Text else contentColor,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontWeight = FontWeight.Black,
         )
     }
 }

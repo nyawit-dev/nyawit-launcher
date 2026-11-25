@@ -51,6 +51,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.MenuIcon
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.SearchIcon
@@ -183,41 +186,42 @@ fun CategoryFilterChips(
             val isSelected = cat == selectedCategory
             val count = counts[cat]
             Surface(
-                color = if (isSelected) c.Primary else c.SurfaceRaised,
-                shape = RoundedCornerShape(8.dp),
+                color = if (isSelected) c.Primary else c.Surface,
+                shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(
-                    1.dp,
-                    if (isSelected) c.Primary else c.Border,
+                    2.dp,
+                    if (isSelected) (if (c.isDark) c.Primary else Color(0xFF0F172A)) else (if (c.isDark) c.BorderHighlight else Color(0xFF334155)),
                 ),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(6.dp))
                     .clickable { onSelectCategory(cat) }
                     .focusable()
-                    .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                    .tvFocusHighlight(RoundedCornerShape(6.dp), 1f),
             ) {
                 Row(
-                    Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     val label = if (cat == "__ALL__") NyawitStrings.CATEGORY_ALL else cat
                     Text(
-                        label,
+                        label.uppercase(),
                         style = NyawitType.Caption,
                         color = if (isSelected) c.OnPrimary else c.Text,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = FontWeight.Black,
                     )
                     if (count != null && count > 0) {
                         Surface(
-                            color = if (isSelected) c.OnPrimary.copy(alpha = 0.2f) else c.SurfaceHighlight,
-                            shape = RoundedCornerShape(5.dp),
+                            color = if (isSelected) c.OnPrimary.copy(alpha = 0.25f) else c.SurfaceHighlight,
+                            shape = RoundedCornerShape(4.dp),
+                            border = BorderStroke(1.dp, if (isSelected) c.OnPrimary else c.Border),
                         ) {
                             Text(
                                 "$count",
                                 style = NyawitType.Overline,
                                 color = if (isSelected) c.OnPrimary else c.Muted,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
                             )
                         }
                     }
@@ -241,21 +245,21 @@ fun NoticeBanner(
     val c = LocalNyawitColors.current
     val tone = if (isError) c.Danger else c.Primary
     Surface(
-        color = if (isError) c.Danger.copy(alpha = 0.12f) else c.SurfaceRaised,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, tone.copy(alpha = 0.35f)),
+        color = if (isError) c.Danger.copy(alpha = 0.15f) else c.SurfaceRaised,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(2.dp, tone),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(3.5.dp).height(32.dp).background(tone, RoundedCornerShape(2.dp)))
+            Box(Modifier.width(4.dp).height(32.dp).background(tone, RoundedCornerShape(2.dp)))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(text, style = NyawitType.Caption, color = if (isError) tone else c.Text, fontWeight = FontWeight.SemiBold)
+                Text(text, style = NyawitType.Caption, color = if (isError) tone else c.Text, fontWeight = FontWeight.Bold)
                 if (busy && progress != null) {
                     Spacer(Modifier.height(6.dp))
                     LinearProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                        modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)),
                         color = tone,
                         trackColor = c.Border,
                     )
@@ -263,17 +267,17 @@ fun NoticeBanner(
             }
             if (actionLabel != null && !busy) {
                 Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onAction, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
-                    Text(actionLabel, style = NyawitType.Caption, color = c.Primary, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onAction, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1f)) {
+                    Text(actionLabel, style = NyawitType.Caption, color = c.Primary, fontWeight = FontWeight.Black)
                 }
-                TextButton(onClick = onDismiss, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
+                TextButton(onClick = onDismiss, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1f)) {
                     Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, color = c.Muted)
                 }
             }
             if (busy && progress != null) {
                 Spacer(Modifier.width(12.dp))
-                TextButton(onClick = onCancel, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
-                    Text(NyawitStrings.BTN_CANCEL, style = NyawitType.Caption, color = c.Danger, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onCancel, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1f)) {
+                    Text(NyawitStrings.BTN_CANCEL, style = NyawitType.Caption, color = c.Danger, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -285,42 +289,22 @@ fun SectionTitle(category: String, total: Int, updateCount: Int) {
     val c = LocalNyawitColors.current
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(NyawitStrings.SECTION_ECOSYSTEM, style = NyawitType.Overline, color = c.Primary)
+            Text("CHAPTER // EKOSISTEM", style = NyawitType.Overline, color = c.Primary, fontWeight = FontWeight.Black)
             Spacer(Modifier.height(2.dp))
             Text(
-                if (category == "__ALL__" || category == "Semua" || category == "All") NyawitStrings.SECTION_ALL_APPS
-                else NyawitStrings.sectionCategory(category),
+                if (category == "__ALL__" || category == "Semua" || category == "All") "SEMUA APLIKASI"
+                else category.uppercase(),
                 style = NyawitType.Title,
+                fontWeight = FontWeight.Black,
                 color = c.Text,
             )
         }
-        Surface(
-            color = c.SurfaceRaised,
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, c.Border),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    NyawitStrings.sectionAppCount(total),
-                    style = NyawitType.Caption,
-                    color = c.Text,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                if (updateCount > 0) {
-                    Box(Modifier.size(4.dp).background(c.Warning, CircleShape))
-                    Text(
-                        NyawitStrings.sectionUpdateCount(updateCount),
-                        style = NyawitType.Caption,
-                        color = c.Warning,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-        }
+        ComicBadge(
+            text = "$total UNIT" + if (updateCount > 0) " // $updateCount UPDATE!" else "",
+            containerColor = if (updateCount > 0) c.Warning.copy(alpha = 0.2f) else c.SurfaceRaised,
+            contentColor = if (updateCount > 0) c.Warning else c.Text,
+            borderColor = if (updateCount > 0) c.Warning else c.BorderHighlight,
+        )
     }
 }
 
@@ -387,46 +371,34 @@ fun FeaturedApp(
     onDetail: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = c.Surface,
-        border = BorderStroke(1.5.dp, c.Primary.copy(alpha = 0.5f)),
-        modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(16.dp), 1f),
+    ComicPanel(
+        modifier = Modifier
+            .fillMaxWidth()
+            .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
+        borderWidth = 2.5.dp,
+        borderColor = c.Primary,
+        shadowOffset = 5.dp,
+        shape = RoundedCornerShape(12.dp),
     ) {
-        Column(Modifier.padding(22.dp)) {
+        Column(Modifier.padding(20.dp)) {
             // Header: Spotlight Classification & Live Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Surface(
-                    color = c.PrimaryMuted,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, c.Primary),
-                ) {
-                    Text(
-                        "UNGGULAN EKOSISTEM // REKOMENDASI",
-                        style = NyawitType.Overline,
-                        color = c.Primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                    )
-                }
+                ComicBadge(
+                    text = "★ EPISODE SPESIAL // REKOMENDASI",
+                    containerColor = c.Primary,
+                    contentColor = c.OnPrimary,
+                )
 
-                Surface(
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, c.Border),
-                ) {
-                    Text(
-                        app.category.uppercase(),
-                        style = NyawitType.Overline,
-                        color = c.Muted,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
-                }
+                ComicBadge(
+                    text = app.category.uppercase(),
+                    containerColor = c.SurfaceRaised,
+                    contentColor = c.Muted,
+                    borderColor = c.Border,
+                )
             }
 
             Spacer(Modifier.height(18.dp))
@@ -437,9 +409,9 @@ fun FeaturedApp(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = c.SurfaceRaised,
-                    border = BorderStroke(1.5.dp, c.BorderHighlight),
+                    border = BorderStroke(2.dp, c.BorderHighlight),
                     modifier = Modifier.size(68.dp),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
@@ -447,7 +419,7 @@ fun FeaturedApp(
                             fullName = app.fullName,
                             fallbackName = app.name,
                             size = 58.dp,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(8.dp),
                         )
                     }
                 }
@@ -458,7 +430,7 @@ fun FeaturedApp(
                     Text(
                         app.name,
                         style = NyawitType.Title,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Black,
                         color = c.Text,
                     )
                     Spacer(Modifier.height(4.dp))
@@ -470,7 +442,7 @@ fun FeaturedApp(
                             app.fullName.substringBefore('/'),
                             style = NyawitType.Caption,
                             color = c.Primary,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                         )
                         Box(Modifier.size(4.dp).background(c.Border, CircleShape))
                         Text(
@@ -497,32 +469,38 @@ fun FeaturedApp(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                val isInstalled = status == AppStatus.INSTALLED
+                val isUpdate = status == AppStatus.UPDATE_AVAILABLE
                 Button(
-                    onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
+                    onClick = if (isInstalled) onOpen else onInstall,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = when (status) {
-                            AppStatus.UPDATE_AVAILABLE -> c.Warning
-                            AppStatus.INSTALLED -> c.Primary
+                        containerColor = when {
+                            isUpdate -> c.Warning
+                            isInstalled -> c.Primary
                             else -> c.Primary
                         },
-                        contentColor = when (status) {
-                            AppStatus.UPDATE_AVAILABLE -> c.OnWarning
+                        contentColor = when {
+                            isUpdate -> c.OnWarning
                             else -> c.OnPrimary
                         },
                     ),
-                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(
+                        2.dp,
+                        if (isUpdate) (if (c.isDark) c.Warning else Color(0xFF0F172A)) else (if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                    ),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .height(44.dp)
-                        .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                        .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     Text(
-                        when (status) {
-                            AppStatus.INSTALLED -> "JALANKAN MODUL"
-                            AppStatus.UPDATE_AVAILABLE -> "PERBARUI VERSI"
-                            else -> "PASANG KE PERANGKAT"
+                        when {
+                            isInstalled -> "JALANKAN SEKARANG! ➔"
+                            isUpdate -> "PERBARUI VERSI! ➔"
+                            else -> "PASANG KE PERANGKAT! ➔"
                         },
                         style = NyawitType.Caption,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                     )
                 }
 
@@ -532,17 +510,17 @@ fun FeaturedApp(
                         containerColor = c.SurfaceRaised,
                         contentColor = c.Text,
                     ),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
-                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(2.dp, c.BorderHighlight),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .height(44.dp)
-                        .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                        .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     Text(
-                        NyawitStrings.BTN_DETAIL,
+                        "LIHAT SPESIFIKASI",
                         style = NyawitType.Caption,
                         color = c.Text,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             }

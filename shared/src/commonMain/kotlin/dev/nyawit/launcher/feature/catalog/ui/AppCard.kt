@@ -21,8 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
@@ -46,6 +44,8 @@ import androidx.compose.ui.unit.sp
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.ArrowIcon
 import dev.nyawit.launcher.core.ui.CheckIcon
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.DownloadIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
 import dev.nyawit.launcher.core.ui.NyawitStrings
@@ -77,77 +77,66 @@ fun AppCard(
 
     val containerColor by animateColorAsState(
         targetValue = if (isCardFocused) c.SurfaceRaised else c.Surface,
-        animationSpec = tween(180),
+        animationSpec = tween(140),
     )
     val borderColor by animateColorAsState(
-        targetValue = if (isCardFocused) c.Primary else c.Border,
-        animationSpec = tween(180),
+        targetValue = if (isCardFocused) c.Primary else if (c.isDark) c.BorderHighlight else Color(0xFF1E293B),
+        animationSpec = tween(140),
     )
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(
-            width = if (isCardFocused) 2.dp else 1.dp,
-            color = borderColor,
-        ),
+    ComicPanel(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 2.dp, vertical = 3.dp)
+            .padding(horizontal = 2.dp, vertical = 2.dp)
             .onFocusChanged { state -> isCardFocused = state.hasFocus }
             .focusProperties { canFocus = false }
             .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() },
+        backgroundColor = containerColor,
+        borderColor = borderColor,
+        shadowColor = if (isCardFocused) c.Primary.copy(alpha = 0.5f) else null,
+        borderWidth = if (isCardFocused) 2.5.dp else 2.dp,
+        shadowOffset = 4.dp,
+        shape = RoundedCornerShape(10.dp),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            // Upper Architectural Header: Module Classification & Status Indicator
+        Column(Modifier.padding(15.dp)) {
+            // Upper Bay: Comic Category Caption & State Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Cartridge/Category Tag
-                Surface(
-                    color = c.SurfaceHighlight,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
-                ) {
-                    Text(
-                        app.category.uppercase(),
-                        style = NyawitType.Overline,
-                        color = c.Primary,
-                        letterSpacing = 1.2.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
+                ComicBadge(
+                    text = app.category.uppercase(),
+                    containerColor = c.SurfaceHighlight,
+                    contentColor = c.Primary,
+                    borderColor = c.BorderHighlight,
+                )
 
-                // Mechanical Status Badge
                 StatusBadge(status)
             }
 
             Spacer(Modifier.height(14.dp))
 
-            // Main Core Display: App Icon Frame + Title & Publisher
+            // Main Comic Dock: Inked Icon Box + Title & Publisher
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Recessed Bevel Icon Dock
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = c.SurfaceRaised,
                     border = BorderStroke(
-                        1.2.dp,
-                        if (isCardFocused) c.Primary.copy(alpha = 0.5f) else c.BorderHighlight,
+                        2.dp,
+                        if (isCardFocused) c.Primary else c.BorderHighlight,
                     ),
-                    modifier = Modifier.size(54.dp),
+                    modifier = Modifier.size(56.dp),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
                         AppIcon(
                             fullName = app.fullName,
                             fallbackName = app.name,
                             size = 48.dp,
-                            shape = RoundedCornerShape(11.dp),
+                            shape = RoundedCornerShape(8.dp),
                         )
                     }
                 }
@@ -157,18 +146,18 @@ fun AppCard(
                 Column(Modifier.weight(1f)) {
                     Text(
                         app.name,
-                        style = NyawitType.Title,
-                        fontWeight = FontWeight.Bold,
+                        style = NyawitType.Subtitle,
+                        fontWeight = FontWeight.Black,
                         color = c.Text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Spacer(Modifier.height(3.dp))
-                    val publisher = app.fullName.substringBefore('/')
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        publisher,
+                        app.fullName.substringBefore('/'),
                         style = NyawitType.Caption,
-                        color = c.Muted,
+                        color = c.Primary,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -177,26 +166,19 @@ fun AppCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // Spec Strip: Platform Compatibility Micro-badges & Package ID
+            // Micro-spec Strip: Comic platform badges
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 app.platforms.forEach { platform ->
-                    Surface(
-                        color = c.SurfaceRaised,
-                        shape = RoundedCornerShape(4.dp),
-                        border = BorderStroke(1.dp, c.Border),
-                    ) {
-                        Text(
-                            platform.badgeLabel(),
-                            style = NyawitType.Overline,
-                            color = c.Faint,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
-                    }
+                    ComicBadge(
+                        text = platform.badgeLabel(),
+                        containerColor = c.SurfaceRaised,
+                        contentColor = c.Faint,
+                        borderColor = c.Border,
+                    )
                 }
                 Spacer(Modifier.width(4.dp))
                 Text(
@@ -231,20 +213,20 @@ fun AppCard(
                     Text(
                         NyawitStrings.PROGRESS_DOWNLOADING,
                         style = NyawitType.Caption,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = c.Primary,
                     )
                     Text(
                         "${(progress * 100).toInt()}%",
                         style = NyawitType.Caption,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         color = c.Text,
                     )
                 }
                 Spacer(Modifier.height(5.dp))
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)),
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
                     color = c.Primary,
                     trackColor = c.SurfaceRaised,
                 )
@@ -252,7 +234,7 @@ fun AppCard(
 
             Spacer(Modifier.height(16.dp))
 
-            // Action Command Deck
+            // Comic Action Command Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -271,9 +253,14 @@ fun AppCard(
                     isInstalled -> c.OnPrimary
                     else -> c.Text
                 }
-                val btnBorder = if (!isInstalled && !isUpdate) {
-                    BorderStroke(1.dp, c.BorderHighlight)
-                } else null
+                val btnBorder = BorderStroke(
+                    2.dp,
+                    when {
+                        isUpdate -> if (c.isDark) c.Warning else Color(0xFF0F172A)
+                        isInstalled -> if (c.isDark) c.Primary else Color(0xFF0F172A)
+                        else -> c.BorderHighlight
+                    },
+                )
 
                 Button(
                     onClick = if (isInstalled) onOpen else onInstall,
@@ -283,11 +270,11 @@ fun AppCard(
                         contentColor = btnContentColor,
                     ),
                     border = btnBorder,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .height(44.dp)
                         .weight(1f)
-                        .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                        .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     if (busy) {
                         CircularProgressIndicator(
@@ -307,25 +294,25 @@ fun AppCard(
                         when {
                             busy && progress != null -> NyawitStrings.progressDownloadingPercent((progress * 100).toInt())
                             busy -> NyawitStrings.PROGRESS_PROCESSING
-                            isInstalled -> NyawitStrings.BTN_OPEN_APP
-                            isUpdate -> NyawitStrings.BTN_UPDATE_NOW
-                            else -> NyawitStrings.BTN_INSTALL_APP
+                            isInstalled -> "JALANKAN! ➔"
+                            isUpdate -> "PERBARUI! ➔"
+                            else -> "PASANG! ➔"
                         },
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         style = NyawitType.Caption,
                     )
                 }
 
-                // Tactile Detail Trigger
+                // Comic Detail Trigger
                 Surface(
                     color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(2.dp, c.BorderHighlight),
                     modifier = Modifier
                         .size(44.dp)
                         .clickable { onDetail?.invoke() }
                         .focusable()
-                        .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                        .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
                         InfoIcon(Modifier.size(18.dp), c.Text)
@@ -339,57 +326,31 @@ fun AppCard(
 @Composable
 private fun StatusBadge(status: AppStatus) {
     val c = LocalNyawitColors.current
-    val label = when (status) {
-        AppStatus.NOT_INSTALLED -> NyawitStrings.CHIP_AVAILABLE
-        AppStatus.INSTALLED -> NyawitStrings.CHIP_INSTALLED
-        AppStatus.UPDATE_AVAILABLE -> NyawitStrings.CHIP_UPDATE
-        AppStatus.UNKNOWN -> NyawitStrings.CHIP_UNKNOWN
-    }
-    val textColor = when (status) {
-        AppStatus.NOT_INSTALLED -> c.Muted
-        AppStatus.INSTALLED -> c.Primary
-        AppStatus.UPDATE_AVAILABLE -> c.Warning
-        AppStatus.UNKNOWN -> c.Faint
-    }
-    val bgColor = when (status) {
-        AppStatus.NOT_INSTALLED -> c.SurfaceHighlight
-        AppStatus.INSTALLED -> c.PrimaryMuted
-        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.18f)
-        AppStatus.UNKNOWN -> c.SurfaceRaised
-    }
-    val borderColor = when (status) {
-        AppStatus.NOT_INSTALLED -> c.BorderHighlight
-        AppStatus.INSTALLED -> c.Primary.copy(alpha = 0.5f)
-        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.6f)
-        AppStatus.UNKNOWN -> c.Border
-    }
-
-    Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(6.dp),
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            if (status == AppStatus.INSTALLED) {
-                CheckIcon(Modifier.size(10.dp), textColor)
-            } else {
-                Box(
-                    Modifier
-                        .size(5.dp)
-                        .background(textColor, CircleShape),
-                )
-            }
-            Text(
-                label,
-                style = NyawitType.Caption,
-                fontWeight = FontWeight.SemiBold,
-                color = textColor,
-                maxLines = 1,
-            )
-        }
+    when (status) {
+        AppStatus.INSTALLED -> ComicBadge(
+            text = "SIAP JALAN!",
+            containerColor = c.Primary,
+            contentColor = c.OnPrimary,
+            borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
+            icon = { CheckIcon(Modifier.size(10.dp), c.OnPrimary) },
+        )
+        AppStatus.UPDATE_AVAILABLE -> ComicBadge(
+            text = "ADA UPDATE!",
+            containerColor = c.Warning,
+            contentColor = c.OnWarning,
+            borderColor = if (c.isDark) c.Warning else Color(0xFF0F172A),
+            icon = { Box(Modifier.size(5.dp).background(c.OnWarning, CircleShape)) },
+        )
+        AppStatus.NOT_INSTALLED -> ComicBadge(
+            text = "TERSEDIA",
+            containerColor = c.SurfaceHighlight,
+            contentColor = c.Muted,
+            borderColor = if (c.isDark) c.BorderHighlight else Color(0xFF334155),
+        )
+        AppStatus.UNKNOWN -> ComicBadge(
+            text = "STATUS ?",
+            containerColor = c.SurfaceRaised,
+            contentColor = c.Faint,
+        )
     }
 }

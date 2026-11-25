@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
@@ -49,10 +52,12 @@ fun AppDetailDialog(
     val c = LocalNyawitColors.current
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = c.Surface,
-            border = BorderStroke(1.dp, c.BorderHighlight),
+        ComicPanel(
+            shape = RoundedCornerShape(12.dp),
+            backgroundColor = c.Surface,
+            borderWidth = 2.5.dp,
+            borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
+            shadowOffset = 6.dp,
             modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = 560.dp),
         ) {
             Column {
@@ -67,51 +72,48 @@ fun AppDetailDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Surface(
-                            color = c.PrimaryMuted,
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
-                        ) {
-                            Text(
-                                "MODUL DECK",
-                                style = NyawitType.Overline,
-                                color = c.Primary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
+                        ComicBadge(
+                            text = "DOKUMEN MODUL // DETAIL",
+                            containerColor = c.Primary,
+                            contentColor = c.OnPrimary,
+                        )
 
-                        Surface(
-                            color = c.SurfaceRaised,
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, c.Border),
-                        ) {
-                            Text(
-                                app.category.uppercase(),
-                                style = NyawitType.Overline,
-                                color = c.Muted,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
+                        ComicBadge(
+                            text = app.category.uppercase(),
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Muted,
+                            borderColor = c.Border,
+                        )
                     }
 
                     Spacer(Modifier.height(16.dp))
 
                     // Title header with icon
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        AppIcon(
-                            fullName = app.fullName,
-                            fallbackName = app.name,
-                            size = 54.dp,
-                            shape = RoundedCornerShape(14.dp),
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = c.SurfaceRaised,
+                            border = BorderStroke(2.dp, c.BorderHighlight),
+                            modifier = Modifier.size(58.dp),
+                        ) {
+                            Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                AppIcon(
+                                    fullName = app.fullName,
+                                    fallbackName = app.name,
+                                    size = 48.dp,
+                                    shape = RoundedCornerShape(8.dp),
+                                )
+                            }
+                        }
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(app.name, style = NyawitType.Title, color = c.Text)
+                            Text(app.name, style = NyawitType.Title, fontWeight = FontWeight.Black, color = c.Text)
                             Spacer(Modifier.height(3.dp))
                             Text(
                                 app.fullName,
                                 style = NyawitType.Caption,
-                                color = c.Muted,
+                                color = c.Primary,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -184,9 +186,10 @@ fun AppDetailDialog(
                                     containerColor = c.Primary,
                                     contentColor = c.OnPrimary,
                                 ),
-                                shape = RoundedCornerShape(11.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
-                            ) { Text(NyawitStrings.BTN_OPEN, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                            ) { Text("JALANKAN! ➔", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
 
                             AppStatus.UPDATE_AVAILABLE -> Button(
                                 onClick = { onUpdate(); onDismiss() },
@@ -194,9 +197,10 @@ fun AppDetailDialog(
                                     containerColor = c.Warning,
                                     contentColor = c.OnWarning,
                                 ),
-                                shape = RoundedCornerShape(11.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
-                            ) { Text(NyawitStrings.BTN_UPDATE, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                border = BorderStroke(2.dp, if (c.isDark) c.Warning else Color(0xFF0F172A)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                            ) { Text("PERBARUI! ➔", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
 
                             else -> Button(
                                 onClick = { onInstall(); onDismiss() },
@@ -204,9 +208,10 @@ fun AppDetailDialog(
                                     containerColor = c.Primary,
                                     contentColor = c.OnPrimary,
                                 ),
-                                shape = RoundedCornerShape(11.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
-                            ) { Text(NyawitStrings.BTN_INSTALL, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                            ) { Text("PASANG SEKARANG! ➔", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
                         }
                         if (status == AppStatus.INSTALLED || status == AppStatus.UPDATE_AVAILABLE) {
                             Button(
@@ -215,10 +220,10 @@ fun AppDetailDialog(
                                     containerColor = c.Danger.copy(alpha = 0.15f),
                                     contentColor = c.Danger,
                                 ),
-                                border = BorderStroke(1.dp, c.Danger.copy(alpha = 0.3f)),
-                                shape = RoundedCornerShape(11.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
-                            ) { Text(NyawitStrings.BTN_UNINSTALL, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                border = BorderStroke(2.dp, c.Danger),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                            ) { Text("HAPUS! ✕", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
                         }
                         Spacer(Modifier.weight(1f))
                         Button(
@@ -227,9 +232,9 @@ fun AppDetailDialog(
                                 containerColor = c.SurfaceRaised,
                                 contentColor = c.Text,
                             ),
-                            border = BorderStroke(1.dp, c.Border),
-                            shape = RoundedCornerShape(11.dp),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                            border = BorderStroke(2.dp, c.BorderHighlight),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                         ) { Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
                     }
                 }
