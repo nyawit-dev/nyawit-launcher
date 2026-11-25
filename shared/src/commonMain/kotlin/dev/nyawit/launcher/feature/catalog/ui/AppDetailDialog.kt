@@ -47,7 +47,6 @@ fun AppDetailDialog(
     onDismiss: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
-    val accent = Color(app.accent)
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -64,7 +63,7 @@ fun AppDetailDialog(
                         .height(3.dp)
                         .background(
                             Brush.horizontalGradient(
-                                listOf(accent, accent.copy(alpha = 0.35f), Color.Transparent),
+                                listOf(c.Primary, c.Primary.copy(alpha = 0.35f), Color.Transparent),
                             ),
                         ),
                 )
@@ -115,7 +114,7 @@ fun AppDetailDialog(
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 SpecItem(NyawitStrings.DETAIL_DEVELOPER, app.fullName.substringBefore('/'), c)
-                                SpecItem(NyawitStrings.DETAIL_CATEGORY, app.category.uppercase(), c, accent)
+                                SpecItem(NyawitStrings.DETAIL_CATEGORY, app.category.uppercase(), c, c.Primary)
                             }
                             HorizontalDivider(color = c.Border.copy(alpha = 0.6f))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -170,7 +169,7 @@ fun AppDetailDialog(
                                 onClick = { onUpdate(); onDismiss() },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = c.Warning,
-                                    contentColor = c.OnPrimary,
+                                    contentColor = c.OnWarning,
                                 ),
                                 shape = RoundedCornerShape(11.dp),
                                 modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),

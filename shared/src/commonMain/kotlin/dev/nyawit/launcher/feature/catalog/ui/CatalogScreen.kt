@@ -394,6 +394,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         Column(
             Modifier
                 .fillMaxSize()
+                .background(c.Background)
                 .padding(
                     horizontal = if (isCompactLayout) 16.dp else 24.dp,
                     vertical = if (isCompactLayout) 14.dp else 20.dp,
@@ -548,7 +549,14 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     )
                 }
             },
-        ) { content() }
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = c.Background,
+            ) {
+                content()
+            }
+        }
     } else {
         Row(Modifier.fillMaxSize().background(c.Background)) {
             AppSidebar(

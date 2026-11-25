@@ -374,7 +374,6 @@ fun FeaturedApp(
     onDetail: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
-    val accent = Color(app.accent)
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = c.Surface,
@@ -389,7 +388,7 @@ fun FeaturedApp(
                     .height(3.dp)
                     .background(
                         Brush.horizontalGradient(
-                            listOf(accent, accent.copy(alpha = 0.4f), Color.Transparent),
+                            listOf(c.Primary, c.Primary.copy(alpha = 0.4f), Color.Transparent),
                         ),
                     ),
             )
@@ -397,14 +396,14 @@ fun FeaturedApp(
             Column(Modifier.padding(22.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        color = accent.copy(alpha = 0.12f),
+                        color = c.PrimaryMuted,
                         shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
+                        border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
                     ) {
                         Text(
                             NyawitStrings.CHIP_FEATURED,
                             style = NyawitType.Overline,
-                            color = accent,
+                            color = c.Primary,
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                         )
                     }
@@ -441,10 +440,10 @@ fun FeaturedApp(
                             containerColor = when (status) {
                                 AppStatus.UPDATE_AVAILABLE -> c.Warning
                                 AppStatus.INSTALLED -> c.SurfaceRaised
-                                else -> accent
+                                else -> c.Primary
                             },
                             contentColor = when (status) {
-                                AppStatus.UPDATE_AVAILABLE -> c.OnPrimary
+                                AppStatus.UPDATE_AVAILABLE -> c.OnWarning
                                 AppStatus.INSTALLED -> c.Text
                                 else -> c.OnPrimary
                             },
@@ -469,153 +468,6 @@ fun FeaturedApp(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun CatalogSidebar(
-    version: String,
-    updateTag: String?,
-    selfPhase: FlowPhase,
-    category: String,
-    categories: List<String>,
-    onCategory: (String) -> Unit,
-    onUpdate: () -> Unit,
-    total: Int,
-    updateCount: Int,
-    modifier: Modifier = Modifier,
-    onClose: (() -> Unit)? = null,
-) {
-    val c = LocalNyawitColors.current
-    val busy = selfPhase == FlowPhase.CHECKING || selfPhase == FlowPhase.DOWNLOADING
-
-    Column(
-        modifier
-            .fillMaxHeight()
-            .background(c.Surface)
-            .padding(20.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandMark(42)
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("NYAWIT", style = NyawitType.Wordmark, color = c.Text)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Box(Modifier.size(5.dp).background(c.Primary, CircleShape))
-                        Text("GITHUB SYNC", style = NyawitType.Overline, color = c.Faint)
-                    }
-                }
-            }
-            if (onClose != null) {
-                Surface(
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, c.Border),
-                    modifier = Modifier.size(32.dp).clickable { onClose() },
-                ) {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        Text("✕", color = c.Muted, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(32.dp))
-        Text("NAVIGASI KATEGORI", style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(10.dp))
-
-        categories.forEach { item ->
-            val selected = category == item
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(if (selected) c.PrimaryMuted else Color.Transparent)
-                    .clickable {
-                        onCategory(item)
-                        onClose?.invoke()
-                    }
-                    .focusable()
-                    .tvFocusHighlight(RoundedCornerShape(11.dp), 1f)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (selected) {
-                    Box(Modifier.width(3.5.dp).height(18.dp).background(c.Primary, RoundedCornerShape(2.dp)))
-                    Spacer(Modifier.width(10.dp))
-                } else {
-                    Spacer(Modifier.width(13.5.dp))
-                }
-                Text(
-                    item,
-                    style = NyawitType.Caption,
-                    color = if (selected) c.Primary else c.Muted,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        Surface(
-            color = c.SurfaceRaised,
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(14.dp)) {
-                Text("STATUS EKOSISTEM", style = NyawitType.Overline, color = c.Primary)
-                Spacer(Modifier.height(8.dp))
-                Text("$total aplikasi terdaftar", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.SemiBold)
-                Text(
-                    if (updateCount > 0) "$updateCount pembaruan tersedia" else "Semua sudah mutakhir",
-                    style = NyawitType.Caption,
-                    color = if (updateCount > 0) c.Warning else c.Muted,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        Button(
-            onClick = {
-                onUpdate()
-                onClose?.invoke()
-            },
-            enabled = !busy,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (updateTag != null) c.Primary else c.SurfaceRaised,
-                contentColor = if (updateTag != null) c.OnPrimary else c.Text,
-            ),
-            shape = RoundedCornerShape(11.dp),
-            modifier = Modifier.fillMaxWidth().height(44.dp).tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
-        ) {
-            if (busy) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = c.Primary)
-                Spacer(Modifier.width(8.dp))
-            }
-            Text(
-                if (updateTag != null) "Update ke $updateTag" else "Cek update",
-                style = NyawitType.Caption,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "v$version",
-            style = NyawitType.Overline,
-            color = c.Faint,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
     }
 }
 

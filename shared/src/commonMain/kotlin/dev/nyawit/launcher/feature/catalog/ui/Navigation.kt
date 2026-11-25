@@ -67,14 +67,15 @@ fun AppSidebar(
 ) {
     val c = LocalNyawitColors.current
 
-    Column(
-        modifier
-            .fillMaxHeight()
-            .background(c.Surface)
-            .border(BorderStroke(1.dp, c.Border))
-            .padding(18.dp)
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Row(modifier.fillMaxHeight()) {
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .background(c.Surface)
+                .padding(18.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
         // Brand Header
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             BrandMark(38)
@@ -227,6 +228,8 @@ fun AppSidebar(
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+    Box(Modifier.fillMaxHeight().width(1.dp).background(c.Border))
     }
 }
 

@@ -1,5 +1,6 @@
 package dev.nyawit.launcher.theme
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -51,7 +52,9 @@ open class NyawitColors(
     val PrimaryMuted: Color,
     val OnPrimary: Color,
     val Warning: Color,
+    val OnWarning: Color = Color(0xFF0F172A),
     val Danger: Color,
+    val OnDanger: Color = Color(0xFFFFFFFF),
     val Text: Color,
     val Muted: Color,
     val Faint: Color,
@@ -68,7 +71,9 @@ open class NyawitColors(
         PrimaryMuted = Color(0xFF092E22),
         OnPrimary = Color(0xFF02160F),
         Warning = Color(0xFFFFB020),
+        OnWarning = Color(0xFF090C10),
         Danger = Color(0xFFFF4D5E),
+        OnDanger = Color(0xFFFFFFFF),
         Text = Color(0xFFF8FAFC),
         Muted = Color(0xFF94A3B8),
         Faint = Color(0xFF52617A),
@@ -87,7 +92,9 @@ val CyberObsidianColors = NyawitColors(
     PrimaryMuted = Color(0xFF092E22),
     OnPrimary = Color(0xFF02160F),
     Warning = Color(0xFFFFB020),
+    OnWarning = Color(0xFF090C10),
     Danger = Color(0xFFFF4D5E),
+    OnDanger = Color(0xFFFFFFFF),
     Text = Color(0xFFF8FAFC),
     Muted = Color(0xFF94A3B8),
     Faint = Color(0xFF52617A),
@@ -105,7 +112,9 @@ val MidnightSapphireColors = NyawitColors(
     PrimaryMuted = Color(0xFF0C2742),
     OnPrimary = Color(0xFF041322),
     Warning = Color(0xFFFBBF24),
+    OnWarning = Color(0xFF080C16),
     Danger = Color(0xFFF43F5E),
+    OnDanger = Color(0xFFFFFFFF),
     Text = Color(0xFFF1F5F9),
     Muted = Color(0xFF94A3B8),
     Faint = Color(0xFF475569),
@@ -123,7 +132,9 @@ val OledBlackColors = NyawitColors(
     PrimaryMuted = Color(0xFF042217),
     OnPrimary = Color(0xFF000000),
     Warning = Color(0xFFFFB703),
+    OnWarning = Color(0xFF000000),
     Danger = Color(0xFFFF334B),
+    OnDanger = Color(0xFFFFFFFF),
     Text = Color(0xFFFFFFFF),
     Muted = Color(0xFFA1A1AA),
     Faint = Color(0xFF52525B),
@@ -141,10 +152,12 @@ val NordicLightColors = NyawitColors(
     PrimaryMuted = Color(0xFFE0F7EF),
     OnPrimary = Color(0xFFFFFFFF),
     Warning = Color(0xFFD97706),
+    OnWarning = Color(0xFFFFFFFF),
     Danger = Color(0xFFE11D48),
+    OnDanger = Color(0xFFFFFFFF),
     Text = Color(0xFF0F172A),
     Muted = Color(0xFF475569),
-    Faint = Color(0xFF94A3B8),
+    Faint = Color(0xFF64748B),
     isDark = false,
 )
 
@@ -268,6 +281,13 @@ fun LauncherTheme(
         LocalSettingsController provides settingsController,
         LocalStrings provides currentStrings,
     ) {
-        MaterialTheme(colorScheme = colorScheme, content = content)
+        MaterialTheme(colorScheme = colorScheme) {
+            androidx.compose.material3.Surface(
+                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                color = currentColors.Background,
+            ) {
+                content()
+            }
+        }
     }
 }

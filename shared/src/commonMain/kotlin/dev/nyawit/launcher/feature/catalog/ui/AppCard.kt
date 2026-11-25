@@ -73,7 +73,6 @@ fun AppCard(
     onOpen: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
-    val accent = Color(app.accent)
     val appear by animateFloatAsState(targetValue = 1f, animationSpec = tween(280))
 
     AnimatedVisibility(
@@ -99,7 +98,7 @@ fun AppCard(
                         .height(2.5.dp)
                         .background(
                             Brush.horizontalGradient(
-                                listOf(accent, accent.copy(alpha = 0.35f), Color.Transparent),
+                                listOf(c.Primary, c.Primary.copy(alpha = 0.35f), Color.Transparent),
                             ),
                         ),
                 )
@@ -128,14 +127,14 @@ fun AppCard(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Surface(
-                                    color = accent.copy(alpha = 0.12f),
+                                    color = c.PrimaryMuted,
                                     shape = RoundedCornerShape(6.dp),
-                                    border = BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
+                                    border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.25f)),
                                 ) {
                                     Text(
                                         app.category.uppercase(),
                                         style = NyawitType.Overline,
-                                        color = accent,
+                                        color = c.Primary,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     )
                                 }
@@ -171,7 +170,7 @@ fun AppCard(
                             Text(
                                 NyawitStrings.PROGRESS_DOWNLOADING,
                                 style = NyawitType.Overline,
-                                color = accent,
+                                color = c.Primary,
                             )
                             Text(
                                 "${(progress * 100).toInt()}%",
@@ -183,7 +182,7 @@ fun AppCard(
                         LinearProgressIndicator(
                             progress = { progress },
                             modifier = Modifier.fillMaxWidth().height(4.dp),
-                            color = accent,
+                            color = c.Primary,
                             trackColor = c.SurfaceRaised,
                         )
                     }
@@ -191,6 +190,11 @@ fun AppCard(
                     Spacer(Modifier.height(16.dp))
 
                     // Action Row
+                    val btnContentColor = when (status) {
+                        AppStatus.UPDATE_AVAILABLE -> c.OnWarning
+                        AppStatus.INSTALLED -> c.Text
+                        else -> c.OnPrimary
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Button(
                             onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
@@ -201,11 +205,7 @@ fun AppCard(
                                     AppStatus.UPDATE_AVAILABLE -> c.Warning
                                     else -> c.Primary
                                 },
-                                contentColor = when (status) {
-                                    AppStatus.UPDATE_AVAILABLE -> c.OnPrimary
-                                    AppStatus.INSTALLED -> c.Text
-                                    else -> c.OnPrimary
-                                },
+                                contentColor = btnContentColor,
                             ),
                             border = when (status) {
                                 AppStatus.INSTALLED -> BorderStroke(1.dp, c.BorderHighlight)
@@ -221,14 +221,14 @@ fun AppCard(
                                 CircularProgressIndicator(
                                     Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = if (status == AppStatus.INSTALLED) c.Text else c.OnPrimary,
+                                    color = btnContentColor,
                                 )
                                 Spacer(Modifier.width(8.dp))
                             } else if (status == AppStatus.INSTALLED) {
-                                ArrowIcon(Modifier.size(16.dp), c.Text)
+                                ArrowIcon(Modifier.size(16.dp), btnContentColor)
                                 Spacer(Modifier.width(8.dp))
                             } else if (progress == null) {
-                                DownloadIcon(Modifier.size(16.dp), c.OnPrimary)
+                                DownloadIcon(Modifier.size(16.dp), btnContentColor)
                                 Spacer(Modifier.width(8.dp))
                             }
                             Text(
@@ -273,16 +273,34 @@ private fun StatusChip(status: AppStatus) {
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(1000)),
     )
-    val (label, color) = when (status) {
-        AppStatus.NOT_INSTALLED -> NyawitStrings.CHIP_AVAILABLE to c.Faint
-        AppStatus.INSTALLED -> NyawitStrings.CHIP_INSTALLED to c.Primary
-        AppStatus.UPDATE_AVAILABLE -> NyawitStrings.CHIP_UPDATE to c.Warning
-        AppStatus.UNKNOWN -> NyawitStrings.CHIP_UNKNOWN to c.Faint
+    val label = when (status) {
+        AppStatus.NOT_INSTALLED -> NyawitStrings.CHIP_AVAILABLE
+        AppStatus.INSTALLED -> NyawitStrings.CHIP_INSTALLED
+        AppStatus.UPDATE_AVAILABLE -> NyawitStrings.CHIP_UPDATE
+        AppStatus.UNKNOWN -> NyawitStrings.CHIP_UNKNOWN
+    }
+    val textColor = when (status) {
+        AppStatus.NOT_INSTALLED -> c.Muted
+        AppStatus.INSTALLED -> c.Primary
+        AppStatus.UPDATE_AVAILABLE -> c.Warning
+        AppStatus.UNKNOWN -> c.Faint
+    }
+    val bgColor = when (status) {
+        AppStatus.NOT_INSTALLED -> c.SurfaceRaised
+        AppStatus.INSTALLED -> c.PrimaryMuted
+        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.15f)
+        AppStatus.UNKNOWN -> c.SurfaceRaised
+    }
+    val borderColor = when (status) {
+        AppStatus.NOT_INSTALLED -> c.BorderHighlight
+        AppStatus.INSTALLED -> c.Primary.copy(alpha = 0.35f)
+        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.45f)
+        AppStatus.UNKNOWN -> c.Border
     }
     Surface(
-        color = color.copy(alpha = 0.12f),
+        color = bgColor,
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.35f)),
+        border = BorderStroke(1.dp, borderColor),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
@@ -291,18 +309,18 @@ private fun StatusChip(status: AppStatus) {
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             if (status == AppStatus.INSTALLED) {
-                CheckIcon(Modifier.size(8.dp), color)
+                CheckIcon(Modifier.size(8.dp), textColor)
             } else {
                 Box(
                     Modifier
                         .size(6.dp)
-                        .background(color, CircleShape),
+                        .background(textColor, CircleShape),
                 )
             }
             Text(
                 label.uppercase(),
                 style = NyawitType.Overline,
-                color = color,
+                color = textColor,
                 maxLines = 1,
             )
         }

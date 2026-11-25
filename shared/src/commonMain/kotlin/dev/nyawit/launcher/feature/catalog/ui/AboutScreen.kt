@@ -49,6 +49,7 @@ fun AboutScreen(
     Column(
         modifier
             .fillMaxSize()
+            .background(c.Background)
             .verticalScroll(rememberScrollState()),
     ) {
         // App Hero Card
