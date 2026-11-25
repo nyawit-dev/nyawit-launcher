@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.platform.isTvPlatform
 import kotlinx.coroutines.launch
 
@@ -40,7 +42,12 @@ enum class ScalePreference(val factor: Float?, val labelKey: String) {
     }
 }
 
-data class DeviceProfile(val kind: ScreenKind, val widthDp: Float)
+data class DeviceProfile(
+    val kind: ScreenKind,
+    val widthDp: Float,
+    val heightDp: Float,
+    val isLandscape: Boolean = false,
+)
 
 /**
  * Konfigurasi Skala Responsif untuk berbagai jenis layar.
@@ -56,14 +63,58 @@ val LocalResponsiveScale = staticCompositionLocalOf { ResponsiveScale() }
 
 @Composable
 fun rememberDeviceProfile(): DeviceProfile {
-    val width = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }
+    val density = LocalDensity.current
+    val containerSize = LocalWindowInfo.current.containerSize
+    val width = with(density) { containerSize.width.toDp().value }
+    val height = with(density) { containerSize.height.toDp().value }
+    val minDimension = minOf(width, height)
+    val isLandscape = width > height
+    val platform = remember { currentAppPlatform() }
+
     val kind = when {
-        isTvPlatform() -> ScreenKind.TV
-        width >= 1200 -> ScreenKind.DESKTOP
-        width >= 600 -> ScreenKind.TABLET
+        isTvPlatform() || platform == AppPlatform.TV -> ScreenKind.TV
+        platform == AppPlatform.DESKTOP -> ScreenKind.DESKTOP
+        minDimension >= 600f -> ScreenKind.TABLET
         else -> ScreenKind.PHONE
     }
-    return remember(kind, width) { DeviceProfile(kind, width) }
+    return remember(kind, width, height, isLandscape) {
+        DeviceProfile(
+            kind = kind,
+            widthDp = width,
+            heightDp = height,
+            isLandscape = isLandscape,
+        )
+    }
+}
+
+/**
+ * Menghitung faktor skala otomatis yang adaptif dan mulus sesuai ukuran fisik & DPI layar.
+ */
+fun calculateAutoScale(profile: DeviceProfile): Float {
+    if (profile.kind == ScreenKind.TV) {
+        return 1.35f // 10-foot UI experience untuk TV
+    }
+    return when (profile.kind) {
+        ScreenKind.PHONE -> when {
+            profile.widthDp < 360f -> (profile.widthDp / 375f).coerceIn(0.84f, 0.94f)
+            profile.widthDp > 460f && !profile.isLandscape -> 1.04f
+            else -> 1.0f
+        }
+        ScreenKind.TABLET -> when {
+            profile.widthDp < 768f -> 1.02f
+            profile.widthDp <= 1024f -> 1.08f
+            else -> 1.12f
+        }
+        ScreenKind.DESKTOP -> when {
+            profile.widthDp < 900f -> 0.94f
+            profile.widthDp <= 1366f -> 1.0f
+            profile.widthDp <= 1680f -> 1.06f
+            profile.widthDp <= 1920f -> 1.12f
+            profile.widthDp <= 2560f -> 1.24f
+            else -> 1.38f // 4K UHD Ultra-wide
+        }
+        ScreenKind.TV -> 1.35f
+    }
 }
 
 /**
@@ -75,22 +126,23 @@ fun rememberResponsiveScale(
     scalePreference: ScalePreference = ScalePreference.AUTO,
 ): ResponsiveScale {
     return remember(profile, scalePreference) {
-        val factor = scalePreference.factor ?: when (profile.kind) {
-            ScreenKind.TV -> 1.30f
-            ScreenKind.TABLET -> 1.08f
-            ScreenKind.PHONE -> if (profile.widthDp < 360f) 0.92f else 1.0f
-            ScreenKind.DESKTOP -> if (profile.widthDp >= 1800f) 1.15f else 1.0f
-        }
-        val columns = when (profile.kind) {
-            ScreenKind.PHONE -> 1
-            ScreenKind.TABLET -> 2
-            ScreenKind.TV -> 3
-            ScreenKind.DESKTOP -> if (profile.widthDp >= 1600f) 4 else 3
-        }
+        val factor = scalePreference.factor ?: calculateAutoScale(profile)
+
         val sidebarWidth = when (profile.kind) {
             ScreenKind.TV -> 260.dp
             ScreenKind.DESKTOP -> if (profile.widthDp >= 1600f) 248.dp else 224.dp
-            else -> 280.dp // Drawer width on phone/tablet
+            else -> minOf(280.dp, (profile.widthDp * 0.82f).dp)
+        }
+        val isCompactLayout = profile.kind == ScreenKind.PHONE || profile.widthDp < 860f
+        val availableWidth = if (isCompactLayout) profile.widthDp else (profile.widthDp - sidebarWidth.value)
+
+        val columns = when {
+            isCompactLayout && profile.kind == ScreenKind.PHONE && !profile.isLandscape -> 1
+            availableWidth < 620f -> 1
+            availableWidth < 1000f -> 2
+            availableWidth < 1450f -> 3
+            availableWidth < 1950f -> 4
+            else -> 5
         }
         ResponsiveScale(
             factor = factor,

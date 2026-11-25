@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -51,7 +52,14 @@ fun AboutScreen(
             .fillMaxSize()
             .background(c.Background)
             .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 840.dp)
+                .padding(horizontal = if (isNarrow) 16.dp else 24.dp, vertical = 20.dp),
+        ) {
         // App Hero Card
         Surface(
             color = c.Surface,
@@ -195,6 +203,7 @@ fun AboutScreen(
             modifier = Modifier.padding(horizontal = 4.dp),
         )
         Spacer(Modifier.height(32.dp))
+        }
     }
 }
 

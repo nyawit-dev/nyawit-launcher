@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +40,7 @@ import dev.nyawit.launcher.core.platform.clearCatalogCache
 import dev.nyawit.launcher.core.ui.AppLanguage
 import dev.nyawit.launcher.core.ui.CheckIcon
 import dev.nyawit.launcher.core.ui.GlobeIcon
+import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScalePreference
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -66,13 +68,19 @@ fun SettingsScreen(
         modifier
             .fillMaxSize()
             .background(c.Background)
-            .verticalScroll(rememberScrollState())
-            .padding(
-                horizontal = if (isNarrow) 16.dp else 28.dp,
-                vertical = if (isNarrow) 16.dp else 24.dp,
-            ),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 840.dp)
+                .padding(
+                    horizontal = if (isNarrow) 16.dp else 28.dp,
+                    vertical = if (isNarrow) 16.dp else 24.dp,
+                ),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
         // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -349,6 +357,7 @@ fun SettingsScreen(
                 color = c.Muted,
             )
         }
+        }
     }
 }
 
@@ -462,8 +471,9 @@ private fun ScalePreferenceChip(
     modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
     val label = when (pref) {
-        ScalePreference.AUTO -> NyawitStrings.SETTINGS_SCALE_AUTO
+        ScalePreference.AUTO -> "${NyawitStrings.SETTINGS_SCALE_AUTO} (${(responsiveScale.factor * 100).toInt()}%)"
         ScalePreference.COMPACT -> NyawitStrings.SETTINGS_SCALE_COMPACT
         ScalePreference.STANDARD -> NyawitStrings.SETTINGS_SCALE_STANDARD
         ScalePreference.LARGE -> NyawitStrings.SETTINGS_SCALE_LARGE

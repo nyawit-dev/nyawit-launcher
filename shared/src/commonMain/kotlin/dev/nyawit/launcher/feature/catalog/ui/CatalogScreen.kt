@@ -493,7 +493,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             ) { Text(NyawitStrings.BTN_RETRY) }
                         }
                         visibleApps.isEmpty() -> EmptyState()
-                        isPhone -> AppList(
+                        responsiveScale.columns == 1 -> AppList(
                             apps = visibleApps,
                             statuses = statuses,
                             busyApps = busyApps,

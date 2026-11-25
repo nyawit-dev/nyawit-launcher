@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -48,7 +49,7 @@ fun UpdateDialog(
             shape = RoundedCornerShape(18.dp),
             color = c.Surface,
             border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier.fillMaxWidth(0.9f),
+            modifier = Modifier.fillMaxWidth(0.9f).widthIn(max = 460.dp),
         ) {
             Column(Modifier.padding(24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
