@@ -7,6 +7,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,52 @@ import dev.nyawit.launcher.theme.LocalNyawitColors
 import kotlinx.coroutines.launch
 
 enum class ScreenKind { PHONE, TABLET, DESKTOP, TV }
+
+@Immutable
+data class WindowSize(
+    val widthDp: Int,
+    val heightDp: Int,
+) {
+    val isLandscape: Boolean get() = widthDp > heightDp
+    val minDimension: Int get() = minOf(widthDp, heightDp)
+}
+
+val LocalWindowSize = staticCompositionLocalOf { WindowSize(1280, 720) }
+val LocalUiScale = staticCompositionLocalOf { 1f }
+
+/**
+ * Global UI scale calculation dari WindowSize (mengadopsi arsitektur teruji Diggo POS).
+ * Menghitung skala density secara seragam di tingkat root aplikasi.
+ */
+fun calculateUiScale(widthDp: Int, heightDp: Int, isTv: Boolean = false): Float {
+    if (isTv) return 1.0f
+
+    val minDimension = minOf(widthDp, heightDp)
+    val isLandscape = widthDp > heightDp
+
+    // Ponsel (< 600dp)
+    if (minDimension < 600) {
+        return if (isLandscape) {
+            (heightDp / 380f).coerceIn(0.85f, 1.0f)
+        } else {
+            (widthDp / 390f).coerceIn(0.85f, 1.04f)
+        }
+    }
+
+    // Tablet (600..900dp)
+    if (minDimension in 600..900) {
+        return (minDimension / 768f).coerceIn(0.96f, 1.08f)
+    }
+
+    // Desktop / Monitor Layar Lebar
+    return when {
+        widthDp >= 2560 -> 1.18f
+        widthDp >= 1920 -> 1.08f
+        widthDp >= 1440 -> 1.04f
+        widthDp >= 1100 -> 1.0f
+        else -> 0.96f
+    }
+}
 
 enum class ScalePreference(val factor: Float?, val labelKey: String) {
     AUTO(null, "AUTO"),

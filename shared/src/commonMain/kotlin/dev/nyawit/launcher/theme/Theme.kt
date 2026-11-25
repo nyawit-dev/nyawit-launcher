@@ -17,12 +17,24 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Density
+import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.LocalSettingsController
 import dev.nyawit.launcher.core.platform.SettingsController
+import dev.nyawit.launcher.core.platform.currentAppPlatform
+import dev.nyawit.launcher.core.platform.isTvPlatform
+import dev.nyawit.launcher.core.ui.DeviceProfile
 import dev.nyawit.launcher.core.ui.LanguageController
 import dev.nyawit.launcher.core.ui.LocalLanguageController
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.LocalStrings
+import dev.nyawit.launcher.core.ui.LocalUiScale
+import dev.nyawit.launcher.core.ui.LocalWindowSize
+import dev.nyawit.launcher.core.ui.ResponsiveScale
+import dev.nyawit.launcher.core.ui.ScreenKind
+import dev.nyawit.launcher.core.ui.WindowSize
+import dev.nyawit.launcher.core.ui.calculateUiScale
 import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.core.ui.rememberResponsiveScale
 import dev.nyawit.launcher.core.ui.rememberScaledDensity
@@ -242,6 +254,7 @@ object NyawitType {
 @Composable
 fun LauncherTheme(
     platformContext: Any? = null,
+    windowSize: WindowSize? = null,
     themeController: ThemeController = remember { ThemeController() },
     languageController: LanguageController = remember { LanguageController() },
     content: @Composable () -> Unit,
@@ -251,9 +264,68 @@ fun LauncherTheme(
     }
     val currentColors = colorsFor(themeController.mode)
     val currentStrings = stringsFor(languageController.language)
-    val profile = rememberDeviceProfile()
-    val responsiveScale = rememberResponsiveScale(profile)
-    val scaledDensity = rememberScaledDensity(responsiveScale.factor)
+
+    val baseDensity = LocalDensity.current
+    val effectiveWindowSize = windowSize ?: WindowSize(1280, 720)
+    val isTv = isTvPlatform() || currentAppPlatform() == AppPlatform.TV
+    val scale = remember(effectiveWindowSize, isTv) {
+        calculateUiScale(effectiveWindowSize.widthDp, effectiveWindowSize.heightDp, isTv)
+    }
+
+    val scaledDensity = remember(baseDensity, scale) {
+        Density(
+            density = baseDensity.density * scale,
+            fontScale = baseDensity.fontScale,
+        )
+    }
+
+    val profile = remember(effectiveWindowSize, isTv) {
+        val minDim = minOf(effectiveWindowSize.widthDp, effectiveWindowSize.heightDp)
+        val kind = when {
+            isTv -> ScreenKind.TV
+            currentAppPlatform() == AppPlatform.DESKTOP -> ScreenKind.DESKTOP
+            minDim >= 600 -> ScreenKind.TABLET
+            else -> ScreenKind.PHONE
+        }
+        DeviceProfile(
+            kind = kind,
+            widthDp = effectiveWindowSize.widthDp.toFloat(),
+            heightDp = effectiveWindowSize.heightDp.toFloat(),
+            isLandscape = effectiveWindowSize.widthDp > effectiveWindowSize.heightDp,
+        )
+    }
+
+    val responsiveScale = remember(profile, scale) {
+        val sidebarWidth = when (profile.kind) {
+            ScreenKind.TV -> 250.dp
+            ScreenKind.DESKTOP -> when {
+                profile.widthDp >= 2560f -> 320.dp
+                profile.widthDp >= 1920f -> 290.dp
+                profile.widthDp >= 1440f -> 270.dp
+                profile.widthDp >= 1100f -> 250.dp
+                else -> 230.dp
+            }
+            else -> minOf(280.dp, (profile.widthDp * 0.82f).dp)
+        }
+        val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
+        val availableWidth = if (isCompactLayout) profile.widthDp else (profile.widthDp - sidebarWidth.value)
+
+        val columns = when {
+            isCompactLayout && profile.kind == ScreenKind.PHONE && !profile.isLandscape -> 1
+            availableWidth < 620f -> 1
+            availableWidth < 1000f -> 2
+            availableWidth < 1450f -> 3
+            availableWidth < 1950f -> 4
+            else -> 5
+        }
+        ResponsiveScale(
+            factor = scale,
+            columns = columns,
+            sidebarWidth = sidebarWidth,
+            isTv = isTv,
+        )
+    }
+
     val typography = remember { NyawitTypography() }
 
     val colorScheme = if (currentColors.isDark) {
@@ -285,6 +357,8 @@ fun LauncherTheme(
     }
 
     CompositionLocalProvider(
+        LocalWindowSize provides effectiveWindowSize,
+        LocalUiScale provides scale,
         LocalDensity provides scaledDensity,
         LocalResponsiveScale provides responsiveScale,
         LocalNyawitTypography provides typography,
