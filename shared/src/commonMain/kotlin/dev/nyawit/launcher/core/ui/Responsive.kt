@@ -27,6 +27,19 @@ import kotlinx.coroutines.launch
 
 enum class ScreenKind { PHONE, TABLET, DESKTOP, TV }
 
+enum class ScalePreference(val factor: Float?, val labelKey: String) {
+    AUTO(null, "AUTO"),
+    COMPACT(0.85f, "COMPACT"),
+    STANDARD(1.0f, "STANDARD"),
+    LARGE(1.15f, "LARGE"),
+    EXTRA_LARGE(1.30f, "EXTRA_LARGE");
+
+    companion object {
+        fun fromKey(key: String): ScalePreference =
+            entries.find { it.name.equals(key, ignoreCase = true) } ?: AUTO
+    }
+}
+
 data class DeviceProfile(val kind: ScreenKind, val widthDp: Float)
 
 /**
@@ -57,9 +70,12 @@ fun rememberDeviceProfile(): DeviceProfile {
  * Menghitung skala responsif adaptif sesuai dengan ukuran dan orientasi layar.
  */
 @Composable
-fun rememberResponsiveScale(profile: DeviceProfile): ResponsiveScale {
-    return remember(profile) {
-        val factor = when (profile.kind) {
+fun rememberResponsiveScale(
+    profile: DeviceProfile,
+    scalePreference: ScalePreference = ScalePreference.AUTO,
+): ResponsiveScale {
+    return remember(profile, scalePreference) {
+        val factor = scalePreference.factor ?: when (profile.kind) {
             ScreenKind.TV -> 1.30f
             ScreenKind.TABLET -> 1.08f
             ScreenKind.PHONE -> if (profile.widthDp < 360f) 0.92f else 1.0f

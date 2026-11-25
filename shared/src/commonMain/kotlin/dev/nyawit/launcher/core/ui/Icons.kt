@@ -245,3 +245,29 @@ fun GlobeIcon(modifier: Modifier = Modifier, color: Color) {
         drawPath(ovalPath, color, style = Stroke(1.4.dp.toPx()))
     }
 }
+
+@Composable
+fun SettingsIcon(modifier: Modifier = Modifier, color: Color) {
+    Canvas(modifier) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val innerR = size.minDimension * 0.16f
+        val rimR = size.minDimension * 0.32f
+        val outerR = size.minDimension * 0.42f
+        drawCircle(color, radius = innerR, center = Offset(cx, cy), style = Stroke(1.7.dp.toPx()))
+        drawCircle(color, radius = rimR, center = Offset(cx, cy), style = Stroke(1.5.dp.toPx()))
+
+        val teeth = 6
+        for (i in 0 until teeth) {
+            val angle = (i * (2.0 * kotlin.math.PI / teeth)).toFloat()
+            val cosA = kotlin.math.cos(angle)
+            val sinA = kotlin.math.sin(angle)
+            drawLine(
+                color = color,
+                start = Offset(cx + rimR * cosA, cy + rimR * sinA),
+                end = Offset(cx + outerR * cosA, cy + outerR * sinA),
+                strokeWidth = 2.4.dp.toPx(),
+            )
+        }
+    }
+}

@@ -42,6 +42,7 @@ import dev.nyawit.launcher.core.ui.InfoIcon
 import dev.nyawit.launcher.core.ui.LocalLanguageController
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.PaletteIcon
+import dev.nyawit.launcher.core.ui.SettingsIcon
 import dev.nyawit.launcher.core.ui.SyncIcon
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.theme.LocalNyawitColors
@@ -49,7 +50,7 @@ import dev.nyawit.launcher.theme.LocalThemeController
 import dev.nyawit.launcher.theme.NyawitType
 import dev.nyawit.launcher.theme.ThemeMode
 
-enum class AppPage { APPS, ABOUT }
+enum class AppPage { APPS, SETTINGS, ABOUT }
 
 @Composable
 fun AppSidebar(
@@ -111,6 +112,13 @@ fun AppSidebar(
             selected = page == AppPage.APPS,
             icon = { iconColor -> GridIcon(Modifier.size(16.dp), iconColor) },
             onClick = { onNavigate(AppPage.APPS); onClose?.invoke() },
+        )
+        Spacer(Modifier.height(5.dp))
+        NavItem(
+            label = NyawitStrings.NAV_SETTINGS,
+            selected = page == AppPage.SETTINGS,
+            icon = { iconColor -> SettingsIcon(Modifier.size(16.dp), iconColor) },
+            onClick = { onNavigate(AppPage.SETTINGS); onClose?.invoke() },
         )
         Spacer(Modifier.height(5.dp))
         NavItem(

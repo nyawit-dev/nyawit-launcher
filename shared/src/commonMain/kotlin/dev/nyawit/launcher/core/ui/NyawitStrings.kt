@@ -1,6 +1,5 @@
 package dev.nyawit.launcher.core.ui
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,9 +20,12 @@ class LanguageController(initialLanguage: AppLanguage = AppLanguage.ID) {
     var language by mutableStateOf(initialLanguage)
         private set
 
+    var onLanguageChanged: ((AppLanguage) -> Unit)? = null
+
     fun set(newLang: AppLanguage) {
         language = newLang
         NyawitStrings.active = stringsFor(newLang)
+        onLanguageChanged?.invoke(newLang)
     }
 
     fun toggle() {
@@ -44,6 +46,7 @@ open class LanguageStrings(
     val BRAND_TAGLINE: String,
     val NAV_TITLE: String,
     val NAV_APPS: String,
+    val NAV_SETTINGS: String,
     val NAV_ABOUT: String,
     val THEME_SECTION: String,
     val THEME_TAP_TO_CHANGE: String,
@@ -104,6 +107,29 @@ open class LanguageStrings(
     val ABOUT_LINK_CATALOG: String,
     val ABOUT_LINK_ORG: String,
     val ABOUT_SECURITY_FOOTER: String,
+    val SETTINGS_TITLE: String,
+    val SETTINGS_SUBTITLE: String,
+    val SETTINGS_SEC_APPEARANCE: String,
+    val SETTINGS_SEC_APPEARANCE_DESC: String,
+    val SETTINGS_SEC_LANGUAGE: String,
+    val SETTINGS_SEC_LANGUAGE_DESC: String,
+    val SETTINGS_SEC_SCALE: String,
+    val SETTINGS_SEC_SCALE_DESC: String,
+    val SETTINGS_SCALE_AUTO: String,
+    val SETTINGS_SCALE_COMPACT: String,
+    val SETTINGS_SCALE_STANDARD: String,
+    val SETTINGS_SCALE_LARGE: String,
+    val SETTINGS_SCALE_XLARGE: String,
+    val SETTINGS_SEC_STORAGE: String,
+    val SETTINGS_SEC_STORAGE_DESC: String,
+    val SETTINGS_BTN_CLEAR_CACHE: String,
+    val SETTINGS_CACHE_CLEARED: String,
+    val SETTINGS_SEC_UPDATES: String,
+    val SETTINGS_SEC_UPDATES_DESC: String,
+    val SETTINGS_AUTO_CHECK_TITLE: String,
+    val SETTINGS_AUTO_CHECK_DESC: String,
+    val SETTINGS_STORAGE_SAVED_NOTICE: String,
+    val SETTINGS_BTN_OPEN: String,
     val statusAppsRegistered: (Int) -> String,
     val statusUpdatesAvailable: (Int) -> String,
     val statusLauncherUpdate: (String) -> String,
@@ -125,6 +151,7 @@ val IndonesianStrings = LanguageStrings(
     BRAND_TAGLINE = "Ekosistem aplikasi open-source tanpa server perantara",
     NAV_TITLE = "NAVIGASI",
     NAV_APPS = "Katalog Aplikasi",
+    NAV_SETTINGS = "Pengaturan",
     NAV_ABOUT = "Tentang Sistem",
     THEME_SECTION = "TEMA VISUAL",
     THEME_TAP_TO_CHANGE = "Ketuk ganti tema",
@@ -177,6 +204,29 @@ val IndonesianStrings = LanguageStrings(
     ABOUT_LINK_CATALOG = "Katalog",
     ABOUT_LINK_ORG = "Organisasi",
     ABOUT_SECURITY_FOOTER = "Seluruh paket diverifikasi dengan SHA-256 bila tersedia. Tidak ada server perantara — katalog dan rilis berasal langsung dari GitHub API.",
+    SETTINGS_TITLE = "PENGATURAN LAUNCHER",
+    SETTINGS_SUBTITLE = "Kelola estetika tema, bahasa, penskalaan layar, dan preferensi aplikasi",
+    SETTINGS_SEC_APPEARANCE = "TAMPILAN & TEMA",
+    SETTINGS_SEC_APPEARANCE_DESC = "Pilih palet visual antarmuka launcher sesuai kenyamanan mata Anda",
+    SETTINGS_SEC_LANGUAGE = "BAHASA & REGIONAL",
+    SETTINGS_SEC_LANGUAGE_DESC = "Pilih bahasa pengantar antarmuka di seluruh aplikasi",
+    SETTINGS_SEC_SCALE = "PENSKALAAN LAYAR",
+    SETTINGS_SEC_SCALE_DESC = "Sesuaikan proporsi elemen antarmuka agar optimal di ukuran monitor/layar Anda",
+    SETTINGS_SCALE_AUTO = "Otomatis (Adaptif)",
+    SETTINGS_SCALE_COMPACT = "Kompak (0.85x)",
+    SETTINGS_SCALE_STANDARD = "Standar (1.0x)",
+    SETTINGS_SCALE_LARGE = "Besar (1.15x)",
+    SETTINGS_SCALE_XLARGE = "Sangat Besar (1.30x)",
+    SETTINGS_SEC_STORAGE = "PENYIMPANAN & CACHE",
+    SETTINGS_SEC_STORAGE_DESC = "Kelola berkas cache katalog lokal yang tersimpan di perangkat",
+    SETTINGS_BTN_CLEAR_CACHE = "Bersihkan Cache Katalog",
+    SETTINGS_CACHE_CLEARED = "Cache katalog berhasil dibersihkan",
+    SETTINGS_SEC_UPDATES = "SISTEM & PEMBARUAN",
+    SETTINGS_SEC_UPDATES_DESC = "Pengaturan otomatisasi untuk memeriksa versi terbaru aplikasi",
+    SETTINGS_AUTO_CHECK_TITLE = "Periksa Pembaruan Saat Mulai",
+    SETTINGS_AUTO_CHECK_DESC = "Secara otomatis memeriksa versi baru dari katalog saat aplikasi dibuka",
+    SETTINGS_STORAGE_SAVED_NOTICE = "Seluruh preferensi tersimpan otomatis dan persisten di perangkat",
+    SETTINGS_BTN_OPEN = "Buka Pengaturan",
     statusAppsRegistered = { "$it aplikasi terdaftar" },
     statusUpdatesAvailable = { "$it pembaruan tersedia" },
     statusLauncherUpdate = { "Update launcher $it" },
@@ -198,6 +248,7 @@ val EnglishStrings = LanguageStrings(
     BRAND_TAGLINE = "Open-source application ecosystem with no intermediary server",
     NAV_TITLE = "NAVIGATION",
     NAV_APPS = "App Catalog",
+    NAV_SETTINGS = "Settings",
     NAV_ABOUT = "About System",
     THEME_SECTION = "VISUAL THEME",
     THEME_TAP_TO_CHANGE = "Tap to change theme",
@@ -250,6 +301,29 @@ val EnglishStrings = LanguageStrings(
     ABOUT_LINK_CATALOG = "Catalog",
     ABOUT_LINK_ORG = "Organization",
     ABOUT_SECURITY_FOOTER = "All packages are verified with SHA-256 when available. No intermediary server — catalog and releases originate directly from GitHub API.",
+    SETTINGS_TITLE = "LAUNCHER SETTINGS",
+    SETTINGS_SUBTITLE = "Manage theme aesthetics, language, display scaling, and app preferences",
+    SETTINGS_SEC_APPEARANCE = "APPEARANCE & THEME",
+    SETTINGS_SEC_APPEARANCE_DESC = "Choose a visual color palette tailored to your comfort",
+    SETTINGS_SEC_LANGUAGE = "LANGUAGE & REGION",
+    SETTINGS_SEC_LANGUAGE_DESC = "Select interface language across the entire application",
+    SETTINGS_SEC_SCALE = "DISPLAY SCALING",
+    SETTINGS_SEC_SCALE_DESC = "Adjust UI component proportions to fit your screen size",
+    SETTINGS_SCALE_AUTO = "Automatic (Adaptive)",
+    SETTINGS_SCALE_COMPACT = "Compact (0.85x)",
+    SETTINGS_SCALE_STANDARD = "Standard (1.0x)",
+    SETTINGS_SCALE_LARGE = "Large (1.15x)",
+    SETTINGS_SCALE_XLARGE = "Extra Large (1.30x)",
+    SETTINGS_SEC_STORAGE = "STORAGE & CACHE",
+    SETTINGS_SEC_STORAGE_DESC = "Manage offline local catalog cache files stored on this device",
+    SETTINGS_BTN_CLEAR_CACHE = "Clear Catalog Cache",
+    SETTINGS_CACHE_CLEARED = "Catalog cache cleared successfully",
+    SETTINGS_SEC_UPDATES = "SYSTEM & UPDATES",
+    SETTINGS_SEC_UPDATES_DESC = "Automation settings for checking newer application versions",
+    SETTINGS_AUTO_CHECK_TITLE = "Check Updates on Startup",
+    SETTINGS_AUTO_CHECK_DESC = "Automatically check for new catalog versions when app opens",
+    SETTINGS_STORAGE_SAVED_NOTICE = "All preferences are saved automatically and persist across restarts",
+    SETTINGS_BTN_OPEN = "Open Settings",
     statusAppsRegistered = { "$it apps registered" },
     statusUpdatesAvailable = { "$it updates available" },
     statusLauncherUpdate = { "Launcher update $it" },
@@ -283,6 +357,7 @@ object NyawitStrings {
     val BRAND_TAGLINE: String get() = active.BRAND_TAGLINE
     val NAV_TITLE: String get() = active.NAV_TITLE
     val NAV_APPS: String get() = active.NAV_APPS
+    val NAV_SETTINGS: String get() = active.NAV_SETTINGS
     val NAV_ABOUT: String get() = active.NAV_ABOUT
     val THEME_SECTION: String get() = active.THEME_SECTION
     val THEME_TAP_TO_CHANGE: String get() = active.THEME_TAP_TO_CHANGE
@@ -343,6 +418,30 @@ object NyawitStrings {
     val ABOUT_LINK_CATALOG: String get() = active.ABOUT_LINK_CATALOG
     val ABOUT_LINK_ORG: String get() = active.ABOUT_LINK_ORG
     val ABOUT_SECURITY_FOOTER: String get() = active.ABOUT_SECURITY_FOOTER
+
+    val SETTINGS_TITLE: String get() = active.SETTINGS_TITLE
+    val SETTINGS_SUBTITLE: String get() = active.SETTINGS_SUBTITLE
+    val SETTINGS_SEC_APPEARANCE: String get() = active.SETTINGS_SEC_APPEARANCE
+    val SETTINGS_SEC_APPEARANCE_DESC: String get() = active.SETTINGS_SEC_APPEARANCE_DESC
+    val SETTINGS_SEC_LANGUAGE: String get() = active.SETTINGS_SEC_LANGUAGE
+    val SETTINGS_SEC_LANGUAGE_DESC: String get() = active.SETTINGS_SEC_LANGUAGE_DESC
+    val SETTINGS_SEC_SCALE: String get() = active.SETTINGS_SEC_SCALE
+    val SETTINGS_SEC_SCALE_DESC: String get() = active.SETTINGS_SEC_SCALE_DESC
+    val SETTINGS_SCALE_AUTO: String get() = active.SETTINGS_SCALE_AUTO
+    val SETTINGS_SCALE_COMPACT: String get() = active.SETTINGS_SCALE_COMPACT
+    val SETTINGS_SCALE_STANDARD: String get() = active.SETTINGS_SCALE_STANDARD
+    val SETTINGS_SCALE_LARGE: String get() = active.SETTINGS_SCALE_LARGE
+    val SETTINGS_SCALE_XLARGE: String get() = active.SETTINGS_SCALE_XLARGE
+    val SETTINGS_SEC_STORAGE: String get() = active.SETTINGS_SEC_STORAGE
+    val SETTINGS_SEC_STORAGE_DESC: String get() = active.SETTINGS_SEC_STORAGE_DESC
+    val SETTINGS_BTN_CLEAR_CACHE: String get() = active.SETTINGS_BTN_CLEAR_CACHE
+    val SETTINGS_CACHE_CLEARED: String get() = active.SETTINGS_CACHE_CLEARED
+    val SETTINGS_SEC_UPDATES: String get() = active.SETTINGS_SEC_UPDATES
+    val SETTINGS_SEC_UPDATES_DESC: String get() = active.SETTINGS_SEC_UPDATES_DESC
+    val SETTINGS_AUTO_CHECK_TITLE: String get() = active.SETTINGS_AUTO_CHECK_TITLE
+    val SETTINGS_AUTO_CHECK_DESC: String get() = active.SETTINGS_AUTO_CHECK_DESC
+    val SETTINGS_STORAGE_SAVED_NOTICE: String get() = active.SETTINGS_STORAGE_SAVED_NOTICE
+    val SETTINGS_BTN_OPEN: String get() = active.SETTINGS_BTN_OPEN
 
     fun statusAppsRegistered(total: Int): String = active.statusAppsRegistered(total)
     fun statusUpdatesAvailable(count: Int): String = active.statusUpdatesAvailable(count)

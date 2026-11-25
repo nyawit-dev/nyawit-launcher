@@ -4,3 +4,5 @@ package dev.nyawit.launcher.core.platform
 expect fun readCatalogCache(platformContext: Any?): String?
 
 expect fun writeCatalogCache(content: String, platformContext: Any?)
+
+expect fun clearCatalogCache(platformContext: Any?): Boolean

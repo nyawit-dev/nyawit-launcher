@@ -7,7 +7,7 @@ import dev.nyawit.launcher.theme.LauncherTheme
 
 @Composable
 fun LauncherApp(modifier: Modifier = Modifier, platformContext: Any? = null) {
-    LauncherTheme {
+    LauncherTheme(platformContext = platformContext) {
         CatalogScreen(modifier, platformContext)
     }
 }

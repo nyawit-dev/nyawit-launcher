@@ -46,6 +46,7 @@ import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.appVersion
 import dev.nyawit.launcher.core.platform.currentAppPlatform
+import dev.nyawit.launcher.core.platform.LocalSettingsController
 import dev.nyawit.launcher.core.platform.observeAppResume
 import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
@@ -122,6 +123,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var notice by remember { mutableStateOf<Notice?>(null) }
     var selfBusy by remember { mutableStateOf(false) }
     var selfUpdateDone by remember { mutableStateOf(false) }
+    val settingsController = LocalSettingsController.current
     var updateTag by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableStateOf(0) }
     var statusKey by remember { mutableStateOf(0) }
@@ -320,11 +322,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         } finally {
             loading = false
         }
-        val release = withContext(Dispatchers.Default) { updater.latest() }
-        if (!selfUpdateDone && release != null && isNewer(release.tag, version)) {
-            selfUpdateDone = true
-            updateTag = release.tag
-            autoUpdate(release)
+        if (settingsController.autoCheckUpdates) {
+            val release = withContext(Dispatchers.Default) { updater.latest() }
+            if (!selfUpdateDone && release != null && isNewer(release.tag, version)) {
+                selfUpdateDone = true
+                updateTag = release.tag
+                autoUpdate(release)
+            }
         }
     }
 
@@ -508,7 +512,15 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                         )
                     }
                 }
-                AppPage.ABOUT -> AboutScreen(version, platformContext)
+                AppPage.SETTINGS -> SettingsScreen(
+                    platformContext = platformContext,
+                    onCatalogCacheCleared = { reloadKey++ },
+                )
+                AppPage.ABOUT -> AboutScreen(
+                    version = version,
+                    platformContext = platformContext,
+                    onOpenSettings = { page = AppPage.SETTINGS },
+                )
             }
         }
     }

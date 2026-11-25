@@ -5,6 +5,7 @@
     <string name="brand_tagline">Ekosistem aplikasi open-source tanpa server perantara</string>
     <string name="nav_title">NAVIGASI</string>
     <string name="nav_apps">Katalog Aplikasi</string>
+    <string name="nav_settings">Pengaturan</string>
     <string name="nav_about">Tentang Sistem</string>
     <string name="theme_section">TEMA VISUAL</string>
     <string name="theme_tap_to_change">Ketuk ganti tema</string>
@@ -65,4 +66,29 @@
     <string name="about_link_catalog">Katalog</string>
     <string name="about_link_org">Organisasi</string>
     <string name="about_security_footer">Seluruh paket diverifikasi dengan SHA-256 bila tersedia. Tidak ada server perantara — katalog dan rilis berasal langsung dari GitHub API.</string>
+
+    <!-- SETTINGS STRINGS (ID) -->
+    <string name="settings_title">PENGATURAN LAUNCHER</string>
+    <string name="settings_subtitle">Kelola estetika tema, bahasa, penskalaan layar, dan preferensi aplikasi</string>
+    <string name="settings_sec_appearance">TAMPILAN &amp; TEMA</string>
+    <string name="settings_sec_appearance_desc">Pilih palet visual antarmuka launcher sesuai kenyamanan mata Anda</string>
+    <string name="settings_sec_language">BAHASA &amp; REGIONAL</string>
+    <string name="settings_sec_language_desc">Pilih bahasa pengantar antarmuka di seluruh aplikasi</string>
+    <string name="settings_sec_scale">PENSKALAAN LAYAR</string>
+    <string name="settings_sec_scale_desc">Sesuaikan proporsi elemen antarmuka agar optimal di ukuran monitor/layar Anda</string>
+    <string name="settings_scale_auto">Otomatis (Adaptif)</string>
+    <string name="settings_scale_compact">Kompak (0.85x)</string>
+    <string name="settings_scale_standard">Standar (1.0x)</string>
+    <string name="settings_scale_large">Besar (1.15x)</string>
+    <string name="settings_scale_xlarge">Sangat Besar (1.30x)</string>
+    <string name="settings_sec_storage">PENYIMPANAN &amp; CACHE</string>
+    <string name="settings_sec_storage_desc">Kelola berkas cache katalog lokal yang tersimpan di perangkat</string>
+    <string name="settings_btn_clear_cache">Bersihkan Cache Katalog</string>
+    <string name="settings_cache_cleared">Cache katalog berhasil dibersihkan</string>
+    <string name="settings_sec_updates">SISTEM &amp; PEMBARUAN</string>
+    <string name="settings_sec_updates_desc">Pengaturan otomatisasi untuk memeriksa versi terbaru aplikasi</string>
+    <string name="settings_auto_check_title">Periksa Pembaruan Saat Mulai</string>
+    <string name="settings_auto_check_desc">Secara otomatis memeriksa versi baru dari katalog saat aplikasi dibuka</string>
+    <string name="settings_storage_saved_notice">Seluruh preferensi tersimpan otomatis dan persisten di perangkat</string>
+    <string name="settings_btn_open">Buka Pengaturan</string>
 </resources>

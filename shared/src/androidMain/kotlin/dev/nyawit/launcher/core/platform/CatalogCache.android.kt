@@ -23,3 +23,10 @@ actual fun writeCatalogCache(content: String, platformContext: Any?) {
         // Abaikan kegagalan cache.
     }
 }
+
+actual fun clearCatalogCache(platformContext: Any?): Boolean = try {
+    val file = cacheFile(platformContext as? Context)
+    if (file != null && file.exists()) file.delete() else true
+} catch (_: Throwable) {
+    false
+}

@@ -2,9 +2,6 @@ package dev.nyawit.launcher.feature.catalog.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -27,29 +23,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
-import dev.nyawit.launcher.core.ui.AppLanguage
-import dev.nyawit.launcher.core.ui.GlobeIcon
-import dev.nyawit.launcher.core.ui.LocalLanguageController
 import dev.nyawit.launcher.core.ui.NyawitStrings
-import dev.nyawit.launcher.core.ui.PaletteIcon
-import dev.nyawit.launcher.core.ui.tvFocusHighlight
+import dev.nyawit.launcher.core.ui.SettingsIcon
 import dev.nyawit.launcher.theme.LocalNyawitColors
-import dev.nyawit.launcher.theme.LocalThemeController
 import dev.nyawit.launcher.theme.NyawitType
-import dev.nyawit.launcher.theme.ThemeMode
-import dev.nyawit.launcher.theme.colorsFor
 
 @Composable
-fun AboutScreen(version: String, platformContext: Any?, modifier: Modifier = Modifier) {
+fun AboutScreen(
+    version: String,
+    platformContext: Any?,
+    onOpenSettings: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
     val c = LocalNyawitColors.current
-    val themeController = LocalThemeController.current
-    val languageController = LocalLanguageController.current
 
     Column(
         modifier
@@ -94,122 +85,51 @@ fun AboutScreen(version: String, platformContext: Any?, modifier: Modifier = Mod
             }
         }
 
-        Spacer(Modifier.height(20.dp))
-        Text(NyawitStrings.ABOUT_THEME_TITLE, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(8.dp))
-
-        // Multi-Theme Grid Selector
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ThemeMode.values().forEach { mode ->
-                val isSelected = themeController.mode == mode
-                val modeColors = colorsFor(mode)
-
-                Surface(
-                    color = if (isSelected) c.PrimaryMuted else c.Surface,
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        if (isSelected) c.Primary else c.Border,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable { themeController.set(mode) }
-                        .focusable()
-                        .tvFocusHighlight(RoundedCornerShape(14.dp), 1f),
+        if (onOpenSettings != null) {
+            Spacer(Modifier.height(18.dp))
+            Surface(
+                color = c.Surface,
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, c.Border),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(18.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            Modifier
-                                .size(28.dp)
-                                .background(modeColors.Background, RoundedCornerShape(8.dp))
-                                .border(1.dp, modeColors.BorderHighlight, RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center,
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            color = c.PrimaryMuted,
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, c.Primary),
+                            modifier = Modifier.size(38.dp),
                         ) {
-                            Box(Modifier.size(10.dp).background(modeColors.Primary, CircleShape))
+                            Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                SettingsIcon(Modifier.size(20.dp), color = c.Primary)
+                            }
                         }
                         Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    mode.label,
-                                    style = NyawitType.Caption,
-                                    color = if (isSelected) c.Primary else c.Text,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                if (isSelected) {
-                                    Spacer(Modifier.width(8.dp))
-                                    Surface(
-                                        color = c.Primary,
-                                        shape = RoundedCornerShape(4.dp),
-                                    ) {
-                                        Text(
-                                            NyawitStrings.THEME_ACTIVE_BADGE,
-                                            style = NyawitType.Overline,
-                                            color = c.OnPrimary,
-                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(2.dp))
+                        Column {
                             Text(
-                                mode.description,
+                                text = NyawitStrings.SETTINGS_TITLE,
+                                style = NyawitType.Subtitle,
+                                color = c.Text,
+                            )
+                            Text(
+                                text = NyawitStrings.SETTINGS_SUBTITLE,
                                 style = NyawitType.Caption,
                                 color = c.Muted,
                             )
                         }
                     }
-                }
-            }
-        }
 
-        Spacer(Modifier.height(20.dp))
-        Text(NyawitStrings.ABOUT_LANGUAGE_TITLE, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(8.dp))
-
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            AppLanguage.values().forEach { lang ->
-                val isSelected = languageController.language == lang
-                Surface(
-                    color = if (isSelected) c.PrimaryMuted else c.Surface,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        if (isSelected) c.Primary else c.Border,
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { languageController.set(lang) }
-                        .focusable()
-                        .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
-                ) {
-                    Row(
-                        Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Button(
+                        onClick = onOpenSettings,
+                        colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
+                        shape = RoundedCornerShape(8.dp),
                     ) {
-                        GlobeIcon(Modifier.size(18.dp), if (isSelected) c.Primary else c.Muted)
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                lang.label,
-                                style = NyawitType.Caption,
-                                color = if (isSelected) c.Primary else c.Text,
-                                fontWeight = FontWeight.Bold,
-                            )
-                            Text(
-                                lang.code.uppercase(),
-                                style = NyawitType.Overline,
-                                color = c.Muted,
-                            )
-                        }
+                        Text(NyawitStrings.SETTINGS_BTN_OPEN, style = NyawitType.Caption, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -221,17 +141,22 @@ fun AboutScreen(version: String, platformContext: Any?, modifier: Modifier = Mod
 
         Surface(
             color = c.Surface,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             border = BorderStroke(1.dp, c.Border),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(Modifier.padding(18.dp)) {
-                InfoRow(NyawitStrings.ABOUT_LABEL_VERSION, "v$version")
-                InfoRow(NyawitStrings.ABOUT_LABEL_PLATFORMS, NyawitStrings.ABOUT_VAL_PLATFORMS)
-                InfoRow(NyawitStrings.ABOUT_LABEL_IDENTIFIER, BuildConfig.APP_ID)
-                InfoRow(NyawitStrings.ABOUT_LABEL_OWNER, BuildConfig.GITHUB_OWNER)
-                InfoRow(NyawitStrings.ABOUT_LABEL_LICENSE, NyawitStrings.ABOUT_VAL_LICENSE)
-                InfoRow(NyawitStrings.ABOUT_LABEL_FRAMEWORK, NyawitStrings.ABOUT_VAL_FRAMEWORK)
+            Column(Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                MetaRow(NyawitStrings.ABOUT_LABEL_VERSION, "v$version (${BuildConfig.VERSION_CODE})")
+                MetaDivider()
+                MetaRow(NyawitStrings.ABOUT_LABEL_PLATFORMS, NyawitStrings.ABOUT_VAL_PLATFORMS)
+                MetaDivider()
+                MetaRow(NyawitStrings.ABOUT_LABEL_IDENTIFIER, BuildConfig.APP_ID)
+                MetaDivider()
+                MetaRow(NyawitStrings.ABOUT_LABEL_OWNER, BuildConfig.GITHUB_OWNER)
+                MetaDivider()
+                MetaRow(NyawitStrings.ABOUT_LABEL_LICENSE, NyawitStrings.ABOUT_VAL_LICENSE)
+                MetaDivider()
+                MetaRow(NyawitStrings.ABOUT_LABEL_FRAMEWORK, NyawitStrings.ABOUT_VAL_FRAMEWORK)
             }
         }
 
@@ -239,44 +164,67 @@ fun AboutScreen(version: String, platformContext: Any?, modifier: Modifier = Mod
         Text(NyawitStrings.ABOUT_LINKS_TITLE, style = NyawitType.Overline, color = c.Faint)
         Spacer(Modifier.height(8.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LinkButton(NyawitStrings.ABOUT_LINK_REPO) {
-                openUrl("https://github.com/${BuildConfig.GITHUB_REPO_FULL}", platformContext)
-            }
-            LinkButton(NyawitStrings.ABOUT_LINK_CATALOG) { openUrl(BuildConfig.CATALOG_URL, platformContext) }
-            LinkButton(NyawitStrings.ABOUT_LINK_ORG) { openUrl("https://github.com/${BuildConfig.GITHUB_OWNER}", platformContext) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val repoUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}"
+            val catalogUrl = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/main/catalog.json"
+            val orgUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}"
+
+            ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.weight(1f), platformContext)
+            ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.weight(1f), platformContext)
+            ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.weight(1f), platformContext)
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(24.dp))
         Text(
             NyawitStrings.ABOUT_SECURITY_FOOTER,
             style = NyawitType.Caption,
             color = c.Faint,
+            modifier = Modifier.padding(horizontal = 4.dp),
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
     }
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun MetaRow(label: String, value: String) {
     val c = LocalNyawitColors.current
-    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
-        Text(label, style = NyawitType.Caption, color = c.Faint, modifier = Modifier.weight(0.4f))
-        Text(value, style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(0.6f))
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 11.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = NyawitType.Caption, color = c.Muted)
+        Text(value, style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
-private fun LinkButton(label: String, onClick: () -> Unit) {
+private fun MetaDivider() {
     val c = LocalNyawitColors.current
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = c.SurfaceRaised, contentColor = c.Text),
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(c.Border),
+    )
+}
+
+@Composable
+private fun ExternalLinkCard(title: String, url: String, modifier: Modifier = Modifier, platformContext: Any?) {
+    val c = LocalNyawitColors.current
+    Surface(
+        color = c.Surface,
+        shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, c.Border),
-        shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-    ) { Text(label, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+        modifier = modifier,
+        onClick = { openUrl(url, platformContext) },
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(title, style = NyawitType.Subtitle, color = c.Text)
+            Spacer(Modifier.height(2.dp))
+            Text("github.com ↗", style = NyawitType.Overline, color = c.Primary)
+        }
+    }
 }
-
-/** Pembuka URL lintas platform didefinisikan di platform-specific source set. */
-expect fun openUrl(url: String, platformContext: Any?)

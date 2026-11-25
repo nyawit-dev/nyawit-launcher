@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import dev.nyawit.launcher.core.platform.LocalSettingsController
+import dev.nyawit.launcher.core.platform.SettingsController
 import dev.nyawit.launcher.core.ui.LanguageController
 import dev.nyawit.launcher.core.ui.LocalLanguageController
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
@@ -160,14 +162,17 @@ class ThemeController(initialMode: ThemeMode = ThemeMode.CYBER_OBSIDIAN) {
     var mode by mutableStateOf(initialMode)
         private set
 
+    var onModeChanged: ((ThemeMode) -> Unit)? = null
+
     fun set(newMode: ThemeMode) {
         mode = newMode
+        onModeChanged?.invoke(newMode)
     }
 
     fun next() {
         val modes = ThemeMode.values()
         val nextIdx = (mode.ordinal + 1) % modes.size
-        mode = modes[nextIdx]
+        set(modes[nextIdx])
     }
 }
 
@@ -212,14 +217,18 @@ object NyawitType {
 
 @Composable
 fun LauncherTheme(
+    platformContext: Any? = null,
     themeController: ThemeController = remember { ThemeController() },
     languageController: LanguageController = remember { LanguageController() },
     content: @Composable () -> Unit,
 ) {
+    val settingsController = remember(platformContext) {
+        SettingsController(platformContext, themeController, languageController)
+    }
     val currentColors = colorsFor(themeController.mode)
     val currentStrings = stringsFor(languageController.language)
     val profile = rememberDeviceProfile()
-    val responsiveScale = rememberResponsiveScale(profile)
+    val responsiveScale = rememberResponsiveScale(profile, settingsController.scalePreference)
     val scaledDensity = rememberScaledDensity(responsiveScale.factor)
 
     val colorScheme = if (currentColors.isDark) {
@@ -256,6 +265,7 @@ fun LauncherTheme(
         LocalNyawitColors provides currentColors,
         LocalThemeController provides themeController,
         LocalLanguageController provides languageController,
+        LocalSettingsController provides settingsController,
         LocalStrings provides currentStrings,
     ) {
         MaterialTheme(colorScheme = colorScheme, content = content)

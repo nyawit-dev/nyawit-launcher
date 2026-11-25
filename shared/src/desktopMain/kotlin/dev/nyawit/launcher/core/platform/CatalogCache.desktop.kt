@@ -22,3 +22,10 @@ actual fun writeCatalogCache(content: String, platformContext: Any?) {
         // Cache gagal ditulis — katalog tetap dipakai dari hasil unduhan.
     }
 }
+
+actual fun clearCatalogCache(platformContext: Any?): Boolean = try {
+    val file = cacheFile()
+    if (file.exists()) file.delete() else true
+} catch (_: Throwable) {
+    false
+}
