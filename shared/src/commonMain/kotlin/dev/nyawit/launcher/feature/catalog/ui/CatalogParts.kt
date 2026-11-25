@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.Image
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -73,45 +75,53 @@ import nyawit_launcher.shared.generated.resources.Res
 import nyawit_launcher.shared.generated.resources.empty_state
 import org.jetbrains.compose.resources.painterResource
 
-/** Tanda merek yang digambar vektor, tajam di semua kepadatan layar. */
+/** Tanda merek yang digambar vektor dengan gaya neo-pop comic ink. */
 @Composable
 fun BrandMark(size: Int = 46) {
     val c = LocalNyawitColors.current
-    Canvas(Modifier.size(size.dp)) {
-        val r = 12.dp.toPx()
-        drawRoundRect(
-            c.SurfaceRaised,
-            size = androidx.compose.ui.geometry.Size(size.dp.toPx(), size.dp.toPx()),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
+    Box(Modifier.size(size.dp)) {
+        // Comic hard drop shadow
+        Box(
+            Modifier
+                .size(size.dp)
+                .offset(2.dp, 2.dp)
+                .background(
+                    if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
+                    RoundedCornerShape(10.dp),
+                ),
         )
-        drawRoundRect(
-            c.BorderHighlight,
-            size = androidx.compose.ui.geometry.Size(size.dp.toPx(), size.dp.toPx()),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
-            style = Stroke(1.2.dp.toPx()),
-        )
-        val cx = size.dp.toPx() / 2f
-        val cy = size.dp.toPx() / 2f
-        drawCircle(c.Primary, radius = size.dp.toPx() * 0.28f, center = Offset(cx, cy))
-        val nSize = size.dp.toPx() * 0.32f
-        drawLine(
-            c.OnPrimary,
-            Offset(cx - nSize / 2, cy + nSize / 2),
-            Offset(cx - nSize / 2, cy - nSize / 2),
-            strokeWidth = 3.dp.toPx(),
-        )
-        drawLine(
-            c.OnPrimary,
-            Offset(cx - nSize / 2, cy - nSize / 2),
-            Offset(cx + nSize / 2, cy + nSize / 2),
-            strokeWidth = 3.dp.toPx(),
-        )
-        drawLine(
-            c.OnPrimary,
-            Offset(cx + nSize / 2, cy - nSize / 2),
-            Offset(cx + nSize / 2, cy + nSize / 2),
-            strokeWidth = 3.dp.toPx(),
-        )
+        Canvas(
+            Modifier
+                .size(size.dp)
+                .background(c.SurfaceRaised, RoundedCornerShape(10.dp))
+                .border(
+                    BorderStroke(2.dp, if (c.isDark) Color(0xFF475569) else Color(0xFF0F172A)),
+                    RoundedCornerShape(10.dp),
+                ),
+        ) {
+            val cx = size.dp.toPx() / 2f
+            val cy = size.dp.toPx() / 2f
+            drawCircle(c.Primary, radius = size.dp.toPx() * 0.28f, center = Offset(cx, cy))
+            val nSize = size.dp.toPx() * 0.32f
+            drawLine(
+                c.OnPrimary,
+                Offset(cx - nSize / 2, cy + nSize / 2),
+                Offset(cx - nSize / 2, cy - nSize / 2),
+                strokeWidth = 3.dp.toPx(),
+            )
+            drawLine(
+                c.OnPrimary,
+                Offset(cx - nSize / 2, cy - nSize / 2),
+                Offset(cx + nSize / 2, cy + nSize / 2),
+                strokeWidth = 3.dp.toPx(),
+            )
+            drawLine(
+                c.OnPrimary,
+                Offset(cx + nSize / 2, cy - nSize / 2),
+                Offset(cx + nSize / 2, cy + nSize / 2),
+                strokeWidth = 3.dp.toPx(),
+            )
+        }
     }
 }
 
@@ -594,7 +604,7 @@ fun FeaturedApp(
     }
 }
 
-/** Header atas untuk ponsel: bersih, ada tombol drawer navigasi, tanpa tombol cek update di atas. */
+/** Header atas untuk ponsel dengan gaya Neo-Pop Comic. */
 @Composable
 fun MobileHeader(
     version: String,
@@ -603,46 +613,53 @@ fun MobileHeader(
     modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
-            color = c.SurfaceRaised,
-            shape = RoundedCornerShape(10.dp),
-            border = BorderStroke(1.dp, c.Border),
+        ComicPanel(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(responsiveScale.dp(42))
                 .clickable { onOpenDrawer() }
-                .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+            borderWidth = 2.dp,
+            shadowOffset = 2.5.dp,
+            backgroundColor = c.SurfaceRaised,
+            shape = RoundedCornerShape(8.dp),
         ) {
             Box(Modifier.fillMaxSize(), Alignment.Center) {
-                MenuIcon(Modifier.size(18.dp), c.Text)
+                MenuIcon(Modifier.size(responsiveScale.dp(20)), c.Text)
                 if (updateAvailable) {
                     Box(
                         Modifier
                             .align(Alignment.TopEnd)
                             .padding(4.dp)
-                            .size(7.dp)
-                            .background(c.Warning, CircleShape),
+                            .size(8.dp)
+                            .background(c.Warning, CircleShape)
+                            .border(BorderStroke(1.dp, Color(0xFF0F172A)), CircleShape),
                     )
                 }
             }
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(responsiveScale.dp(12)))
         BrandMark(36)
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(responsiveScale.dp(10)))
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(NyawitStrings.BRAND_NAME, style = NyawitType.Wordmark, color = c.Text)
-                Box(Modifier.size(4.dp).background(c.Primary, CircleShape))
-                Text(NyawitStrings.BRAND_SUBTITLE, style = NyawitType.Overline, color = c.Primary)
+                ComicBadge(
+                    text = "EDISI PONSEL",
+                    containerColor = c.Primary,
+                    contentColor = c.OnPrimary,
+                )
             }
             Text(
-                "v$version",
-                style = NyawitType.Caption,
+                "${NyawitStrings.BRAND_SUBTITLE.uppercase()} • v$version",
+                style = NyawitType.Overline,
                 color = c.Muted,
+                fontWeight = FontWeight.Bold,
             )
         }
     }
