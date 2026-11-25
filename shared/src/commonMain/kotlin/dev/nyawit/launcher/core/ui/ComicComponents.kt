@@ -136,6 +136,8 @@ fun ComicBadge(
                 color = contentColor,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 1.sp,
+                maxLines = 1,
+                softWrap = false,
             )
         }
     }

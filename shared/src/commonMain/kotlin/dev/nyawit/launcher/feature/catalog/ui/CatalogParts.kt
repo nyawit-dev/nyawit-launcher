@@ -67,7 +67,9 @@ import dev.nyawit.launcher.core.ui.ComicSpeedLines
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.MenuIcon
 import dev.nyawit.launcher.core.ui.NyawitStrings
+import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SearchIcon
+import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.theme.LocalNyawitColors
@@ -416,6 +418,9 @@ fun FeaturedApp(
 ) {
     val c = LocalNyawitColors.current
     val responsiveScale = LocalResponsiveScale.current
+    val profile = rememberDeviceProfile()
+    val isCompact = profile.kind == ScreenKind.PHONE || profile.widthDp < 680f
+
     ComicPanel(
         modifier = Modifier
             .fillMaxWidth()
@@ -437,7 +442,7 @@ fun FeaturedApp(
             lineColor = if (c.isDark) c.Primary.copy(alpha = 0.16f) else Color(0xFF0F172A).copy(alpha = 0.05f),
         )
 
-        Column(Modifier.padding(20.dp)) {
+        Column(Modifier.padding(if (isCompact) 14.dp else 20.dp)) {
             // Header: Spotlight Classification & Comic Burst Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -446,16 +451,16 @@ fun FeaturedApp(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     ComicActionBurst(
                         text = "HOT!",
                         burstColor = Color(0xFFFFDE00),
                         textColor = Color(0xFF0F172A),
-                        size = 38.dp,
+                        size = if (isCompact) 30.dp else 38.dp,
                     )
                     ComicBadge(
-                        text = "EPISODE SPESIAL // REKOMENDASI",
+                        text = if (isCompact) "REKOMENDASI" else "EPISODE SPESIAL // REKOMENDASI",
                         containerColor = c.Primary,
                         contentColor = c.OnPrimary,
                     )
@@ -469,192 +474,327 @@ fun FeaturedApp(
                 )
             }
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(if (isCompact) 12.dp else 18.dp))
 
-            // Main Core Display: Balanced 2-Column Comic Hero Layout
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // Left Column: Icon, Title, Description Bubble, and Actions
-                Column(
-                    modifier = Modifier.weight(1.2f).fillMaxWidth(),
+            if (isCompact) {
+                // Mobile Portrait Layout: Clean 1-Column Stack
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = c.SurfaceRaised,
-                            border = BorderStroke(2.5.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
-                            modifier = Modifier.size(responsiveScale.dp(68)),
-                        ) {
-                            Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                AppIcon(
-                                    fullName = app.fullName,
-                                    fallbackName = app.name,
-                                    size = responsiveScale.dp(56),
-                                    shape = RoundedCornerShape(8.dp),
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.width(16.dp))
-
-                        Column {
-                            Text(
-                                app.name,
-                                style = NyawitType.Title,
-                                fontWeight = FontWeight.Black,
-                                color = c.Text,
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = c.SurfaceRaised,
+                        border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                        modifier = Modifier.size(54.dp),
+                    ) {
+                        Box(Modifier.fillMaxSize(), Alignment.Center) {
+                            AppIcon(
+                                fullName = app.fullName,
+                                fallbackName = app.name,
+                                size = 44.dp,
+                                shape = RoundedCornerShape(8.dp),
                             )
-                            Spacer(Modifier.height(3.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    app.fullName.substringBefore('/'),
-                                    style = NyawitType.Caption,
-                                    color = c.Primary,
-                                    fontWeight = FontWeight.Black,
-                                )
-                                Box(Modifier.size(4.dp).background(c.Primary, CircleShape))
-                                Text(
-                                    app.packageName,
-                                    style = NyawitType.Caption,
-                                    color = c.Faint,
-                                )
-                            }
                         }
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.width(12.dp))
 
-                    ComicSpeechBubble(
-                        backgroundColor = if (c.isDark) c.SurfaceHighlight else Color(0xFFF8FAFC),
-                        borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
-                    ) {
+                    Column(Modifier.weight(1f)) {
                         Text(
-                            "\"${app.description}\"",
-                            style = NyawitType.Body,
+                            app.name,
+                            style = NyawitType.Subtitle,
+                            fontWeight = FontWeight.Black,
                             color = c.Text,
-                            maxLines = 2,
+                            maxLines = 1,
+                            softWrap = false,
                         )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // Spotlight Action Command Deck
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        val isInstalled = status == AppStatus.INSTALLED
-                        val isUpdate = status == AppStatus.UPDATE_AVAILABLE
-                        Button(
-                            onClick = if (isInstalled) onOpen else onInstall,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = when {
-                                    isUpdate -> c.Warning
-                                    isInstalled -> c.Primary
-                                    else -> c.Primary
-                                },
-                                contentColor = when {
-                                    isUpdate -> c.OnWarning
-                                    else -> c.OnPrimary
-                                },
-                            ),
-                            border = BorderStroke(
-                                2.5.dp,
-                                Color(0xFF0F172A),
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = responsiveScale.dp(44))
-                                .heightIn(min = responsiveScale.dp(44))
-                                .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                        ) {
-                            Text(
-                                when {
-                                    isInstalled -> "JALANKAN SEKARANG! ➔"
-                                    isUpdate -> "PERBARUI VERSI! ➔"
-                                    else -> "PASANG KE PERANGKAT! ➔"
-                                },
-                                style = NyawitType.Caption,
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
-
-                        Button(
-                            onClick = onDetail,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = c.SurfaceRaised,
-                                contentColor = c.Text,
-                            ),
-                            border = BorderStroke(2.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = responsiveScale.dp(44))
-                                .heightIn(min = responsiveScale.dp(44))
-                                .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                        ) {
-                            Text(
-                                "LIHAT SPESIFIKASI",
-                                style = NyawitType.Caption,
-                                color = c.Text,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "${app.fullName.substringBefore('/')} • ${app.packageName}",
+                            style = NyawitType.Caption,
+                            color = c.Muted,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
 
-                Spacer(Modifier.width(20.dp))
+                Spacer(Modifier.height(10.dp))
 
-                // Right Column: Comic Spec Showcase Panel
-                ComicPanel(
-                    modifier = Modifier.weight(0.8f).defaultMinSize(minHeight = 130.dp),
-                    borderWidth = 2.dp,
-                    shadowOffset = 3.dp,
-                    backgroundColor = if (c.isDark) c.SurfaceRaised else Color(0xFFF1F5F9),
-                    shape = RoundedCornerShape(10.dp),
+                ComicSpeechBubble(
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = if (c.isDark) c.SurfaceHighlight else Color(0xFFF8FAFC),
+                    borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
+                ) {
+                    Text(
+                        "\"${app.description}\"",
+                        style = NyawitType.Body,
+                        color = c.Text,
+                        maxLines = 2,
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Mobile Buttons: Side by side with proportional weights
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val isInstalled = status == AppStatus.INSTALLED
+                    val isUpdate = status == AppStatus.UPDATE_AVAILABLE
+                    Button(
+                        onClick = if (isInstalled) onOpen else onInstall,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = when {
+                                isUpdate -> c.Warning
+                                isInstalled -> c.Primary
+                                else -> c.Primary
+                            },
+                            contentColor = when {
+                                isUpdate -> c.OnWarning
+                                else -> c.OnPrimary
+                            },
+                        ),
+                        border = BorderStroke(2.dp, Color(0xFF0F172A)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .height(42.dp)
+                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                    ) {
+                        Text(
+                            when {
+                                isInstalled -> "BUKA ➔"
+                                isUpdate -> "UPDATE ➔"
+                                else -> "PASANG ➔"
+                            },
+                            style = NyawitType.Caption,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+
+                    Button(
+                        onClick = onDetail,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = c.SurfaceRaised,
+                            contentColor = c.Text,
+                        ),
+                        border = BorderStroke(1.5.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(42.dp)
+                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                    ) {
+                        Text(
+                            "DETAIL",
+                            style = NyawitType.Caption,
+                            color = c.Text,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+            } else {
+                // Wide Desktop / Tablet Layout: Balanced 2-Column Hero Layout
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
-                        Modifier.padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.weight(1.2f).fillMaxWidth(),
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            ComicArcadeIllustration(
-                                modifier = Modifier.size(responsiveScale.dp(86)),
-                                primaryColor = c.Primary,
-                                accentColor = Color(0xFFFFDE00),
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    "SPESIFIKASI MODUL",
-                                    style = NyawitType.Overline,
-                                    color = if (c.isDark) c.Primary else Color(0xFF0F172A),
-                                    fontWeight = FontWeight.Black,
-                                )
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    app.platforms.forEach { platform ->
-                                        ComicBadge(
-                                            text = platform.badgeLabel(),
-                                            containerColor = c.Surface,
-                                            contentColor = c.Text,
-                                            borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
-                                        )
-                                    }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = c.SurfaceRaised,
+                                border = BorderStroke(2.5.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
+                                modifier = Modifier.size(68.dp),
+                            ) {
+                                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                    AppIcon(
+                                        fullName = app.fullName,
+                                        fallbackName = app.name,
+                                        size = 56.dp,
+                                        shape = RoundedCornerShape(8.dp),
+                                    )
                                 }
+                            }
+
+                            Spacer(Modifier.width(16.dp))
+
+                            Column {
                                 Text(
-                                    "STATUS: SIAP JALAN ✦",
-                                    style = NyawitType.Overline,
-                                    color = c.Muted,
-                                    fontWeight = FontWeight.Bold,
+                                    app.name,
+                                    style = NyawitType.Title,
+                                    fontWeight = FontWeight.Black,
+                                    color = c.Text,
+                                    maxLines = 1,
+                                    softWrap = false,
                                 )
+                                Spacer(Modifier.height(3.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        app.fullName.substringBefore('/'),
+                                        style = NyawitType.Caption,
+                                        color = c.Primary,
+                                        fontWeight = FontWeight.Black,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                    Box(Modifier.size(4.dp).background(c.Primary, CircleShape))
+                                    Text(
+                                        app.packageName,
+                                        style = NyawitType.Caption,
+                                        color = c.Faint,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        ComicSpeechBubble(
+                            backgroundColor = if (c.isDark) c.SurfaceHighlight else Color(0xFFF8FAFC),
+                            borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
+                        ) {
+                            Text(
+                                "\"${app.description}\"",
+                                style = NyawitType.Body,
+                                color = c.Text,
+                                maxLines = 2,
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            val isInstalled = status == AppStatus.INSTALLED
+                            val isUpdate = status == AppStatus.UPDATE_AVAILABLE
+                            Button(
+                                onClick = if (isInstalled) onOpen else onInstall,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = when {
+                                        isUpdate -> c.Warning
+                                        isInstalled -> c.Primary
+                                        else -> c.Primary
+                                    },
+                                    contentColor = when {
+                                        isUpdate -> c.OnWarning
+                                        else -> c.OnPrimary
+                                    },
+                                ),
+                                border = BorderStroke(2.5.dp, Color(0xFF0F172A)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 44.dp)
+                                    .heightIn(min = 44.dp)
+                                    .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                            ) {
+                                Text(
+                                    when {
+                                        isInstalled -> "JALANKAN SEKARANG! ➔"
+                                        isUpdate -> "PERBARUI VERSI! ➔"
+                                        else -> "PASANG KE PERANGKAT! ➔"
+                                    },
+                                    style = NyawitType.Caption,
+                                    fontWeight = FontWeight.Black,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+
+                            Button(
+                                onClick = onDetail,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = c.SurfaceRaised,
+                                    contentColor = c.Text,
+                                ),
+                                border = BorderStroke(2.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 44.dp)
+                                    .heightIn(min = 44.dp)
+                                    .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                            ) {
+                                Text(
+                                    "LIHAT SPESIFIKASI",
+                                    style = NyawitType.Caption,
+                                    color = c.Text,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.width(20.dp))
+
+                    ComicPanel(
+                        modifier = Modifier.weight(0.8f).defaultMinSize(minHeight = 130.dp),
+                        borderWidth = 2.dp,
+                        shadowOffset = 3.dp,
+                        backgroundColor = if (c.isDark) c.SurfaceRaised else Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Column(
+                            Modifier.padding(14.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                ComicArcadeIllustration(
+                                    modifier = Modifier.size(86.dp),
+                                    primaryColor = c.Primary,
+                                    accentColor = Color(0xFFFFDE00),
+                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        "SPESIFIKASI MODUL",
+                                        style = NyawitType.Overline,
+                                        color = if (c.isDark) c.Primary else Color(0xFF0F172A),
+                                        fontWeight = FontWeight.Black,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        app.platforms.forEach { platform ->
+                                            ComicBadge(
+                                                text = platform.badgeLabel(),
+                                                containerColor = c.Surface,
+                                                contentColor = c.Text,
+                                                borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        "STATUS: SIAP JALAN ✦",
+                                        style = NyawitType.Overline,
+                                        color = c.Muted,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                }
                             }
                         }
                     }
