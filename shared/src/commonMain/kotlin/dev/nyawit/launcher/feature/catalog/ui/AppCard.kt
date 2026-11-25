@@ -9,11 +9,14 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -51,6 +54,7 @@ import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.DownloadIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
+import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
@@ -76,6 +80,7 @@ fun AppCard(
     onOpen: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
     var isCardFocused by remember { mutableStateOf(false) }
 
     val containerColor by animateColorAsState(
@@ -159,13 +164,13 @@ fun AppCard(
                         2.dp,
                         if (isCardFocused) c.Primary else c.BorderHighlight,
                     ),
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier.size(responsiveScale.dp(56)),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
                         AppIcon(
                             fullName = app.fullName,
                             fallbackName = app.name,
-                            size = 48.dp,
+                            size = responsiveScale.dp(48),
                             shape = RoundedCornerShape(8.dp),
                         )
                     }
@@ -301,23 +306,28 @@ fun AppCard(
                     ),
                     border = btnBorder,
                     shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(
+                        horizontal = responsiveScale.dp(12),
+                        vertical = responsiveScale.dp(8),
+                    ),
                     modifier = Modifier
-                        .height(44.dp)
+                        .defaultMinSize(minHeight = responsiveScale.dp(44))
+                        .heightIn(min = responsiveScale.dp(44))
                         .weight(1f)
                         .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     if (busy) {
                         CircularProgressIndicator(
-                            Modifier.size(16.dp),
+                            Modifier.size(responsiveScale.dp(16)),
                             strokeWidth = 2.dp,
                             color = btnContentColor,
                         )
                         Spacer(Modifier.width(8.dp))
                     } else if (isInstalled) {
-                        ArrowIcon(Modifier.size(16.dp), btnContentColor)
+                        ArrowIcon(Modifier.size(responsiveScale.dp(16)), btnContentColor)
                         Spacer(Modifier.width(8.dp))
                     } else if (progress == null) {
-                        DownloadIcon(Modifier.size(16.dp), if (isUpdate) btnContentColor else c.Primary)
+                        DownloadIcon(Modifier.size(responsiveScale.dp(16)), if (isUpdate) btnContentColor else c.Primary)
                         Spacer(Modifier.width(8.dp))
                     }
                     Text(
@@ -339,13 +349,13 @@ fun AppCard(
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(2.dp, c.BorderHighlight),
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(responsiveScale.dp(44))
                         .clickable { onDetail?.invoke() }
                         .focusable()
                         .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        InfoIcon(Modifier.size(18.dp), c.Text)
+                        InfoIcon(Modifier.size(responsiveScale.dp(18)), c.Text)
                     }
                 }
             }

@@ -106,6 +106,7 @@ fun ComicBadge(
     icon: (@Composable () -> Unit)? = null,
 ) {
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
     val border = borderColor ?: if (c.isDark) {
         if (containerColor == c.Primary || containerColor == c.Warning) Color(0xFF0F172A) else c.Primary.copy(alpha = 0.8f)
     } else {
@@ -119,7 +120,10 @@ fun ComicBadge(
         modifier = modifier,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            modifier = Modifier.padding(
+                horizontal = responsiveScale.dp(8),
+                vertical = responsiveScale.dp(3),
+            ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {

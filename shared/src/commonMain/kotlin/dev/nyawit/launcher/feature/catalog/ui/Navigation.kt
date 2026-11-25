@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +44,7 @@ import dev.nyawit.launcher.core.ui.GlobeIcon
 import dev.nyawit.launcher.core.ui.GridIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
 import dev.nyawit.launcher.core.ui.LocalLanguageController
+import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.PaletteIcon
 import dev.nyawit.launcher.core.ui.SettingsIcon
@@ -204,7 +206,7 @@ fun AppSidebar(
             border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(42.dp)
+                .defaultMinSize(minHeight = LocalResponsiveScale.current.dp(42))
                 .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
         ) {
             if (selfBusy) {
@@ -242,11 +244,12 @@ private fun NavItem(
         animationSpec = tween(140),
     )
     val contentColor = if (selected) c.Primary else c.Muted
+    val responsiveScale = LocalResponsiveScale.current
 
     Row(
         Modifier
             .fillMaxWidth()
-            .height(46.dp)
+            .defaultMinSize(minHeight = responsiveScale.dp(46))
             .clip(RoundedCornerShape(8.dp))
             .background(itemBg)
             .border(

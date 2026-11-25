@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -59,6 +61,7 @@ import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.ComicSpeechBubble
 import dev.nyawit.launcher.core.ui.ComicSpeedLines
+import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.MenuIcon
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.SearchIcon
@@ -395,6 +398,7 @@ fun FeaturedApp(
     onDetail: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
     ComicPanel(
         modifier = Modifier
             .fillMaxWidth()
@@ -459,13 +463,13 @@ fun FeaturedApp(
                     shape = RoundedCornerShape(12.dp),
                     color = c.SurfaceRaised,
                     border = BorderStroke(2.5.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier.size(responsiveScale.dp(72)),
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
                         AppIcon(
                             fullName = app.fullName,
                             fallbackName = app.name,
-                            size = 60.dp,
+                            size = responsiveScale.dp(60),
                             shape = RoundedCornerShape(8.dp),
                         )
                     }
@@ -515,7 +519,7 @@ fun FeaturedApp(
                 // Comic Pop-Art Vector Gamepad Illustration
                 Spacer(Modifier.width(12.dp))
                 ComicArcadeIllustration(
-                    modifier = Modifier.size(76.dp),
+                    modifier = Modifier.size(responsiveScale.dp(76)),
                     primaryColor = c.Primary,
                     accentColor = Color(0xFFFFDE00),
                 )
@@ -550,7 +554,8 @@ fun FeaturedApp(
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
-                        .height(44.dp)
+                        .defaultMinSize(minHeight = responsiveScale.dp(44))
+                        .heightIn(min = responsiveScale.dp(44))
                         .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     Text(
@@ -573,7 +578,8 @@ fun FeaturedApp(
                     border = BorderStroke(2.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
-                        .height(44.dp)
+                        .defaultMinSize(minHeight = responsiveScale.dp(44))
+                        .heightIn(min = responsiveScale.dp(44))
                         .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                 ) {
                     Text(

@@ -59,7 +59,11 @@ data class ResponsiveScale(
     val columns: Int = 3,
     val sidebarWidth: Dp = 224.dp,
     val isTv: Boolean = false,
-)
+) {
+    fun dp(base: Dp): Dp = base * factor
+    fun dp(base: Int): Dp = (base * factor).dp
+    fun dp(base: Float): Dp = (base * factor).dp
+}
 
 val LocalResponsiveScale = staticCompositionLocalOf { ResponsiveScale() }
 

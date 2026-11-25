@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicPanel
+import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
@@ -50,6 +51,7 @@ fun AppDetailDialog(
     onDismiss: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
 
     Dialog(onDismissRequest = onDismiss) {
         ComicPanel(
@@ -58,7 +60,7 @@ fun AppDetailDialog(
             borderWidth = 2.5.dp,
             borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
             shadowOffset = 6.dp,
-            modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = 560.dp),
+            modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = responsiveScale.dp(580)),
         ) {
             Column {
                 Column(
@@ -94,13 +96,13 @@ fun AppDetailDialog(
                             shape = RoundedCornerShape(10.dp),
                             color = c.SurfaceRaised,
                             border = BorderStroke(2.dp, c.BorderHighlight),
-                            modifier = Modifier.size(58.dp),
+                            modifier = Modifier.size(responsiveScale.dp(58)),
                         ) {
                             Box(Modifier.fillMaxSize(), Alignment.Center) {
                                 AppIcon(
                                     fullName = app.fullName,
                                     fallbackName = app.name,
-                                    size = 48.dp,
+                                    size = responsiveScale.dp(48),
                                     shape = RoundedCornerShape(8.dp),
                                 )
                             }
