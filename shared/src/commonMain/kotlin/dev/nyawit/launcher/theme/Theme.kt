@@ -241,7 +241,7 @@ fun LauncherTheme(
     val currentColors = colorsFor(themeController.mode)
     val currentStrings = stringsFor(languageController.language)
     val profile = rememberDeviceProfile()
-    val responsiveScale = rememberResponsiveScale(profile, settingsController.scalePreference)
+    val responsiveScale = rememberResponsiveScale(profile)
     val scaledDensity = rememberScaledDensity(responsiveScale.factor)
 
     val colorScheme = if (currentColors.isDark) {

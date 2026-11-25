@@ -44,7 +44,6 @@ import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.GlobeIcon
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
-import dev.nyawit.launcher.core.ui.ScalePreference
 import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SettingsIcon
 import dev.nyawit.launcher.core.ui.rememberDeviceProfile
@@ -197,59 +196,7 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 3: Penskalaan Layar
-            SettingsSectionCard(
-                title = NyawitStrings.SETTINGS_SEC_SCALE,
-                description = NyawitStrings.SETTINGS_SEC_SCALE_DESC,
-            ) {
-                val prefs = ScalePreference.entries
-                if (isNarrow) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            prefs.take(3).forEach { pref ->
-                                ScalePreferenceChip(
-                                    pref = pref,
-                                    selected = settingsController.scalePreference == pref,
-                                    onClick = { settingsController.setScale(pref) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            prefs.drop(3).forEach { pref ->
-                                ScalePreferenceChip(
-                                    pref = pref,
-                                    selected = settingsController.scalePreference == pref,
-                                    onClick = { settingsController.setScale(pref) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        prefs.forEach { pref ->
-                            ScalePreferenceChip(
-                                pref = pref,
-                                selected = settingsController.scalePreference == pref,
-                                onClick = { settingsController.setScale(pref) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Section 4: Sistem & Pembaruan
+            // Section 3: Sistem & Pembaruan
             SettingsSectionCard(
                 title = NyawitStrings.SETTINGS_SEC_UPDATES,
                 description = NyawitStrings.SETTINGS_SEC_UPDATES_DESC,
@@ -494,53 +441,6 @@ private fun LanguageCard(
             }
             if (selected) {
                 CheckIcon(Modifier.size(16.dp), color = c.Primary)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScalePreferenceChip(
-    pref: ScalePreference,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = LocalNyawitColors.current
-    val responsiveScale = LocalResponsiveScale.current
-    val label = when (pref) {
-        ScalePreference.AUTO -> "${NyawitStrings.SETTINGS_SCALE_AUTO} (${(responsiveScale.factor * 100).toInt()}%)"
-        ScalePreference.COMPACT -> NyawitStrings.SETTINGS_SCALE_COMPACT
-        ScalePreference.STANDARD -> NyawitStrings.SETTINGS_SCALE_STANDARD
-        ScalePreference.LARGE -> NyawitStrings.SETTINGS_SCALE_LARGE
-        ScalePreference.EXTRA_LARGE -> NyawitStrings.SETTINGS_SCALE_XLARGE
-    }
-
-    Surface(
-        color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
-        shape = RoundedCornerShape(6.dp),
-        border = BorderStroke(
-            width = if (selected) 2.dp else 1.5.dp,
-            color = if (selected) c.Primary else c.BorderHighlight,
-        ),
-        modifier = modifier
-            .focusable()
-            .tvFocusHighlight(RoundedCornerShape(6.dp), 1.02f)
-            .clickable { onClick() },
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = label,
-                style = NyawitType.Caption,
-                color = if (selected) c.Primary else c.Text,
-                fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
-            )
-            if (selected) {
-                CheckIcon(Modifier.size(12.dp), color = c.Primary)
             }
         }
     }

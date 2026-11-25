@@ -98,8 +98,9 @@ fun calculateAutoScale(profile: DeviceProfile): Float {
     }
     return when (profile.kind) {
         ScreenKind.PHONE -> when {
-            profile.widthDp < 360f -> (profile.widthDp / 375f).coerceIn(0.84f, 0.94f)
-            profile.widthDp > 460f && !profile.isLandscape -> 1.04f
+            profile.isLandscape -> 0.90f
+            profile.widthDp < 360f -> (profile.widthDp / 375f).coerceIn(0.82f, 0.94f)
+            profile.widthDp > 460f -> 1.04f
             else -> 1.0f
         }
         ScreenKind.TABLET -> when {
