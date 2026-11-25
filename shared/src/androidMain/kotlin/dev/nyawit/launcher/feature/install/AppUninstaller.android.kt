@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import dev.nyawit.launcher.core.platform.resolvePackage
 
 actual fun uninstallApp(
@@ -14,25 +15,40 @@ actual fun uninstallApp(
     onResult: (Boolean, String) -> Unit,
 ) {
     val context = platformContext as? Context
-    if (context == null) {
-        onResult(false, "Konteks Android tidak tersedia")
-        return
-    }
-    val resolved = resolvePackage(packageName, displayName, context)
-    if (resolved == null) {
-        onResult(false, "$displayName tidak terpasang")
-        return
-    }
-    @Suppress("DEPRECATION")
-    val intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
-        .setData(Uri.parse("package:$resolved"))
-        .putExtra(Intent.EXTRA_RETURN_RESULT, false)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     val main = Handler(Looper.getMainLooper())
-    try {
-        context.startActivity(intent)
-        main.post { onResult(true, "Konfirmasi penghapusan $displayName ditampilkan") }
-    } catch (t: Throwable) {
-        main.post { onResult(false, "Gagal membuka penghapusan: ${t.message ?: "unknown"}") }
+    if (context == null) {
+        main.post { onResult(false, "Konteks Android tidak tersedia") }
+        return
+    }
+    val targetPackage = resolvePackage(packageName, displayName, context) ?: packageName
+
+    main.post {
+        try {
+            // Intent resmi modern untuk uninstall di Android TV dan Mobile: ACTION_DELETE
+            var intent = Intent(Intent.ACTION_DELETE).apply {
+                data = Uri.parse("package:$targetPackage")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (intent.resolveActivity(context.packageManager) == null) {
+                // Fallback 1: Legacy ACTION_UNINSTALL_PACKAGE
+                @Suppress("DEPRECATION")
+                intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                    data = Uri.parse("package:$targetPackage")
+                    putExtra(Intent.EXTRA_RETURN_RESULT, false)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                if (intent.resolveActivity(context.packageManager) == null) {
+                    // Fallback 2: Detail aplikasi di Pengaturan
+                    intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:$targetPackage")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                }
+            }
+            context.startActivity(intent)
+            onResult(true, "Konfirmasi penghapusan $displayName ditampilkan")
+        } catch (t: Throwable) {
+            onResult(false, "Gagal membuka penghapusan: ${t.message ?: "unknown"}")
+        }
     }
 }
