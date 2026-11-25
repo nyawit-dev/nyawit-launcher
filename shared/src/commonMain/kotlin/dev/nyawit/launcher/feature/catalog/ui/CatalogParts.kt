@@ -77,12 +77,14 @@ import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 import nyawit_launcher.shared.generated.resources.Res
 import nyawit_launcher.shared.generated.resources.empty_state
+import nyawit_launcher.shared.generated.resources.nyawit_launcher
 import org.jetbrains.compose.resources.painterResource
 
-/** Tanda merek yang digambar vektor dengan gaya neo-pop comic ink. */
+/** Tanda merek dengan ikon resmi Nyawit berpadu gaya neo-pop comic ink. */
 @Composable
 fun BrandMark(size: Int = 46) {
     val c = LocalNyawitColors.current
+    val cornerRadius = (size * 0.22f).dp
     Box(Modifier.size(size.dp)) {
         // Comic hard drop shadow
         Box(
@@ -91,39 +93,26 @@ fun BrandMark(size: Int = 46) {
                 .offset(2.dp, 2.dp)
                 .background(
                     if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
-                    RoundedCornerShape(10.dp),
+                    RoundedCornerShape(cornerRadius),
                 ),
         )
-        Canvas(
-            Modifier
+        Surface(
+            modifier = Modifier
                 .size(size.dp)
-                .background(c.SurfaceRaised, RoundedCornerShape(10.dp))
                 .border(
-                    BorderStroke(2.dp, if (c.isDark) Color(0xFF475569) else Color(0xFF0F172A)),
-                    RoundedCornerShape(10.dp),
+                    BorderStroke(2.dp, if (c.isDark) c.Primary.copy(alpha = 0.6f) else Color(0xFF0F172A)),
+                    RoundedCornerShape(cornerRadius),
                 ),
+            shape = RoundedCornerShape(cornerRadius),
+            color = c.SurfaceRaised,
         ) {
-            val cx = size.dp.toPx() / 2f
-            val cy = size.dp.toPx() / 2f
-            drawCircle(c.Primary, radius = size.dp.toPx() * 0.28f, center = Offset(cx, cy))
-            val nSize = size.dp.toPx() * 0.32f
-            drawLine(
-                c.OnPrimary,
-                Offset(cx - nSize / 2, cy + nSize / 2),
-                Offset(cx - nSize / 2, cy - nSize / 2),
-                strokeWidth = 3.dp.toPx(),
-            )
-            drawLine(
-                c.OnPrimary,
-                Offset(cx - nSize / 2, cy - nSize / 2),
-                Offset(cx + nSize / 2, cy + nSize / 2),
-                strokeWidth = 3.dp.toPx(),
-            )
-            drawLine(
-                c.OnPrimary,
-                Offset(cx + nSize / 2, cy - nSize / 2),
-                Offset(cx + nSize / 2, cy + nSize / 2),
-                strokeWidth = 3.dp.toPx(),
+            Image(
+                painter = painterResource(Res.drawable.nyawit_launcher),
+                contentDescription = NyawitStrings.BRAND_NAME,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(cornerRadius)),
+                contentScale = ContentScale.Fit,
             )
         }
     }
