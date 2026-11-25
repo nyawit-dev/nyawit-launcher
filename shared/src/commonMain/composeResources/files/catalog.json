@@ -1,4 +1,4 @@
- {
+{
   "sources": [
     {
       "owner": {
@@ -67,6 +67,27 @@
           ],
           "packageName": "com.unknown.unknownapp",
           "accent": "#9B8CFF"
+        }
+      ]
+    },
+    {
+      "owner": {
+        "name": "xiaoyouchr",
+        "web": "https://github.com/xiaoyouchr"
+      },
+      "repo": [
+        {
+          "type": "repo",
+          "name": "xiaoyouchr/ghost-downloader-3",
+          "label": "Ghost Downloader",
+          "description": "Downloader multi-protokol untuk Android dan desktop: HTTP, FTP, BitTorrent, magnet, dan streaming.",
+          "category": "Aplikasi",
+          "platforms": [
+            "android",
+            "desktop"
+          ],
+          "packageName": "com.xychr.ghostdownloader",
+          "accent": "#3DDC97"
         }
       ]
     }
