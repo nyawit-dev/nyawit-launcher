@@ -11,3 +11,6 @@ expect fun launchInstalledApp(
     platformContext: Any?,
     displayName: String? = null,
 ): Boolean
+
+/** Alasan kegagalan `launchInstalledApp` terakhir, atau null bila berhasil. */
+expect fun lastLaunchError(): String?

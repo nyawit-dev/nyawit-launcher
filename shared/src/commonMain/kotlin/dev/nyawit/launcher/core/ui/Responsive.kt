@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
@@ -18,6 +19,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.isTvPlatform
 import kotlinx.coroutines.launch
@@ -25,6 +28,18 @@ import kotlinx.coroutines.launch
 enum class ScreenKind { PHONE, TABLET, DESKTOP, TV }
 
 data class DeviceProfile(val kind: ScreenKind, val widthDp: Float)
+
+/**
+ * Konfigurasi Skala Responsif untuk berbagai jenis layar.
+ */
+data class ResponsiveScale(
+    val factor: Float = 1f,
+    val columns: Int = 3,
+    val sidebarWidth: Dp = 224.dp,
+    val isTv: Boolean = false,
+)
+
+val LocalResponsiveScale = staticCompositionLocalOf { ResponsiveScale() }
 
 @Composable
 fun rememberDeviceProfile(): DeviceProfile {
@@ -35,7 +50,54 @@ fun rememberDeviceProfile(): DeviceProfile {
         width >= 600 -> ScreenKind.TABLET
         else -> ScreenKind.PHONE
     }
-    return DeviceProfile(kind, width)
+    return remember(kind, width) { DeviceProfile(kind, width) }
+}
+
+/**
+ * Menghitung skala responsif adaptif sesuai dengan ukuran dan orientasi layar.
+ */
+@Composable
+fun rememberResponsiveScale(profile: DeviceProfile): ResponsiveScale {
+    return remember(profile) {
+        val factor = when (profile.kind) {
+            ScreenKind.TV -> 1.30f
+            ScreenKind.TABLET -> 1.08f
+            ScreenKind.PHONE -> if (profile.widthDp < 360f) 0.92f else 1.0f
+            ScreenKind.DESKTOP -> if (profile.widthDp >= 1800f) 1.15f else 1.0f
+        }
+        val columns = when (profile.kind) {
+            ScreenKind.PHONE -> 1
+            ScreenKind.TABLET -> 2
+            ScreenKind.TV -> 3
+            ScreenKind.DESKTOP -> if (profile.widthDp >= 1600f) 4 else 3
+        }
+        val sidebarWidth = when (profile.kind) {
+            ScreenKind.TV -> 260.dp
+            ScreenKind.DESKTOP -> if (profile.widthDp >= 1600f) 248.dp else 224.dp
+            else -> 280.dp // Drawer width on phone/tablet
+        }
+        ResponsiveScale(
+            factor = factor,
+            columns = columns,
+            sidebarWidth = sidebarWidth,
+            isTv = profile.kind == ScreenKind.TV,
+        )
+    }
+}
+
+/**
+ * Menghitung Density terskala agar seluruh elemen teks dan Dp di seluruh aplikasi
+ * beradaptasi secara presisi dengan jarak pandang dan resolusi layar perangkat.
+ */
+@Composable
+fun rememberScaledDensity(scaleFactor: Float): Density {
+    val currentDensity = LocalDensity.current
+    return remember(currentDensity, scaleFactor) {
+        Density(
+            density = currentDensity.density * scaleFactor,
+            fontScale = currentDensity.fontScale * scaleFactor,
+        )
+    }
 }
 
 @Composable

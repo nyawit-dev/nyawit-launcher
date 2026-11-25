@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -26,6 +27,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -44,9 +46,13 @@ import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.appVersion
 import dev.nyawit.launcher.core.platform.currentAppPlatform
+import dev.nyawit.launcher.core.platform.observeAppResume
 import dev.nyawit.launcher.core.platform.installedVersion
 import dev.nyawit.launcher.core.platform.launchInstalledApp
+import dev.nyawit.launcher.core.platform.lastLaunchError
 import dev.nyawit.launcher.core.platform.localCatalogOverride
+import dev.nyawit.launcher.core.ui.LocalResponsiveScale
+import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
@@ -118,9 +124,11 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var selfUpdateDone by remember { mutableStateOf(false) }
     var updateTag by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableStateOf(0) }
+    var statusKey by remember { mutableStateOf(0) }
     var detailApp by remember { mutableStateOf<CatalogApp?>(null) }
     var page by remember { mutableStateOf(AppPage.APPS) }
     var query by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("__ALL__") }
     val searchFocus = remember { FocusRequester() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
@@ -129,7 +137,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         if (selfBusy) {
             delay(180_000)
             selfBusy = false
-            notice = Notice("Pembaruan tidak merespons — coba lagi", error = true)
+            notice = Notice(NyawitStrings.NOTICE_TIMEOUT, error = true)
         }
     }
 
@@ -138,6 +146,12 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             catalog.close()
             updater.close()
         }
+    }
+
+    // Kembali dari dialog pasang/hapus sistem: status harus dihitung ulang dari perangkat.
+    DisposableEffect(platformContext) {
+        val dispose = observeAppResume(platformContext) { statusKey++ }
+        onDispose(dispose)
     }
 
     LaunchedEffect(notice) {
@@ -155,7 +169,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         if (selfBusy) return
         val asset = updater.pickAsset(release) ?: return
         selfBusy = true
-        notice = Notice("Memasang pembaruan launcher ${release.tag}…")
+        notice = Notice(NyawitStrings.noticeUpdatingLauncher(release.tag))
         applyUpdate(
             InstallRequest(
                 url = asset.downloadUrl,
@@ -170,8 +184,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         ) { ok, msg ->
             selfBusy = false
             notice = Notice(
-                if (ok) "Pembaruan launcher ${release.tag} dipasang otomatis"
-                else "Gagal memperbarui launcher: $msg",
+                if (ok) NyawitStrings.noticeUpdateInstalled(release.tag)
+                else NyawitStrings.noticeUpdateFailed(msg),
                 error = !ok,
             )
         }
@@ -184,7 +198,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             try {
                 val release = withContext(Dispatchers.Default) { updater.latest() }
                 if (release == null) {
-                    notice = Notice("Gagal mengecek rilis terbaru", error = true)
+                    notice = Notice(NyawitStrings.NOTICE_CHECK_FAILED, error = true)
                     selfBusy = false
                     return@launch
                 }
@@ -194,7 +208,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     selfBusy = false
                     autoUpdate(release)
                 } else {
-                    notice = Notice("Aplikasi sudah versi terbaru (v$version)")
+                    notice = Notice(NyawitStrings.noticeUpToDate(version))
                     selfBusy = false
                 }
             } catch (t: Throwable) {
@@ -209,8 +223,17 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         if (app.fullName in busyApps) return
         busyApps = busyApps + app.fullName
         progress = progress + (app.fullName to 0f)
-        notice = Notice(if (request.filePath != null) "Membuka installer ${app.name}…" else "Mengunduh ${app.name}…")
+        notice = Notice(if (request.filePath != null) NyawitStrings.noticeOpeningInstaller(app.name) else NyawitStrings.noticeDownloadingApp(app.name))
         val cachedPath = downloadedInstallerPath(request)
+        // Status lama (mis. sisa penghapusan yang belum tersegarkan) tidak boleh terbawa saat unduh.
+        scope.launch {
+            val installed = withContext(Dispatchers.Default) {
+                installedVersion(app.packageName, platformContext, app.name)
+            }
+            if (installed == null) {
+                statuses = statuses + (app.fullName to AppStatus.NOT_INSTALLED)
+            }
+        }
         installApp(
             request,
             onProgress = { progress = progress + (app.fullName to it) },
@@ -229,10 +252,11 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             notice = Notice(
                 text = "${app.name}: $msg",
                 error = !ok,
-                actionLabel = if (!ok && cachedPath.isNotBlank()) "Lanjutkan" else null,
+                actionLabel = if (!ok && cachedPath.isNotBlank()) NyawitStrings.ACTION_CONTINUE else null,
                 onAction = { startInstall(app, request.copy(filePath = cachedPath)) },
             )
-            reloadKey++
+            // Hitung ulang dari perangkat: installer sistem bisa selesai setelah callback ini.
+            statusKey++
         }
     }
 
@@ -252,7 +276,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             val url = selected.first
             val fileName = selected.second
             if (url == null || fileName == null) {
-                notice = Notice("${app.name} tidak menyediakan installer untuk platform ini", error = true)
+                notice = Notice(NyawitStrings.noticePlatformNotSupported(app.name), error = true)
                 return@launch
             }
             startInstall(
@@ -274,34 +298,23 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     fun uninstall(app: CatalogApp) {
         uninstallApp(app.packageName, app.name, platformContext) { ok, msg ->
             notice = Notice("${app.name}: $msg", error = !ok)
-            if (ok) reloadKey++
+            if (ok) statusKey++
         }
     }
 
     fun open(app: CatalogApp) {
         if (!launchInstalledApp(app.packageName, platformContext, app.name)) {
-            notice = Notice("Gagal membuka ${app.name}", error = true)
+            val detail = lastLaunchError()?.takeIf { it.isNotBlank() }
+            notice = Notice(
+                NyawitStrings.noticeOpenFailed(app.name, detail),
+                error = true,
+            )
         }
     }
 
     LaunchedEffect(reloadKey) {
         try {
-            val loaded = catalog.loadApps()
-            apps = loaded
-            statuses = coroutineScope {
-                loaded.map { app ->
-                    async(Dispatchers.Default) {
-                        val installed = installedVersion(app.packageName, platformContext, app.name)
-                        val tag = if (installed == null) null else catalog.latestReleaseTag(app.fullName)
-                        val status = when {
-                            installed == null -> AppStatus.NOT_INSTALLED
-                            tag == null || !isNewer(tag, installed) -> AppStatus.INSTALLED
-                            else -> AppStatus.UPDATE_AVAILABLE
-                        }
-                        app.fullName to status
-                    }
-                }.awaitAll().toMap()
-            }
+            apps = catalog.loadApps()
         } catch (t: Throwable) {
             error = t.message ?: "Gagal memuat katalog"
         } finally {
@@ -315,18 +328,62 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         }
     }
 
+    // Status dihitung terpisah dari katalog agar bisa disegarkan setelah pasang/hapus
+    // tanpa mengunduh ulang daftar aplikasi dari GitHub.
+    LaunchedEffect(apps, statusKey) {
+        statuses = coroutineScope {
+            apps.map { app ->
+                async(Dispatchers.Default) {
+                    val installed = installedVersion(app.packageName, platformContext, app.name)
+                    val tag = if (installed == null) null else runCatching { catalog.latestReleaseTag(app.fullName) }.getOrNull()
+                    val status = when {
+                        installed == null -> AppStatus.NOT_INSTALLED
+                        tag == null || !isNewer(tag, installed) -> AppStatus.INSTALLED
+                        else -> AppStatus.UPDATE_AVAILABLE
+                    }
+                    app.fullName to status
+                }
+            }.awaitAll().toMap()
+        }
+    }
+
     val updateCount = statuses.values.count { it == AppStatus.UPDATE_AVAILABLE }
-    val visibleApps = apps.filter { app ->
-        val matchPlatform = when (currentPlatform) {
+
+    val platformMatchedApps = apps.filter { app ->
+        when (currentPlatform) {
             AppPlatform.DESKTOP -> AppPlatform.DESKTOP in app.platforms
             else -> AppPlatform.ANDROID in app.platforms || AppPlatform.TV in app.platforms
         }
-        val matchQuery = query.isBlank() ||
-            app.name.contains(query, true) || app.description.contains(query, true)
-        matchPlatform && matchQuery
     }
+
+    val categories = remember(platformMatchedApps) {
+        val raw = platformMatchedApps.map { it.category.trim() }.filter { it.isNotBlank() }.distinct().sorted()
+        listOf("__ALL__") + raw
+    }
+
+    val categoryCounts = remember(platformMatchedApps) {
+        val counts = mutableMapOf<String, Int>()
+        counts["__ALL__"] = platformMatchedApps.size
+        platformMatchedApps.forEach { app ->
+            val cat = app.category.trim()
+            counts[cat] = (counts[cat] ?: 0) + 1
+        }
+        counts
+    }
+
+    val visibleApps = platformMatchedApps.filter { app ->
+        val matchCategory = selectedCategory == "__ALL__" ||
+            app.category.equals(selectedCategory, ignoreCase = true)
+        val matchQuery = query.isBlank() ||
+            app.name.contains(query, true) ||
+            app.description.contains(query, true) ||
+            app.category.contains(query, true)
+        matchCategory && matchQuery
+    }
+
     val isPhone = profile.kind == ScreenKind.PHONE
     val c = LocalNyawitColors.current
+    val responsiveScale = LocalResponsiveScale.current
 
     val content = @Composable {
         Column(
@@ -337,26 +394,44 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     vertical = if (isPhone) 14.dp else 20.dp,
                 ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isPhone) {
-                    Button(
-                        onClick = { scope.launch { drawerState.open() } },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = c.SurfaceRaised,
-                            contentColor = c.Text,
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.height(38.dp),
-                    ) { Text("☰", style = NyawitType.Caption) }
-                    Spacer(Modifier.width(10.dp))
+            if (isPhone) {
+                MobileHeader(
+                    version = version,
+                    onOpenDrawer = { scope.launch { drawerState.open() } },
+                    updateAvailable = updateCount > 0 || updateTag != null,
+                )
+            } else {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    BrandMark(36)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(NyawitStrings.BRAND_FULL_TITLE, style = NyawitType.Wordmark, color = c.Text)
+                            Spacer(Modifier.width(8.dp))
+                            Surface(
+                                color = c.Primary.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp),
+                            ) {
+                                Text(
+                                    "v$version",
+                                    style = NyawitType.Overline,
+                                    color = c.Primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            NyawitStrings.BRAND_TAGLINE,
+                            style = NyawitType.Caption,
+                            color = c.Muted,
+                        )
+                    }
                 }
-                BrandMark(34)
-                Spacer(Modifier.width(10.dp))
-                Text("NYAWIT LAUNCHER", style = NyawitType.Wordmark, color = c.Text)
-                Spacer(Modifier.width(8.dp))
-                Text("v$version", style = NyawitType.Caption, color = c.Muted)
             }
-            Spacer(Modifier.height(12.dp))
+
+            Spacer(Modifier.height(14.dp))
+
             AnimatedVisibility(
                 visible = notice != null,
                 enter = fadeIn() + slideInVertically { -it / 2 },
@@ -375,11 +450,25 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     )
                 }
             }
+
             Spacer(Modifier.height(10.dp))
+
             when (page) {
                 AppPage.APPS -> {
                     CatalogSearchBar(query, { query = it }, searchFocus)
-                    Spacer(Modifier.height(12.dp))
+
+                    if (categories.size > 1) {
+                        Spacer(Modifier.height(12.dp))
+                        CategoryFilterChips(
+                            categories = categories,
+                            selectedCategory = selectedCategory,
+                            onSelectCategory = { selectedCategory = it },
+                            counts = categoryCounts,
+                        )
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
                     when {
                         loading -> LoadingPlaceholder()
                         error != null -> Column(
@@ -387,7 +476,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            Text("Katalog tidak dapat dimuat", style = NyawitType.Title, color = c.Text)
+                            Text(NyawitStrings.ERROR_CATALOG_LOAD, style = NyawitType.Title, color = c.Text)
                             Spacer(Modifier.height(6.dp))
                             Text(error ?: "", style = NyawitType.Caption, color = c.Muted)
                             Spacer(Modifier.height(18.dp))
@@ -395,7 +484,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                                 onClick = { error = null; loading = true; reloadKey++ },
                                 colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
                                 shape = RoundedCornerShape(10.dp),
-                            ) { Text("Coba lagi") }
+                            ) { Text(NyawitStrings.BTN_RETRY) }
                         }
                         visibleApps.isEmpty() -> EmptyState()
                         isPhone -> AppList(
@@ -408,7 +497,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             onDetail = { detailApp = it },
                         )
                         else -> AppGrid(
-                            columns = if (profile.kind == ScreenKind.TABLET) 2 else 3,
+                            columns = responsiveScale.columns,
                             apps = visibleApps,
                             statuses = statuses,
                             busyApps = busyApps,
@@ -431,7 +520,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 ModalDrawerSheet(
                     drawerContainerColor = c.Surface,
                     drawerContentColor = c.Text,
-                    modifier = Modifier.width(280.dp),
+                    modifier = Modifier.width(responsiveScale.sidebarWidth),
                 ) {
                     AppSidebar(
                         page = page,
@@ -458,7 +547,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 selfBusy = selfBusy,
                 onNavigate = { page = it },
                 onUpdate = ::checkUpdates,
-                modifier = Modifier.width(216.dp),
+                modifier = Modifier.width(responsiveScale.sidebarWidth),
             )
             Box(Modifier.weight(1f).fillMaxSize().background(c.Background)) { content() }
         }

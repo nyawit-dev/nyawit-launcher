@@ -1,8 +1,12 @@
 package dev.nyawit.launcher.feature.catalog.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,22 +18,36 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.nyawit.launcher.core.ui.GlobeIcon
+import dev.nyawit.launcher.core.ui.GridIcon
+import dev.nyawit.launcher.core.ui.InfoIcon
+import dev.nyawit.launcher.core.ui.LocalLanguageController
+import dev.nyawit.launcher.core.ui.NyawitStrings
+import dev.nyawit.launcher.core.ui.PaletteIcon
+import dev.nyawit.launcher.core.ui.SyncIcon
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.theme.LocalNyawitColors
+import dev.nyawit.launcher.theme.LocalThemeController
 import dev.nyawit.launcher.theme.NyawitType
+import dev.nyawit.launcher.theme.ThemeMode
 
 enum class AppPage { APPS, ABOUT }
 
@@ -47,77 +65,207 @@ fun AppSidebar(
     onClose: (() -> Unit)? = null,
 ) {
     val c = LocalNyawitColors.current
+    val themeController = LocalThemeController.current
+    val languageController = LocalLanguageController.current
 
     Column(
         modifier
             .fillMaxHeight()
             .background(c.Surface)
-            .padding(20.dp),
+            .border(BorderStroke(1.dp, c.Border))
+            .padding(18.dp)
+            .verticalScroll(rememberScrollState()),
     ) {
+        // Brand Header
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            BrandMark(40)
-            Spacer(Modifier.width(11.dp))
+            BrandMark(38)
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("NYAWIT", style = NyawitType.Wordmark, color = c.Text)
+                Text(NyawitStrings.BRAND_NAME, style = NyawitType.Wordmark, color = c.Text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(4.dp).background(c.Primary, CircleShape))
+                    Box(Modifier.size(5.dp).background(c.Primary, CircleShape))
                     Spacer(Modifier.width(5.dp))
-                    Text("LAUNCHER", style = NyawitType.Overline, color = c.Primary)
+                    Text(NyawitStrings.BRAND_SUBTITLE, style = NyawitType.Overline, color = c.Primary)
                 }
             }
             if (onClose != null) {
                 Surface(
                     color = c.SurfaceRaised,
                     shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, c.Border),
-                    modifier = Modifier.size(30.dp).clickable { onClose() },
+                    border = BorderStroke(1.dp, c.Border),
+                    modifier = Modifier.size(32.dp).clickable { onClose() },
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        Text("✕", color = c.Muted, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+                        Text(NyawitStrings.SYMBOL_CLOSE, color = c.Muted, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        Spacer(Modifier.height(30.dp))
-        Text("MENU", style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(24.dp))
+        Text(NyawitStrings.NAV_TITLE, style = NyawitType.Overline, color = c.Faint)
+        Spacer(Modifier.height(8.dp))
 
         NavItem(
-            label = "Aplikasi",
+            label = NyawitStrings.NAV_APPS,
             selected = page == AppPage.APPS,
+            icon = { iconColor -> GridIcon(Modifier.size(16.dp), iconColor) },
             onClick = { onNavigate(AppPage.APPS); onClose?.invoke() },
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(5.dp))
         NavItem(
-            label = "Tentang",
+            label = NyawitStrings.NAV_ABOUT,
             selected = page == AppPage.ABOUT,
+            icon = { iconColor -> InfoIcon(Modifier.size(16.dp), iconColor) },
             onClick = { onNavigate(AppPage.ABOUT); onClose?.invoke() },
         )
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(22.dp))
+        Text(NyawitStrings.THEME_SECTION, style = NyawitType.Overline, color = c.Faint)
+        Spacer(Modifier.height(8.dp))
 
+        // Theme Switcher Card
         Surface(
             color = c.SurfaceRaised,
             shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, c.Border),
-            modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, c.Border),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { themeController.next() }
+                .focusable()
+                .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
         ) {
-            Column(Modifier.padding(14.dp)) {
-                Text("STATUS EKOSISTEM", style = NyawitType.Overline, color = c.Primary)
-                Spacer(Modifier.height(7.dp))
-                Text("$total aplikasi terdaftar", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.SemiBold)
-                Text(
-                    if (updateCount > 0) "$updateCount pembaruan tersedia"
-                    else if (updateTag != null) "Pembaruan launcher $updateTag"
-                    else "Semua sudah mutakhir",
-                    style = NyawitType.Caption,
-                    color = if (updateCount > 0 || updateTag != null) c.Warning else c.Muted,
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PaletteIcon(Modifier.size(16.dp), c.Primary)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        themeController.mode.label,
+                        style = NyawitType.Caption,
+                        color = c.Text,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        NyawitStrings.THEME_TAP_TO_CHANGE,
+                        style = NyawitType.Overline,
+                        color = c.Muted,
+                    )
+                }
+                Box(
+                    Modifier
+                        .size(14.dp)
+                        .background(c.Primary, CircleShape)
+                        .border(1.dp, c.BorderHighlight, CircleShape),
                 )
             }
         }
 
+        Spacer(Modifier.height(8.dp))
+
+        // Language Switcher Card
+        Surface(
+            color = c.SurfaceRaised,
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, c.Border),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { languageController.toggle() }
+                .focusable()
+                .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
+        ) {
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlobeIcon(Modifier.size(16.dp), c.Primary)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        languageController.language.label,
+                        style = NyawitType.Caption,
+                        color = c.Text,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        NyawitStrings.LANGUAGE_TAP_TO_CHANGE,
+                        style = NyawitType.Overline,
+                        color = c.Muted,
+                    )
+                }
+                Surface(
+                    color = c.PrimaryMuted,
+                    shape = RoundedCornerShape(4.dp),
+                ) {
+                    Text(
+                        languageController.language.code.uppercase(),
+                        style = NyawitType.Overline,
+                        color = c.Primary,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(26.dp))
+
+        // Ecosystem Status Card
+        Surface(
+            color = c.SurfaceRaised,
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, c.Border),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(c.Primary, c.Primary.copy(alpha = 0.2f), Color.Transparent),
+                            ),
+                        ),
+                )
+                Column(Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .size(6.dp)
+                                .background(
+                                    if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
+                                    CircleShape,
+                                ),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(NyawitStrings.STATUS_TITLE, style = NyawitType.Overline, color = c.Primary)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        NyawitStrings.statusAppsRegistered(total),
+                        style = NyawitType.Caption,
+                        color = c.Text,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        if (updateCount > 0) NyawitStrings.statusUpdatesAvailable(updateCount)
+                        else if (updateTag != null) NyawitStrings.statusLauncherUpdate(updateTag)
+                        else NyawitStrings.STATUS_UP_TO_DATE,
+                        style = NyawitType.Caption,
+                        color = if (updateCount > 0 || updateTag != null) c.Warning else c.Muted,
+                    )
+                }
+            }
+        }
+
         Spacer(Modifier.height(10.dp))
+
+        // Check Update Button
         Button(
             onClick = { onUpdate(); onClose?.invoke() },
             enabled = !selfBusy,
@@ -126,16 +274,20 @@ fun AppSidebar(
                 contentColor = c.Text,
             ),
             shape = RoundedCornerShape(11.dp),
-            modifier = Modifier.fillMaxWidth().height(40.dp).tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+            border = BorderStroke(1.dp, c.BorderHighlight),
+            modifier = Modifier.fillMaxWidth().height(42.dp).tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
         ) {
             if (selfBusy) {
                 CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp, color = c.Primary)
                 Spacer(Modifier.width(8.dp))
+            } else {
+                SyncIcon(Modifier.size(15.dp), c.Primary)
+                Spacer(Modifier.width(8.dp))
             }
-            Text("Cek pembaruan", style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+            Text(NyawitStrings.BTN_CHECK_UPDATES, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
         }
 
-        Spacer(Modifier.height(9.dp))
+        Spacer(Modifier.height(14.dp))
         Text(
             "v$version",
             style = NyawitType.Overline,
@@ -146,14 +298,31 @@ fun AppSidebar(
 }
 
 @Composable
-private fun NavItem(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun NavItem(
+    label: String,
+    selected: Boolean,
+    icon: @Composable (Color) -> Unit,
+    onClick: () -> Unit,
+) {
     val c = LocalNyawitColors.current
+    val itemBg by animateColorAsState(
+        targetValue = if (selected) c.PrimaryMuted else Color.Transparent,
+    )
+    val contentColor = if (selected) c.Primary else c.Muted
+
     Row(
         Modifier
             .fillMaxWidth()
-            .height(42.dp)
+            .height(44.dp)
             .clip(RoundedCornerShape(11.dp))
-            .background(if (selected) c.PrimaryMuted else androidx.compose.ui.graphics.Color.Transparent)
+            .background(itemBg)
+            .border(
+                BorderStroke(
+                    1.dp,
+                    if (selected) c.Primary.copy(alpha = 0.25f) else Color.Transparent,
+                ),
+                RoundedCornerShape(11.dp),
+            )
             .clickable(onClick = onClick)
             .focusable()
             .tvFocusHighlight(RoundedCornerShape(11.dp), 1f)
@@ -162,15 +331,20 @@ private fun NavItem(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Box(
             Modifier
-                .width(3.5.dp)
+                .width(3.dp)
                 .height(18.dp)
-                .background(if (selected) c.Primary else c.Border, RoundedCornerShape(2.dp)),
+                .background(
+                    if (selected) c.Primary else Color.Transparent,
+                    RoundedCornerShape(2.dp),
+                ),
         )
-        Spacer(Modifier.width(11.dp))
+        Spacer(Modifier.width(10.dp))
+        icon(contentColor)
+        Spacer(Modifier.width(10.dp))
         Text(
             label,
             style = NyawitType.Caption,
-            color = if (selected) c.Primary else c.Muted,
+            color = contentColor,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         )
     }

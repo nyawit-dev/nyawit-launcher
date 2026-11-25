@@ -1,5 +1,6 @@
 package dev.nyawit.launcher.feature.install
 
+import dev.nyawit.launcher.core.platform.DesktopLog
 import dev.nyawit.launcher.core.platform.findNativeApp
 import java.awt.EventQueue
 import java.util.concurrent.TimeUnit
@@ -13,6 +14,7 @@ actual fun uninstallApp(
     Thread {
         val os = System.getProperty("os.name").lowercase()
         val info = findNativeApp(displayName, packageName)
+        DesktopLog.debug("Uninstall", "Hapus '$displayName' ($packageName): ${info?.executable ?: "tidak ditemukan"}")
         var ok = false
         var message = "$displayName tidak ditemukan di daftar aplikasi terpasang"
 
@@ -58,7 +60,9 @@ actual fun uninstallApp(
             }
         } catch (t: Throwable) {
             message = "Gagal menghapus: ${t.message ?: "unknown"}"
+            DesktopLog.error("Uninstall", "Gagal menghapus '$displayName'", t)
         }
+        DesktopLog.debug("Uninstall", "Hasil '$displayName': ok=$ok, $message")
         EventQueue.invokeLater { onResult(ok, message) }
     }.start()
 }

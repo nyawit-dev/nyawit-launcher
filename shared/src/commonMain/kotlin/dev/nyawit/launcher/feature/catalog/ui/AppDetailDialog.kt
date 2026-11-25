@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.theme.LocalNyawitColors
@@ -61,7 +62,7 @@ fun AppDetailDialog(
                         .height(3.dp)
                         .background(
                             Brush.horizontalGradient(
-                                listOf(accent, accent.copy(alpha = 0.3f), Color.Transparent),
+                                listOf(accent, accent.copy(alpha = 0.35f), Color.Transparent),
                             ),
                         ),
                 )
@@ -101,25 +102,25 @@ fun AppDetailDialog(
                     // Spec grid
                     Surface(
                         color = c.SurfaceRaised,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         border = BorderStroke(1.dp, c.Border),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                SpecItem("PENGEMBANG", app.fullName.substringBefore('/'), c)
-                                SpecItem("KATEGORI", app.category, c)
+                                SpecItem(NyawitStrings.DETAIL_DEVELOPER, app.fullName.substringBefore('/'), c)
+                                SpecItem(NyawitStrings.DETAIL_CATEGORY, app.category.uppercase(), c, accent)
                             }
-                            HorizontalDivider(color = c.Border.copy(alpha = 0.5f))
+                            HorizontalDivider(color = c.Border.copy(alpha = 0.6f))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                SpecItem("PLATFORM", app.platforms.joinToString(", ") { it.label() }, c)
+                                SpecItem(NyawitStrings.DETAIL_PLATFORM, app.platforms.joinToString(", ") { it.label() }, c)
                                 SpecItem(
-                                    "STATUS",
+                                    NyawitStrings.DETAIL_STATUS,
                                     when (status) {
-                                        AppStatus.NOT_INSTALLED -> "Tersedia"
-                                        AppStatus.INSTALLED -> "Terpasang"
-                                        AppStatus.UPDATE_AVAILABLE -> "Update Tersedia"
-                                        AppStatus.UNKNOWN -> "Unknown"
+                                        AppStatus.NOT_INSTALLED -> NyawitStrings.CHIP_AVAILABLE
+                                        AppStatus.INSTALLED -> NyawitStrings.CHIP_INSTALLED
+                                        AppStatus.UPDATE_AVAILABLE -> NyawitStrings.CHIP_UPDATE_AVAILABLE
+                                        AppStatus.UNKNOWN -> NyawitStrings.CHIP_UNKNOWN
                                     },
                                     c,
                                     valueColor = when (status) {
@@ -129,14 +130,14 @@ fun AppDetailDialog(
                                     },
                                 )
                             }
-                            HorizontalDivider(color = c.Border.copy(alpha = 0.5f))
-                            SpecItem("PACKAGE ID", app.packageName, c)
+                            HorizontalDivider(color = c.Border.copy(alpha = 0.6f))
+                            SpecItem(NyawitStrings.DETAIL_PACKAGE_ID, app.packageName, c)
                         }
                     }
 
                     Spacer(Modifier.height(14.dp))
                     Text(
-                        "Paket diunduh langsung dari GitHub Releases dengan verifikasi checksum SHA-256 tanpa perantara.",
+                        NyawitStrings.DETAIL_VERIFICATION_NOTICE,
                         style = NyawitType.Caption,
                         color = c.Faint,
                     )
@@ -145,15 +146,19 @@ fun AppDetailDialog(
 
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         when (status) {
                             AppStatus.INSTALLED -> Button(
                                 onClick = { onOpen(); onDismiss() },
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                            ) { Text("Buka", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = c.Primary,
+                                    contentColor = c.OnPrimary,
+                                ),
+                                shape = RoundedCornerShape(11.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                            ) { Text(NyawitStrings.BTN_OPEN, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
 
                             AppStatus.UPDATE_AVAILABLE -> Button(
                                 onClick = { onUpdate(); onDismiss() },
@@ -161,9 +166,9 @@ fun AppDetailDialog(
                                     containerColor = c.Warning,
                                     contentColor = c.OnPrimary,
                                 ),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                            ) { Text("Perbarui", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                shape = RoundedCornerShape(11.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                            ) { Text(NyawitStrings.BTN_UPDATE, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
 
                             else -> Button(
                                 onClick = { onInstall(); onDismiss() },
@@ -171,9 +176,9 @@ fun AppDetailDialog(
                                     containerColor = c.Primary,
                                     contentColor = c.OnPrimary,
                                 ),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                            ) { Text("Pasang", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                shape = RoundedCornerShape(11.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                            ) { Text(NyawitStrings.BTN_INSTALL, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
                         }
                         if (status == AppStatus.INSTALLED || status == AppStatus.UPDATE_AVAILABLE) {
                             Button(
@@ -182,9 +187,10 @@ fun AppDetailDialog(
                                     containerColor = c.Danger.copy(alpha = 0.15f),
                                     contentColor = c.Danger,
                                 ),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                            ) { Text("Hapus", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                                border = BorderStroke(1.dp, c.Danger.copy(alpha = 0.3f)),
+                                shape = RoundedCornerShape(11.dp),
+                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                            ) { Text(NyawitStrings.BTN_UNINSTALL, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
                         }
                         Spacer(Modifier.weight(1f))
                         Button(
@@ -193,9 +199,10 @@ fun AppDetailDialog(
                                 containerColor = c.SurfaceRaised,
                                 contentColor = c.Text,
                             ),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                        ) { Text("Tutup", style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                            border = BorderStroke(1.dp, c.Border),
+                            shape = RoundedCornerShape(11.dp),
+                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+                        ) { Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
                     }
                 }
             }
@@ -213,7 +220,7 @@ private fun AppPlatform.label() = when (this) {
 private fun SpecItem(label: String, value: String, c: dev.nyawit.launcher.theme.NyawitColors, valueColor: Color = c.Text) {
     Column {
         Text(label, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(3.dp))
         Text(
             value,
             style = NyawitType.Caption,

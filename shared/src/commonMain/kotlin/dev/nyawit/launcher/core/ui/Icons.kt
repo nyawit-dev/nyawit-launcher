@@ -186,3 +186,62 @@ fun MenuIcon(modifier: Modifier = Modifier, color: Color) {
         drawLine(color, Offset(startX, h * 0.72f), Offset(endX, h * 0.72f), stroke)
     }
 }
+
+@Composable
+fun InfoIcon(modifier: Modifier = Modifier, color: Color) {
+    Canvas(modifier) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val r = size.minDimension * 0.40f
+        drawCircle(color, radius = r, center = Offset(cx, cy), style = Stroke(1.7.dp.toPx()))
+        // Dot
+        drawCircle(color, radius = 1.6.dp.toPx(), center = Offset(cx, cy - r * 0.40f))
+        // Stem
+        drawLine(color, Offset(cx, cy - r * 0.10f), Offset(cx, cy + r * 0.48f), 1.8.dp.toPx())
+    }
+}
+
+@Composable
+fun PaletteIcon(modifier: Modifier = Modifier, color: Color) {
+    Canvas(modifier) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val r = size.minDimension * 0.40f
+        drawCircle(color, radius = r, center = Offset(cx, cy), style = Stroke(1.6.dp.toPx()))
+        // Color wells
+        drawCircle(color, 1.8.dp.toPx(), Offset(cx - r * 0.40f, cy - r * 0.25f))
+        drawCircle(color, 1.8.dp.toPx(), Offset(cx, cy - r * 0.50f))
+        drawCircle(color, 1.8.dp.toPx(), Offset(cx + r * 0.40f, cy - r * 0.25f))
+        drawCircle(color, 1.8.dp.toPx(), Offset(cx - r * 0.25f, cy + r * 0.25f))
+    }
+}
+
+@Composable
+fun CheckIcon(modifier: Modifier = Modifier, color: Color) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        drawLine(color, Offset(w * 0.20f, h * 0.52f), Offset(w * 0.42f, h * 0.76f), 2.dp.toPx())
+        drawLine(color, Offset(w * 0.42f, h * 0.76f), Offset(w * 0.82f, h * 0.28f), 2.dp.toPx())
+    }
+}
+
+@Composable
+fun GlobeIcon(modifier: Modifier = Modifier, color: Color) {
+    Canvas(modifier) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val r = size.minDimension * 0.40f
+        drawCircle(color, radius = r, center = Offset(cx, cy), style = Stroke(1.6.dp.toPx()))
+        // Equator
+        drawLine(color, Offset(cx - r, cy), Offset(cx + r, cy), 1.5.dp.toPx())
+        // Meridian lines
+        val ovalPath = Path().apply {
+            moveTo(cx, cy - r)
+            cubicTo(cx + r * 0.55f, cy - r * 0.5f, cx + r * 0.55f, cy + r * 0.5f, cx, cy + r)
+            cubicTo(cx - r * 0.55f, cy + r * 0.5f, cx - r * 0.55f, cy - r * 0.5f, cx, cy - r)
+            close()
+        }
+        drawPath(ovalPath, color, style = Stroke(1.4.dp.toPx()))
+    }
+}

@@ -2,6 +2,7 @@ package dev.nyawit.launcher.feature.install
 
 import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.platform.checksumMatches
+import dev.nyawit.launcher.core.platform.DesktopLog
 import dev.nyawit.launcher.core.platform.launcherHome
 import java.awt.Desktop
 import java.awt.EventQueue
@@ -11,6 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.TimeUnit
 
 private val NATIVE_EXTENSIONS = setOf("msi", "exe", "dmg", "pkg", "deb", "rpm", "apk")
 
@@ -22,30 +24,70 @@ private fun downloadDir(): File = launcherHome().resolve("downloads").apply { mk
 actual fun downloadedInstallerPath(request: InstallRequest): String =
     File(downloadDir(), safeFileName(request.fileName)).absolutePath
 
+private enum class InstallerLaunch {
+    /** Installer selesai dipasang tanpa interaksi (silent). */
+    SILENT,
+    /** Installer dibuka; pengguna harus menyelesaikan konfirmasi. */
+    MANUAL,
+    /** Installer gagal dibuka sama sekali. */
+    FAILED,
+}
+
+private fun openWithDesktop(file: File): InstallerLaunch = try {
+    // ShellExecute lewat Desktop memicu UAC bila installer butuh hak admin.
+    Desktop.getDesktop().open(file)
+    InstallerLaunch.MANUAL
+} catch (_: Throwable) {
+    InstallerLaunch.FAILED
+}
+
+private fun silentSucceeded(exitCode: Int, ext: String): Boolean = when (ext) {
+    // MSI: 0 sukses, 3010 sukses tapi perlu restart, 1641 sukses + restart dimulai.
+    "msi" -> exitCode == 0 || exitCode == 3010 || exitCode == 1641
+    else -> exitCode == 0
+}
+
+/** Menjalankan installer silent dan menunggu hasilnya. Fallback ke wizard bila gagal. */
+private fun runSilentInstaller(command: List<String>, file: File): InstallerLaunch {
+    val process = try {
+        ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start()
+    } catch (_: Throwable) {
+        return openWithDesktop(file)
+    }
+    val finished = try {
+        process.waitFor(10, TimeUnit.MINUTES)
+    } catch (_: Throwable) {
+        false
+    }
+    if (!finished) {
+        process.destroyForcibly()
+        return openWithDesktop(file)
+    }
+    return if (silentSucceeded(process.exitValue(), file.extension.lowercase())) {
+        InstallerLaunch.SILENT
+    } else {
+        // Exit code gagal (mis. butu hak admin) — buka wizard agar pengguna bisa menyelesaikan.
+        openWithDesktop(file)
+    }
+}
+
 /** Menjalankan installer native. Di Windows dijalankan silent agar langsung terpasang. */
-private fun openNativeInstaller(file: File) {
+private fun openNativeInstaller(file: File): InstallerLaunch {
     val os = System.getProperty("os.name").lowercase()
     val ext = file.extension.lowercase()
-
-    fun launch(vararg command: String) {
-        try {
-            ProcessBuilder(*command).start()
-        } catch (_: Throwable) {
-            // Fallback bila perintah tidak tersedia: biarkan asosiasi file yang membuka installer.
-            Desktop.getDesktop().open(file)
-        }
-    }
-
-    when {
+    return when {
         // /quiet: tanpa wizard, /norestart: jangan reboot otomatis.
-        os.contains("win") && ext == "msi" ->
-            launch("msiexec", "/i", file.absolutePath, "/quiet", "/norestart")
-        // Akhiran NSIS (/S) dan Inno Setup (/VERYSILENT) diabaikan bila tidak didukung.
-        os.contains("win") && ext == "exe" ->
-            launch(file.absolutePath, "/S", "/VERYSILENT", "/NORESTART")
-        os.contains("mac") -> launch("open", file.absolutePath)
-        os.contains("linux") -> launch("xdg-open", file.absolutePath)
-        else -> Desktop.getDesktop().open(file)
+        os.contains("win") && ext == "msi" -> runSilentInstaller(
+            listOf("msiexec", "/i", file.absolutePath, "/quiet", "/norestart"), file,
+        )
+        // NSIS (/S) dan Inno Setup (/VERYSILENT); flag yang tak didukung diabaikan installer.
+        os.contains("win") && ext == "exe" -> runSilentInstaller(
+            listOf(file.absolutePath, "/S", "/VERYSILENT", "/NORESTART"), file,
+        )
+        else -> openWithDesktop(file)
     }
 }
 
@@ -75,6 +117,7 @@ actual fun installApp(
         return
     }
 
+    DesktopLog.debug("Install", "Mulai unduh: ${request.url} → $safeName")
     Thread {
         var connection: HttpURLConnection? = null
         try {
@@ -118,24 +161,40 @@ actual fun installApp(
             }
 
             val target = reusable ?: installer
+            DesktopLog.debug("Install", "Unduhan selesai: ${target.absolutePath} (${target.length()} byte)")
             if (!checksumMatches(request.url, target)) {
                 target.delete()
                 throw IllegalStateException("Checksum SHA-256 tidak cocok — unduhan dibatalkan")
             }
 
             // Installer native (.msi/.exe/.deb/.rpm/.dmg/.pkg/.apk): serahkan ke OS.
-            openNativeInstaller(target)
-            EventQueue.invokeLater {
-                onResult(
-                    true,
-                    if (request.restartAfterInstall) {
-                        "Pembaruan ${target.name} sedang dipasang otomatis — restart launcher setelah selesai"
-                    } else {
-                        "Installer ${target.name} sedang dipasang otomatis — tunggu hingga selesai"
-                    },
-                )
+            val launch = openNativeInstaller(target)
+            DesktopLog.debug("Install", "Hasil peluncuran installer ${target.name}: $launch")
+            when (launch) {
+                InstallerLaunch.SILENT -> EventQueue.invokeLater {
+                    onResult(
+                        true,
+                        if (request.restartAfterInstall) {
+                            "Pembaruan ${target.name} berhasil dipasang — restart launcher untuk menerapkannya"
+                        } else {
+                            "${target.name} berhasil dipasang"
+                        },
+                    )
+                }
+
+                InstallerLaunch.MANUAL -> EventQueue.invokeLater {
+                    onResult(
+                        true,
+                        "Installer ${target.name} dibuka — ikuti konfirmasi pemasangan hingga selesai",
+                    )
+                }
+
+                InstallerLaunch.FAILED -> EventQueue.invokeLater {
+                    onResult(false, "Gagal membuka installer ${target.name} — jalankan file dari ~/.nyawit-launcher/downloads/")
+                }
             }
         } catch (t: Throwable) {
+            DesktopLog.error("Install", "Gagal mengunduh/memasang ${request.fileName}", t)
             EventQueue.invokeLater { onResult(false, "Gagal membuka installer: ${t.message ?: "unknown"}") }
         } finally {
             connection?.disconnect()

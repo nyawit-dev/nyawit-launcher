@@ -2,6 +2,11 @@ package dev.nyawit.launcher.core.platform
 
 import dev.nyawit.launcher.BuildConfig
 
+@Volatile
+private var lastError: String? = null
+
+actual fun lastLaunchError(): String? = lastError
+
 actual fun installedVersion(
     packageName: String,
     platformContext: Any?,
@@ -19,6 +24,20 @@ actual fun launchInstalledApp(
     platformContext: Any?,
     displayName: String?,
 ): Boolean {
-    val native = findNativeApp(displayName ?: packageName, packageName) ?: return false
-    return launchNativeApp(native)
+    lastError = null
+    val label = displayName?.takeIf { it.isNotBlank() } ?: packageName
+    val native = findNativeApp(label, packageName)
+    if (native == null) {
+        lastError = "tidak ditemukan di daftar aplikasi terpasang"
+        DesktopLog.warn("Launch", "Gagal membuka '$label': $lastError")
+        return false
+    }
+    if (!launchNativeApp(native)) {
+        lastError = native.executable?.let { "gagal menjalankan $it" }
+            ?: "path executable tidak tersedia"
+        DesktopLog.warn("Launch", "Gagal membuka '$label': $lastError")
+        return false
+    }
+    DesktopLog.debug("Launch", "'$label' berhasil dibuka")
+    return true
 }

@@ -45,7 +45,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.ArrowIcon
+import dev.nyawit.launcher.core.ui.CheckIcon
 import dev.nyawit.launcher.core.ui.DownloadIcon
+import dev.nyawit.launcher.core.ui.InfoIcon
+import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.theme.LocalNyawitColors
@@ -96,7 +99,7 @@ fun AppCard(
                         .height(2.5.dp)
                         .background(
                             Brush.horizontalGradient(
-                                listOf(accent, accent.copy(alpha = 0.3f), Color.Transparent),
+                                listOf(accent, accent.copy(alpha = 0.35f), Color.Transparent),
                             ),
                         ),
                 )
@@ -125,8 +128,9 @@ fun AppCard(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Surface(
-                                    color = c.SurfaceRaised,
+                                    color = accent.copy(alpha = 0.12f),
                                     shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
                                 ) {
                                     Text(
                                         app.category.uppercase(),
@@ -158,14 +162,14 @@ fun AppCard(
 
                     // Optional progress indicator when downloading
                     if (busy && progress != null) {
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(12.dp))
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "MENGUNDUH PAKET",
+                                NyawitStrings.PROGRESS_DOWNLOADING,
                                 style = NyawitType.Overline,
                                 color = accent,
                             )
@@ -175,7 +179,7 @@ fun AppCard(
                                 color = c.Text,
                             )
                         }
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(5.dp))
                         LinearProgressIndicator(
                             progress = { progress },
                             modifier = Modifier.fillMaxWidth().height(4.dp),
@@ -195,7 +199,7 @@ fun AppCard(
                                 containerColor = when (status) {
                                     AppStatus.INSTALLED -> c.SurfaceRaised
                                     AppStatus.UPDATE_AVAILABLE -> c.Warning
-                                    else -> accent
+                                    else -> c.Primary
                                 },
                                 contentColor = when (status) {
                                     AppStatus.UPDATE_AVAILABLE -> c.OnPrimary
@@ -203,6 +207,10 @@ fun AppCard(
                                     else -> c.OnPrimary
                                 },
                             ),
+                            border = when (status) {
+                                AppStatus.INSTALLED -> BorderStroke(1.dp, c.BorderHighlight)
+                                else -> null
+                            },
                             shape = RoundedCornerShape(11.dp),
                             modifier = Modifier
                                 .height(44.dp)
@@ -213,7 +221,7 @@ fun AppCard(
                                 CircularProgressIndicator(
                                     Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = c.OnPrimary,
+                                    color = if (status == AppStatus.INSTALLED) c.Text else c.OnPrimary,
                                 )
                                 Spacer(Modifier.width(8.dp))
                             } else if (status == AppStatus.INSTALLED) {
@@ -225,11 +233,11 @@ fun AppCard(
                             }
                             Text(
                                 when {
-                                    busy && progress != null -> "Mengunduh ${(progress * 100).toInt()}%"
-                                    busy -> "Memproses…"
-                                    status == AppStatus.INSTALLED -> "Buka aplikasi"
-                                    status == AppStatus.UPDATE_AVAILABLE -> "Perbarui"
-                                    else -> "Pasang"
+                                    busy && progress != null -> NyawitStrings.progressDownloadingPercent((progress * 100).toInt())
+                                    busy -> NyawitStrings.PROGRESS_PROCESSING
+                                    status == AppStatus.INSTALLED -> NyawitStrings.BTN_OPEN_APP
+                                    status == AppStatus.UPDATE_AVAILABLE -> NyawitStrings.BTN_UPDATE_NOW
+                                    else -> NyawitStrings.BTN_INSTALL_APP
                                 },
                                 fontWeight = FontWeight.Bold,
                                 style = NyawitType.Caption,
@@ -247,12 +255,7 @@ fun AppCard(
                                 .tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
                         ) {
                             Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                Text(
-                                    "i",
-                                    color = c.Muted,
-                                    fontWeight = FontWeight.Bold,
-                                    style = NyawitType.Caption,
-                                )
+                                InfoIcon(Modifier.size(17.dp), c.Muted)
                             }
                         }
                     }
@@ -271,10 +274,10 @@ private fun StatusChip(status: AppStatus) {
         animationSpec = infiniteRepeatable(tween(1000)),
     )
     val (label, color) = when (status) {
-        AppStatus.NOT_INSTALLED -> "Tersedia" to c.Faint
-        AppStatus.INSTALLED -> "Terpasang" to c.Primary
-        AppStatus.UPDATE_AVAILABLE -> "Update" to c.Warning
-        AppStatus.UNKNOWN -> "Unknown" to c.Faint
+        AppStatus.NOT_INSTALLED -> NyawitStrings.CHIP_AVAILABLE to c.Faint
+        AppStatus.INSTALLED -> NyawitStrings.CHIP_INSTALLED to c.Primary
+        AppStatus.UPDATE_AVAILABLE -> NyawitStrings.CHIP_UPDATE to c.Warning
+        AppStatus.UNKNOWN -> NyawitStrings.CHIP_UNKNOWN to c.Faint
     }
     Surface(
         color = color.copy(alpha = 0.12f),
@@ -287,11 +290,15 @@ private fun StatusChip(status: AppStatus) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Box(
-                Modifier
-                    .size(6.dp)
-                    .background(color, CircleShape),
-            )
+            if (status == AppStatus.INSTALLED) {
+                CheckIcon(Modifier.size(8.dp), color)
+            } else {
+                Box(
+                    Modifier
+                        .size(6.dp)
+                        .background(color, CircleShape),
+                )
+            }
             Text(
                 label.uppercase(),
                 style = NyawitType.Overline,

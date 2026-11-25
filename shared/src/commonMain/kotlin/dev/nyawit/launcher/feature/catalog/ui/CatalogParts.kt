@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +52,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.ui.MenuIcon
+import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.SearchIcon
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
@@ -107,12 +110,12 @@ fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: F
     OutlinedTextField(
         value = query,
         onValueChange = onQuery,
-        placeholder = { Text("Cari aplikasi atau kategori…", style = NyawitType.Body, color = c.Faint) },
+        placeholder = { Text(NyawitStrings.SEARCH_PLACEHOLDER, style = NyawitType.Body, color = c.Faint) },
         leadingIcon = { SearchIcon(Modifier.size(18.dp), c.Muted) },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 Text(
-                    "✕",
+                    NyawitStrings.SYMBOL_CLOSE,
                     color = c.Muted,
                     modifier = Modifier.clickable { onQuery("") }.padding(horizontal = 12.dp),
                 )
@@ -124,7 +127,7 @@ fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: F
                     modifier = Modifier.padding(end = 12.dp),
                 ) {
                     Text(
-                        "ESC",
+                        NyawitStrings.KEY_ESC,
                         style = NyawitType.Overline,
                         color = c.Faint,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -146,6 +149,69 @@ fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: F
         ),
         modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).tvFocusHighlight(RoundedCornerShape(14.dp), 1f),
     )
+}
+
+@Composable
+fun CategoryFilterChips(
+    categories: List<String>,
+    selectedCategory: String,
+    onSelectCategory: (String) -> Unit,
+    counts: Map<String, Int> = emptyMap(),
+    modifier: Modifier = Modifier,
+) {
+    val c = LocalNyawitColors.current
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(categories) { cat ->
+            val isSelected = cat == selectedCategory
+            val count = counts[cat]
+            Surface(
+                color = if (isSelected) c.PrimaryMuted else c.SurfaceRaised,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(
+                    1.dp,
+                    if (isSelected) c.Primary.copy(alpha = 0.5f) else c.Border,
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { onSelectCategory(cat) }
+                    .focusable()
+                    .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (isSelected) {
+                        Box(Modifier.size(5.dp).background(c.Primary, CircleShape))
+                    }
+                    val label = if (cat == "__ALL__") NyawitStrings.CATEGORY_ALL else cat
+                    Text(
+                        label,
+                        style = NyawitType.Caption,
+                        color = if (isSelected) c.Primary else c.Muted,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    )
+                    if (count != null && count > 0) {
+                        Surface(
+                            color = if (isSelected) c.Primary.copy(alpha = 0.25f) else c.SurfaceHighlight,
+                            shape = RoundedCornerShape(6.dp),
+                        ) {
+                            Text(
+                                "$count",
+                                style = NyawitType.Overline,
+                                color = if (isSelected) c.Primary else c.Faint,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -188,13 +254,13 @@ fun NoticeBanner(
                     Text(actionLabel, style = NyawitType.Caption, color = c.Primary, fontWeight = FontWeight.Bold)
                 }
                 TextButton(onClick = onDismiss, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
-                    Text("Tutup", style = NyawitType.Caption, color = c.Muted)
+                    Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, color = c.Muted)
                 }
             }
             if (busy && progress != null) {
                 Spacer(Modifier.width(12.dp))
                 TextButton(onClick = onCancel, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f)) {
-                    Text("Batal", style = NyawitType.Caption, color = c.Danger, fontWeight = FontWeight.Bold)
+                    Text(NyawitStrings.BTN_CANCEL, style = NyawitType.Caption, color = c.Danger, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -288,9 +354,9 @@ fun EmptyState() {
             contentScale = ContentScale.Fit,
         )
         Spacer(Modifier.height(20.dp))
-        Text("Tidak ada aplikasi", style = NyawitType.Title, color = c.Text)
+        Text(NyawitStrings.EMPTY_APPS_TITLE, style = NyawitType.Title, color = c.Text)
         Spacer(Modifier.height(6.dp))
-        Text("Coba gunakan kata kunci atau pilih kategori lain.", style = NyawitType.Caption, color = c.Muted)
+        Text(NyawitStrings.EMPTY_APPS_DESC, style = NyawitType.Caption, color = c.Muted)
     }
 }
 
@@ -589,9 +655,9 @@ fun MobileHeader(
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("NYAWIT", style = NyawitType.Wordmark, color = c.Text)
+                Text(NyawitStrings.BRAND_NAME, style = NyawitType.Wordmark, color = c.Text)
                 Box(Modifier.size(4.dp).background(c.Primary, CircleShape))
-                Text("LAUNCHER", style = NyawitType.Overline, color = c.Primary)
+                Text(NyawitStrings.BRAND_SUBTITLE, style = NyawitType.Overline, color = c.Primary)
             }
             Text(
                 "v$version",

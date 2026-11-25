@@ -53,19 +53,55 @@ actual fun installedVersion(
     }
 }
 
+private fun launchIntent(context: Context, resolved: String): Intent? {
+    val pm = context.packageManager
+    pm.getLaunchIntentForPackage(resolved)?.let {
+        return it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    // Aplikasi TV kadang hanya mendaftarkan CATEGORY_LEANBACK_LAUNCHER.
+    @Suppress("DEPRECATION")
+    val leanback = Intent(Intent.ACTION_MAIN)
+        .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+        .setPackage(resolved)
+    val target = pm.queryIntentActivities(leanback, 0)
+        .firstOrNull()?.activityInfo ?: return null
+    return Intent(Intent.ACTION_MAIN)
+        .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+        .setClassName(target.packageName, target.name)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+}
+
+@Volatile
+private var lastError: String? = null
+
+actual fun lastLaunchError(): String? = lastError
+
 actual fun launchInstalledApp(
     packageName: String,
     platformContext: Any?,
     displayName: String?,
 ): Boolean {
-    val context = platformContext as? Context ?: return false
-    val resolved = resolvePackage(packageName, displayName, context) ?: return false
-    val intent = context.packageManager.getLaunchIntentForPackage(resolved) ?: return false
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    lastError = null
+    val context = platformContext as? Context
+    if (context == null) {
+        lastError = "konteks Android tidak tersedia"
+        return false
+    }
+    val resolved = resolvePackage(packageName, displayName, context)
+    if (resolved == null) {
+        lastError = "paket tidak ditemukan di perangkat"
+        return false
+    }
+    val intent = launchIntent(context, resolved)
+    if (intent == null) {
+        lastError = "tidak ada activity utama untuk $resolved"
+        return false
+    }
     return try {
         context.startActivity(intent)
         true
-    } catch (_: Throwable) {
+    } catch (t: Throwable) {
+        lastError = t.message ?: "gagal memulai activity"
         false
     }
 }
