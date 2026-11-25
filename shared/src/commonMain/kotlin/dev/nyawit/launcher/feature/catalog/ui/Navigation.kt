@@ -149,19 +149,8 @@ fun AppSidebar(
             border = BorderStroke(1.dp, c.Border),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(2.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(c.Primary, c.Primary.copy(alpha = 0.2f), Color.Transparent),
-                            ),
-                        ),
-                )
-                Column(Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             Modifier
                                 .size(6.dp)
@@ -194,7 +183,6 @@ fun AppSidebar(
                     )
                 }
             }
-        }
 
         Spacer(Modifier.height(10.dp))
 

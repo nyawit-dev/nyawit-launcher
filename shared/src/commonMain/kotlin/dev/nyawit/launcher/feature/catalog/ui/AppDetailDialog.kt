@@ -57,18 +57,6 @@ fun AppDetailDialog(
             modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = 560.dp),
         ) {
             Column {
-                // Top-lit accent bar
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(c.Primary, c.Primary.copy(alpha = 0.35f), Color.Transparent),
-                            ),
-                        ),
-                )
-
                 Column(
                     Modifier
                         .padding(24.dp)
