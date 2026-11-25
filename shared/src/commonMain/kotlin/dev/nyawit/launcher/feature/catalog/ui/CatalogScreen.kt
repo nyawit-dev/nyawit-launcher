@@ -59,6 +59,7 @@ import dev.nyawit.launcher.core.platform.localCatalogOverride
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
+import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -395,15 +396,26 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val responsiveScale = LocalResponsiveScale.current
 
     val content = @Composable {
-        Column(
+        Box(
             Modifier
                 .fillMaxSize()
-                .background(c.Background)
-                .padding(
-                    horizontal = if (isCompactLayout) 16.dp else 24.dp,
-                    vertical = if (isCompactLayout) 14.dp else 20.dp,
-                ),
+                .background(c.Background),
         ) {
+            ComicHalftonePattern(
+                modifier = Modifier.matchParentSize(),
+                dotColor = if (c.isDark) Color.White.copy(alpha = 0.025f) else Color.Black.copy(alpha = 0.02f),
+                dotRadius = 1.0f,
+                spacing = 22f,
+            )
+
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        horizontal = if (isCompactLayout) 16.dp else 24.dp,
+                        vertical = if (isCompactLayout) 14.dp else 20.dp,
+                    ),
+            ) {
             if (isCompactLayout) {
                 MobileHeader(
                     version = version,
@@ -564,6 +576,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             }
         }
     }
+}
 
     if (isCompactLayout) {
         ModalNavigationDrawer(
@@ -695,16 +708,17 @@ private fun AppGrid(
 ) {
     val featuredApp = if (showSpotlight && apps.isNotEmpty()) apps.first() else null
     val gridApps = if (showSpotlight && apps.isNotEmpty()) apps.drop(1) else apps
+    val responsiveScale = LocalResponsiveScale.current
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(columns),
+        columns = GridCells.Adaptive(minSize = responsiveScale.dp(330)),
         contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (featuredApp != null) {
-            item(key = "__SPOTLIGHT__", span = { GridItemSpan(columns) }) {
+            item(key = "__SPOTLIGHT__", span = { GridItemSpan(maxLineSpan) }) {
                 FeaturedApp(
                     app = featuredApp,
                     status = statuses[featuredApp.fullName] ?: AppStatus.NOT_INSTALLED,
@@ -714,7 +728,7 @@ private fun AppGrid(
                 )
             }
         }
-        item(key = "__SECTION_HEADER__", span = { GridItemSpan(columns) }) {
+        item(key = "__SECTION_HEADER__", span = { GridItemSpan(maxLineSpan) }) {
             SectionTitle(
                 category = selectedCategory,
                 total = apps.size,

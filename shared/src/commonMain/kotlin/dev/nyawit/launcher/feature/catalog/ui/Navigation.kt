@@ -152,12 +152,16 @@ fun AppSidebar(
                                     NyawitStrings.BRAND_NAME,
                                     style = NyawitType.Wordmark,
                                     color = c.Text,
+                                    maxLines = 1,
+                                    softWrap = false,
                                 )
                                 Text(
                                     NyawitStrings.BRAND_SUBTITLE.uppercase(),
                                     style = NyawitType.Overline,
                                     color = c.Primary,
                                     fontWeight = FontWeight.Black,
+                                    maxLines = 1,
+                                    softWrap = false,
                                 )
                             }
                         }
@@ -177,12 +181,16 @@ fun AppSidebar(
                         style = NyawitType.Overline,
                         color = if (c.isDark) c.Primary else Color(0xFF0F172A),
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                     Text(
                         "INDEX 01-03",
                         style = NyawitType.Overline,
                         color = c.Muted,
                         fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
 
@@ -249,12 +257,12 @@ fun AppSidebar(
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Modul Aktif:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold)
-                            Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Black)
+                            Text("Modul Aktif:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                            Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
                         }
                         Spacer(Modifier.height(3.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold)
+                            Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             Text(
                                 if (updateCount > 0) "$updateCount Update!"
                                 else if (updateTag != null) "Update $updateTag"
@@ -262,6 +270,8 @@ fun AppSidebar(
                                 style = NyawitType.Caption,
                                 color = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
                                 fontWeight = FontWeight.Black,
+                                maxLines = 1,
+                                softWrap = false,
                             )
                         }
                     }
@@ -314,6 +324,8 @@ fun AppSidebar(
                             "CEK PEMBARUAN! ➔",
                             style = NyawitType.Caption,
                             fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            softWrap = false,
                         )
                     }
                 }
@@ -429,12 +441,16 @@ private fun NavItem(
                     style = NyawitType.Subtitle,
                     color = contentColor,
                     fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false,
                 )
                 Text(
                     subtitle,
                     style = NyawitType.Overline,
                     color = if (selected) c.OnPrimary.copy(alpha = 0.85f) else c.Muted,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
 

@@ -192,46 +192,40 @@ class ThemeController(initialMode: ThemeMode = ThemeMode.CYBER_OBSIDIAN) {
 val LocalNyawitColors = compositionLocalOf<NyawitColors> { NyawitColors }
 val LocalThemeController = compositionLocalOf { ThemeController() }
 
-class NyawitTypography(val factor: Float = 1f) {
-    val Wordmark: TextStyle
-        get() = TextStyle(
-            fontSize = (22 * factor).sp,
-            lineHeight = (26 * factor).sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = (2 * factor).sp,
-        )
-    val Overline: TextStyle
-        get() = TextStyle(
-            fontSize = (10 * factor).sp,
-            lineHeight = (14 * factor).sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (1.6 * factor).sp,
-        )
-    val Title: TextStyle
-        get() = TextStyle(
-            fontSize = (18 * factor).sp,
-            lineHeight = (23 * factor).sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.2 * factor).sp,
-        )
-    val Subtitle: TextStyle
-        get() = TextStyle(
-            fontSize = (15 * factor).sp,
-            lineHeight = (20 * factor).sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-    val Body: TextStyle
-        get() = TextStyle(
-            fontSize = (13 * factor).sp,
-            lineHeight = (19 * factor).sp,
-            fontWeight = FontWeight.Normal,
-        )
-    val Caption: TextStyle
-        get() = TextStyle(
-            fontSize = (11 * factor).sp,
-            lineHeight = (15 * factor).sp,
-            fontWeight = FontWeight.Medium,
-        )
+class NyawitTypography {
+    val Wordmark: TextStyle = TextStyle(
+        fontSize = 22.sp,
+        lineHeight = 26.sp,
+        fontWeight = FontWeight.Black,
+        letterSpacing = 2.sp,
+    )
+    val Overline: TextStyle = TextStyle(
+        fontSize = 10.sp,
+        lineHeight = 14.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.6.sp,
+    )
+    val Title: TextStyle = TextStyle(
+        fontSize = 18.sp,
+        lineHeight = 23.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.2).sp,
+    )
+    val Subtitle: TextStyle = TextStyle(
+        fontSize = 15.sp,
+        lineHeight = 20.sp,
+        fontWeight = FontWeight.SemiBold,
+    )
+    val Body: TextStyle = TextStyle(
+        fontSize = 13.sp,
+        lineHeight = 19.sp,
+        fontWeight = FontWeight.Normal,
+    )
+    val Caption: TextStyle = TextStyle(
+        fontSize = 11.sp,
+        lineHeight = 15.sp,
+        fontWeight = FontWeight.Medium,
+    )
 }
 
 val LocalNyawitTypography = compositionLocalOf { NyawitTypography() }
@@ -259,7 +253,8 @@ fun LauncherTheme(
     val currentStrings = stringsFor(languageController.language)
     val profile = rememberDeviceProfile()
     val responsiveScale = rememberResponsiveScale(profile)
-    val typography = remember(responsiveScale.factor) { NyawitTypography(responsiveScale.factor) }
+    val scaledDensity = rememberScaledDensity(responsiveScale.factor)
+    val typography = remember { NyawitTypography() }
 
     val colorScheme = if (currentColors.isDark) {
         darkColorScheme(
@@ -290,6 +285,7 @@ fun LauncherTheme(
     }
 
     CompositionLocalProvider(
+        LocalDensity provides scaledDensity,
         LocalResponsiveScale provides responsiveScale,
         LocalNyawitTypography provides typography,
         LocalNyawitColors provides currentColors,

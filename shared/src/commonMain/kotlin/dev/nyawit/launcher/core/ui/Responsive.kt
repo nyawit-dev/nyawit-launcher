@@ -57,12 +57,12 @@ data class DeviceProfile(
 data class ResponsiveScale(
     val factor: Float = 1f,
     val columns: Int = 3,
-    val sidebarWidth: Dp = 224.dp,
+    val sidebarWidth: Dp = 280.dp,
     val isTv: Boolean = false,
 ) {
-    fun dp(base: Dp): Dp = base * factor
-    fun dp(base: Int): Dp = (base * factor).dp
-    fun dp(base: Float): Dp = (base * factor).dp
+    fun dp(base: Dp): Dp = base
+    fun dp(base: Int): Dp = base.dp
+    fun dp(base: Float): Dp = base.dp
 }
 
 val LocalResponsiveScale = staticCompositionLocalOf { ResponsiveScale() }
@@ -115,10 +115,10 @@ fun calculateAutoScale(profile: DeviceProfile): Float {
         ScreenKind.DESKTOP -> when {
             profile.widthDp < 900f -> 0.94f
             profile.widthDp <= 1366f -> 1.0f
-            profile.widthDp <= 1680f -> 1.06f
-            profile.widthDp <= 1920f -> 1.12f
-            profile.widthDp <= 2560f -> 1.24f
-            else -> 1.38f // 4K UHD Ultra-wide
+            profile.widthDp <= 1680f -> 1.04f
+            profile.widthDp <= 1920f -> 1.08f
+            profile.widthDp <= 2560f -> 1.15f
+            else -> 1.25f // 4K UHD Ultra-wide
         }
         ScreenKind.TV -> 1.35f
     }
@@ -136,9 +136,15 @@ fun rememberResponsiveScale(
         val factor = scalePreference.factor ?: calculateAutoScale(profile)
 
         val sidebarWidth = when (profile.kind) {
-            ScreenKind.TV -> 260.dp
-            ScreenKind.DESKTOP -> if (profile.widthDp >= 1600f) 248.dp else 224.dp
-            else -> minOf(280.dp, (profile.widthDp * 0.82f).dp)
+            ScreenKind.TV -> (300 * factor.coerceIn(1.0f, 1.25f)).dp
+            ScreenKind.DESKTOP -> when {
+                profile.widthDp >= 2560f -> 360.dp
+                profile.widthDp >= 1920f -> 320.dp
+                profile.widthDp >= 1440f -> 300.dp
+                profile.widthDp >= 1100f -> 280.dp
+                else -> 260.dp
+            }
+            else -> minOf(320.dp, (profile.widthDp * 0.85f).dp)
         }
         val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
         val availableWidth = if (isCompactLayout) profile.widthDp else (profile.widthDp - sidebarWidth.value)
@@ -170,7 +176,7 @@ fun rememberScaledDensity(scaleFactor: Float): Density {
     return remember(currentDensity, scaleFactor) {
         Density(
             density = currentDensity.density * scaleFactor,
-            fontScale = currentDensity.fontScale * scaleFactor,
+            fontScale = currentDensity.fontScale,
         )
     }
 }
