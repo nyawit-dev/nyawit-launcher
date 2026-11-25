@@ -76,142 +76,172 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .widthIn(max = 840.dp)
                 .padding(
-                    horizontal = if (isNarrow) 16.dp else 28.dp,
-                    vertical = if (isNarrow) 16.dp else 24.dp,
+                    horizontal = if (isNarrow) 16.dp else 24.dp,
+                    vertical = if (isNarrow) 16.dp else 20.dp,
                 ),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                color = c.PrimaryMuted,
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, c.Primary),
-                modifier = Modifier.size(46.dp),
+            // Deck Command Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    SettingsIcon(Modifier.size(24.dp), color = c.Primary)
+                Surface(
+                    color = c.SurfaceRaised,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, c.BorderHighlight),
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Box(Modifier.fillMaxSize(), Alignment.Center) {
+                        SettingsIcon(Modifier.size(24.dp), color = c.Primary)
+                    }
+                }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = NyawitStrings.SETTINGS_TITLE.uppercase(),
+                            style = NyawitType.Wordmark,
+                            color = c.Text,
+                        )
+                        Surface(
+                            color = c.PrimaryMuted,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
+                        ) {
+                            Text(
+                                "KONFIG",
+                                style = NyawitType.Overline,
+                                color = c.Primary,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = NyawitStrings.SETTINGS_SUBTITLE,
+                        style = NyawitType.Body,
+                        color = c.Muted,
+                    )
                 }
             }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(
-                    text = NyawitStrings.SETTINGS_TITLE,
-                    style = NyawitType.Wordmark,
-                    color = c.Text,
-                )
-                Text(
-                    text = NyawitStrings.SETTINGS_SUBTITLE,
-                    style = NyawitType.Body,
-                    color = c.Muted,
-                )
-            }
-        }
 
-        // Section 1: Tema & Tampilan
-        SettingsSectionCard(
-            title = NyawitStrings.SETTINGS_SEC_APPEARANCE,
-            description = NyawitStrings.SETTINGS_SEC_APPEARANCE_DESC,
-        ) {
-            val modes = ThemeMode.entries
-            if (isNarrow) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    modes.chunked(2).forEach { rowModes ->
+            // Section 1: Tema & Tampilan
+            SettingsSectionCard(
+                title = NyawitStrings.SETTINGS_SEC_APPEARANCE,
+                description = NyawitStrings.SETTINGS_SEC_APPEARANCE_DESC,
+            ) {
+                val modes = ThemeMode.entries
+                if (isNarrow) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        modes.chunked(2).forEach { rowModes ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                rowModes.forEach { mode ->
+                                    ThemeModeCard(
+                                        mode = mode,
+                                        selected = settingsController.themeController.mode == mode,
+                                        onClick = { settingsController.setTheme(mode) },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        modes.forEach { mode ->
+                            ThemeModeCard(
+                                mode = mode,
+                                selected = settingsController.themeController.mode == mode,
+                                onClick = { settingsController.setTheme(mode) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Section 2: Bahasa & Regional
+            SettingsSectionCard(
+                title = NyawitStrings.SETTINGS_SEC_LANGUAGE,
+                description = NyawitStrings.SETTINGS_SEC_LANGUAGE_DESC,
+            ) {
+                val languages = AppLanguage.entries
+                if (isNarrow) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        languages.forEach { lang ->
+                            LanguageCard(
+                                lang = lang,
+                                selected = settingsController.languageController.language == lang,
+                                onClick = { settingsController.setLanguage(lang) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        languages.forEach { lang ->
+                            LanguageCard(
+                                lang = lang,
+                                selected = settingsController.languageController.language == lang,
+                                onClick = { settingsController.setLanguage(lang) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Section 3: Penskalaan Layar
+            SettingsSectionCard(
+                title = NyawitStrings.SETTINGS_SEC_SCALE,
+                description = NyawitStrings.SETTINGS_SEC_SCALE_DESC,
+            ) {
+                val prefs = ScalePreference.entries
+                if (isNarrow) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            rowModes.forEach { mode ->
-                                ThemeModeCard(
-                                    mode = mode,
-                                    selected = settingsController.themeController.mode == mode,
-                                    onClick = { settingsController.setTheme(mode) },
+                            prefs.take(3).forEach { pref ->
+                                ScalePreferenceChip(
+                                    pref = pref,
+                                    selected = settingsController.scalePreference == pref,
+                                    onClick = { settingsController.setScale(pref) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            prefs.drop(3).forEach { pref ->
+                                ScalePreferenceChip(
+                                    pref = pref,
+                                    selected = settingsController.scalePreference == pref,
+                                    onClick = { settingsController.setScale(pref) },
                                     modifier = Modifier.weight(1f),
                                 )
                             }
                         }
                     }
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    modes.forEach { mode ->
-                        ThemeModeCard(
-                            mode = mode,
-                            selected = settingsController.themeController.mode == mode,
-                            onClick = { settingsController.setTheme(mode) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-        }
-
-        // Section 2: Bahasa & Regional
-        SettingsSectionCard(
-            title = NyawitStrings.SETTINGS_SEC_LANGUAGE,
-            description = NyawitStrings.SETTINGS_SEC_LANGUAGE_DESC,
-        ) {
-            val languages = AppLanguage.entries
-            if (isNarrow) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    languages.forEach { lang ->
-                        LanguageCard(
-                            lang = lang,
-                            selected = settingsController.languageController.language == lang,
-                            onClick = { settingsController.setLanguage(lang) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    languages.forEach { lang ->
-                        LanguageCard(
-                            lang = lang,
-                            selected = settingsController.languageController.language == lang,
-                            onClick = { settingsController.setLanguage(lang) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-        }
-
-        // Section 3: Penskalaan Layar
-        SettingsSectionCard(
-            title = NyawitStrings.SETTINGS_SEC_SCALE,
-            description = NyawitStrings.SETTINGS_SEC_SCALE_DESC,
-        ) {
-            val prefs = ScalePreference.entries
-            if (isNarrow) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        prefs.take(3).forEach { pref ->
-                            ScalePreferenceChip(
-                                pref = pref,
-                                selected = settingsController.scalePreference == pref,
-                                onClick = { settingsController.setScale(pref) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        prefs.drop(3).forEach { pref ->
+                        prefs.forEach { pref ->
                             ScalePreferenceChip(
                                 pref = pref,
                                 selected = settingsController.scalePreference == pref,
@@ -221,142 +251,138 @@ fun SettingsScreen(
                         }
                     }
                 }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    prefs.forEach { pref ->
-                        ScalePreferenceChip(
-                            pref = pref,
-                            selected = settingsController.scalePreference == pref,
-                            onClick = { settingsController.setScale(pref) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
             }
-        }
 
-        // Section 4: Sistem & Pembaruan
-        SettingsSectionCard(
-            title = NyawitStrings.SETTINGS_SEC_UPDATES,
-            description = NyawitStrings.SETTINGS_SEC_UPDATES_DESC,
-        ) {
-            Surface(
-                color = c.SurfaceRaised,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, c.Border),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) }
-                    .focusable()
-                    .tvFocusHighlight(RoundedCornerShape(10.dp)),
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = NyawitStrings.SETTINGS_AUTO_CHECK_TITLE,
-                            style = NyawitType.Subtitle,
-                            color = c.Text,
-                        )
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            text = NyawitStrings.SETTINGS_AUTO_CHECK_DESC,
-                            style = NyawitType.Body,
-                            color = c.Muted,
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Surface(
-                        color = if (settingsController.autoCheckUpdates) c.Primary else c.SurfaceHighlight,
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, if (settingsController.autoCheckUpdates) c.Primary else c.Border),
-                    ) {
-                        Text(
-                            text = if (settingsController.autoCheckUpdates) "ON" else "OFF",
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                            style = NyawitType.Overline,
-                            color = if (settingsController.autoCheckUpdates) c.OnPrimary else c.Muted,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
-        }
-
-        // Section 5: Penyimpanan & Cache
-        SettingsSectionCard(
-            title = NyawitStrings.SETTINGS_SEC_STORAGE,
-            description = NyawitStrings.SETTINGS_SEC_STORAGE_DESC,
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            // Section 4: Sistem & Pembaruan
+            SettingsSectionCard(
+                title = NyawitStrings.SETTINGS_SEC_UPDATES,
+                description = NyawitStrings.SETTINGS_SEC_UPDATES_DESC,
             ) {
                 Surface(
                     color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, c.Border),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, c.BorderHighlight),
                     modifier = Modifier
-                        .clickable {
-                            val success = clearCatalogCache(platformContext)
-                            if (success) {
-                                cacheClearedNotice = true
-                                onCatalogCacheCleared?.invoke()
-                            }
-                        }
+                        .fillMaxWidth()
+                        .clickable { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) }
                         .focusable()
-                        .tvFocusHighlight(RoundedCornerShape(8.dp)),
+                        .tvFocusHighlight(RoundedCornerShape(10.dp)),
                 ) {
-                    Text(
-                        text = NyawitStrings.SETTINGS_BTN_CLEAR_CACHE,
-                        style = NyawitType.Subtitle,
-                        color = c.Danger,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = cacheClearedNotice,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CheckIcon(Modifier.size(16.dp), color = c.Primary)
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = NyawitStrings.SETTINGS_CACHE_CLEARED,
-                            style = NyawitType.Caption,
-                            color = c.Primary,
-                        )
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = NyawitStrings.SETTINGS_AUTO_CHECK_TITLE,
+                                style = NyawitType.Subtitle,
+                                color = c.Text,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                text = NyawitStrings.SETTINGS_AUTO_CHECK_DESC,
+                                style = NyawitType.Body,
+                                color = c.Muted,
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Surface(
+                            color = if (settingsController.autoCheckUpdates) c.Primary else c.SurfaceHighlight,
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, if (settingsController.autoCheckUpdates) c.Primary else c.Border),
+                        ) {
+                            Text(
+                                text = if (settingsController.autoCheckUpdates) "AKTIF" else "NONAKTIF",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = NyawitType.Overline,
+                                color = if (settingsController.autoCheckUpdates) c.OnPrimary else c.Muted,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        // Footer status persisten
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 20.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CheckIcon(Modifier.size(14.dp), color = c.Muted)
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = NyawitStrings.SETTINGS_STORAGE_SAVED_NOTICE,
-                style = NyawitType.Caption,
-                color = c.Muted,
-            )
-        }
+            // Section 5: Penyimpanan & Cache
+            SettingsSectionCard(
+                title = NyawitStrings.SETTINGS_SEC_STORAGE,
+                description = NyawitStrings.SETTINGS_SEC_STORAGE_DESC,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(
+                        color = c.Danger.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, c.Danger.copy(alpha = 0.45f)),
+                        modifier = Modifier
+                            .clickable {
+                                val success = clearCatalogCache(platformContext)
+                                if (success) {
+                                    cacheClearedNotice = true
+                                    onCatalogCacheCleared?.invoke()
+                                }
+                            }
+                            .focusable()
+                            .tvFocusHighlight(RoundedCornerShape(8.dp)),
+                    ) {
+                        Text(
+                            text = NyawitStrings.SETTINGS_BTN_CLEAR_CACHE,
+                            style = NyawitType.Caption,
+                            color = c.Danger,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = cacheClearedNotice,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        Surface(
+                            color = c.PrimaryMuted,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                CheckIcon(Modifier.size(14.dp), color = c.Primary)
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = NyawitStrings.SETTINGS_CACHE_CLEARED,
+                                    style = NyawitType.Caption,
+                                    color = c.Primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Footer status persisten
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 20.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CheckIcon(Modifier.size(14.dp), color = c.Primary)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = NyawitStrings.SETTINGS_STORAGE_SAVED_NOTICE,
+                    style = NyawitType.Caption,
+                    color = c.Muted,
+                )
+            }
         }
     }
 }
@@ -382,23 +408,23 @@ private fun ThemeModeCard(
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) c.Primary else c.Border,
+            color = if (selected) c.Primary else c.BorderHighlight,
         ),
         modifier = modifier
             .focusable()
             .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
             .clickable { onClick() },
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Box(Modifier.size(12.dp).background(modeColors.Background, CircleShape).border(1.dp, c.Border, CircleShape))
-                    Box(Modifier.size(12.dp).background(modeColors.Surface, CircleShape).border(1.dp, c.Border, CircleShape))
-                    Box(Modifier.size(12.dp).background(modeColors.Primary, CircleShape))
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Box(Modifier.size(13.dp).background(modeColors.Background, CircleShape).border(1.dp, c.Border, CircleShape))
+                    Box(Modifier.size(13.dp).background(modeColors.Surface, CircleShape).border(1.dp, c.Border, CircleShape))
+                    Box(Modifier.size(13.dp).background(modeColors.Primary, CircleShape))
                 }
                 if (selected) {
                     CheckIcon(Modifier.size(14.dp), color = c.Primary)
@@ -427,7 +453,7 @@ private fun LanguageCard(
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) c.Primary else c.Border,
+            color = if (selected) c.Primary else c.BorderHighlight,
         ),
         modifier = modifier
             .focusable()
@@ -440,8 +466,22 @@ private fun LanguageCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                GlobeIcon(Modifier.size(18.dp), color = if (selected) c.Primary else c.Muted)
-                Spacer(Modifier.width(10.dp))
+                Surface(
+                    color = if (selected) c.Primary.copy(alpha = 0.2f) else c.SurfaceHighlight,
+                    shape = RoundedCornerShape(6.dp),
+                ) {
+                    Text(
+                        when (lang) {
+                            AppLanguage.ID -> "ID"
+                            AppLanguage.EN -> "EN"
+                        },
+                        style = NyawitType.Overline,
+                        color = if (selected) c.Primary else c.Muted,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
                 Column {
                     Text(
                         text = lang.nativeName,
@@ -485,7 +525,7 @@ private fun ScalePreferenceChip(
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(
             width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) c.Primary else c.Border,
+            color = if (selected) c.Primary else c.BorderHighlight,
         ),
         modifier = modifier
             .focusable()
@@ -520,22 +560,23 @@ private fun SettingsSectionCard(
     Surface(
         color = c.Surface,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, c.Border),
+        border = BorderStroke(1.dp, c.BorderHighlight),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = title,
-                    style = NyawitType.Overline,
+                    text = title.uppercase(),
+                    style = NyawitType.Subtitle,
                     color = c.Primary,
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = description,
-                    style = NyawitType.Body,
+                    style = NyawitType.Caption,
                     color = c.Muted,
                 )
             }

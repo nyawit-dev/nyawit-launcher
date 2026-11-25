@@ -1,6 +1,7 @@
 package dev.nyawit.launcher.feature.catalog.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -231,44 +232,41 @@ private fun NavItem(
     val c = LocalNyawitColors.current
     val itemBg by animateColorAsState(
         targetValue = if (selected) c.PrimaryMuted else Color.Transparent,
+        animationSpec = tween(180),
     )
     val contentColor = if (selected) c.Primary else c.Muted
 
     Row(
         Modifier
             .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(11.dp))
+            .height(46.dp)
+            .clip(RoundedCornerShape(10.dp))
             .background(itemBg)
             .border(
                 BorderStroke(
                     1.dp,
-                    if (selected) c.Primary.copy(alpha = 0.25f) else Color.Transparent,
+                    if (selected) c.Primary.copy(alpha = 0.45f) else Color.Transparent,
                 ),
-                RoundedCornerShape(11.dp),
+                RoundedCornerShape(10.dp),
             )
             .clickable(onClick = onClick)
             .focusable()
-            .tvFocusHighlight(RoundedCornerShape(11.dp), 1f)
+            .tvFocusHighlight(RoundedCornerShape(10.dp), 1f)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .width(3.dp)
-                .height(18.dp)
-                .background(
-                    if (selected) c.Primary else Color.Transparent,
-                    RoundedCornerShape(2.dp),
-                ),
-        )
+        Surface(
+            color = if (selected) c.Primary else c.SurfaceHighlight,
+            shape = RoundedCornerShape(2.dp),
+            modifier = Modifier.width(3.dp).height(20.dp),
+        ) {}
         Spacer(Modifier.width(10.dp))
         icon(contentColor)
         Spacer(Modifier.width(10.dp))
         Text(
             label,
-            style = NyawitType.Caption,
-            color = contentColor,
+            style = NyawitType.Subtitle,
+            color = if (selected) c.Text else contentColor,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         )
     }

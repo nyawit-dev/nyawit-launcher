@@ -111,14 +111,25 @@ fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: F
         value = query,
         onValueChange = onQuery,
         placeholder = { Text(NyawitStrings.SEARCH_PLACEHOLDER, style = NyawitType.Body, color = c.Faint) },
-        leadingIcon = { SearchIcon(Modifier.size(18.dp), c.Muted) },
+        leadingIcon = { SearchIcon(Modifier.size(19.dp), c.Muted) },
         trailingIcon = {
             if (query.isNotEmpty()) {
-                Text(
-                    NyawitStrings.SYMBOL_CLOSE,
-                    color = c.Muted,
-                    modifier = Modifier.clickable { onQuery("") }.padding(horizontal = 12.dp),
-                )
+                Surface(
+                    color = c.SurfaceHighlight,
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, c.BorderHighlight),
+                    modifier = Modifier
+                        .clickable { onQuery("") }
+                        .padding(end = 12.dp),
+                ) {
+                    Text(
+                        NyawitStrings.SYMBOL_CLOSE,
+                        color = c.Text,
+                        style = NyawitType.Caption,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
             } else {
                 Surface(
                     color = c.SurfaceRaised,
@@ -130,24 +141,27 @@ fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: F
                         NyawitStrings.KEY_ESC,
                         style = NyawitType.Overline,
                         color = c.Faint,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                     )
                 }
             }
         },
         singleLine = true,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         textStyle = NyawitType.Body,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = c.Surface,
+            focusedContainerColor = c.SurfaceRaised,
             unfocusedContainerColor = c.Surface,
             focusedBorderColor = c.Primary,
-            unfocusedBorderColor = c.Border,
+            unfocusedBorderColor = c.BorderHighlight,
             focusedTextColor = c.Text,
             unfocusedTextColor = c.Text,
             cursorColor = c.Primary,
         ),
-        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).tvFocusHighlight(RoundedCornerShape(14.dp), 1f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
     )
 }
 
@@ -169,43 +183,41 @@ fun CategoryFilterChips(
             val isSelected = cat == selectedCategory
             val count = counts[cat]
             Surface(
-                color = if (isSelected) c.PrimaryMuted else c.SurfaceRaised,
-                shape = RoundedCornerShape(10.dp),
+                color = if (isSelected) c.Primary else c.SurfaceRaised,
+                shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(
                     1.dp,
-                    if (isSelected) c.Primary.copy(alpha = 0.5f) else c.Border,
+                    if (isSelected) c.Primary else c.Border,
                 ),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable { onSelectCategory(cat) }
                     .focusable()
-                    .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                    .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
             ) {
                 Row(
-                    Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (isSelected) {
-                        Box(Modifier.size(5.dp).background(c.Primary, CircleShape))
-                    }
                     val label = if (cat == "__ALL__") NyawitStrings.CATEGORY_ALL else cat
                     Text(
                         label,
                         style = NyawitType.Caption,
-                        color = if (isSelected) c.Primary else c.Muted,
+                        color = if (isSelected) c.OnPrimary else c.Text,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     )
                     if (count != null && count > 0) {
                         Surface(
-                            color = if (isSelected) c.Primary.copy(alpha = 0.25f) else c.SurfaceHighlight,
-                            shape = RoundedCornerShape(6.dp),
+                            color = if (isSelected) c.OnPrimary.copy(alpha = 0.2f) else c.SurfaceHighlight,
+                            shape = RoundedCornerShape(5.dp),
                         ) {
                             Text(
                                 "$count",
                                 style = NyawitType.Overline,
-                                color = if (isSelected) c.Primary else c.Faint,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                color = if (isSelected) c.OnPrimary else c.Muted,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
                     }
@@ -323,19 +335,19 @@ fun LoadingPlaceholder() {
             RepeatMode.Reverse,
         ),
     )
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         repeat(3) {
             Surface(
                 color = c.Surface.copy(alpha = alpha),
-                shape = RoundedCornerShape(18.dp),
-                border = BorderStroke(1.dp, c.Border),
-                modifier = Modifier.fillMaxWidth().height(132.dp),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, c.BorderHighlight),
+                modifier = Modifier.fillMaxWidth().height(124.dp),
             ) {
-                Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = c.SurfaceRaised, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(46.dp)) {}
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Surface(color = c.SurfaceRaised, shape = RoundedCornerShape(4.dp), modifier = Modifier.fillMaxWidth(0.5f).height(14.dp)) {}
+                        Surface(color = c.SurfaceRaised, shape = RoundedCornerShape(4.dp), modifier = Modifier.fillMaxWidth(0.45f).height(14.dp)) {}
                         Spacer(Modifier.height(10.dp))
                         Surface(color = c.SurfaceRaised, shape = RoundedCornerShape(4.dp), modifier = Modifier.fillMaxWidth(0.85f).height(10.dp)) {}
                     }
@@ -376,26 +388,13 @@ fun FeaturedApp(
 ) {
     val c = LocalNyawitColors.current
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = c.Surface,
         border = BorderStroke(1.dp, c.BorderHighlight),
-        modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(20.dp), 1f),
+        modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(16.dp), 1f),
     ) {
-        Column {
-            // Top highlight gradient line
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(c.Primary, c.Primary.copy(alpha = 0.4f), Color.Transparent),
-                        ),
-                    ),
-            )
-
-            Column(Modifier.padding(22.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         color = c.PrimaryMuted,
                         shape = RoundedCornerShape(8.dp),
@@ -470,7 +469,6 @@ fun FeaturedApp(
             }
         }
     }
-}
 
 /** Header atas untuk ponsel: bersih, ada tombol drawer navigasi, tanpa tombol cek update di atas. */
 @Composable

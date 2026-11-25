@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,7 +50,7 @@ fun AppDetailDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(16.dp),
             color = c.Surface,
             border = BorderStroke(1.dp, c.BorderHighlight),
             modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = 560.dp),
@@ -62,6 +61,41 @@ fun AppDetailDialog(
                         .padding(24.dp)
                         .verticalScroll(rememberScrollState()),
                 ) {
+                    // Header Bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(
+                            color = c.PrimaryMuted,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
+                        ) {
+                            Text(
+                                "MODUL DECK",
+                                style = NyawitType.Overline,
+                                color = c.Primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
+
+                        Surface(
+                            color = c.SurfaceRaised,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, c.Border),
+                        ) {
+                            Text(
+                                app.category.uppercase(),
+                                style = NyawitType.Overline,
+                                color = c.Muted,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
                     // Title header with icon
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         AppIcon(

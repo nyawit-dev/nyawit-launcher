@@ -2,6 +2,7 @@ package dev.nyawit.launcher.feature.catalog.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
@@ -33,6 +32,7 @@ import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SettingsIcon
 import dev.nyawit.launcher.core.ui.rememberDeviceProfile
+import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 
@@ -60,35 +60,79 @@ fun AboutScreen(
                 .widthIn(max = 840.dp)
                 .padding(horizontal = if (isNarrow) 16.dp else 24.dp, vertical = 20.dp),
         ) {
-        // App Hero Card
-        Surface(
-            color = c.Surface,
-            shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(c.Primary, c.Primary.copy(alpha = 0.3f), Color.Transparent),
-                            ),
-                        ),
-                )
-                Column(Modifier.padding(22.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        BrandMark(52)
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(BuildConfig.APP_NAME.uppercase(), style = NyawitType.Wordmark, color = c.Text)
-                            Spacer(Modifier.height(3.dp))
-                            Text("v$version  ·  build ${BuildConfig.VERSION_CODE}", style = NyawitType.Caption, color = c.Primary)
+            // App Hero Card (Neo-Industrial Deck)
+            Surface(
+                color = c.Surface,
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, c.BorderHighlight),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(
+                            color = c.PrimaryMuted,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
+                        ) {
+                            Text(
+                                "CORE RUNTIME",
+                                style = NyawitType.Overline,
+                                color = c.Primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
+
+                        Surface(
+                            color = c.SurfaceRaised,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, c.Border),
+                        ) {
+                            Text(
+                                "RELEASE STABLE",
+                                style = NyawitType.Overline,
+                                color = c.Muted,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
                         }
                     }
+
                     Spacer(Modifier.height(18.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        BrandMark(56)
+                        Spacer(Modifier.width(18.dp))
+                        Column {
+                            Text(BuildConfig.APP_NAME.uppercase(), style = NyawitType.Wordmark, color = c.Text)
+                            Spacer(Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Surface(
+                                    color = c.SurfaceRaised,
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, c.BorderHighlight),
+                                ) {
+                                    Text(
+                                        "v$version",
+                                        style = NyawitType.Caption,
+                                        color = c.Primary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
+                                }
+                                Text(
+                                    "BUILD ${BuildConfig.VERSION_CODE}",
+                                    style = NyawitType.Overline,
+                                    color = c.Muted,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+
                     Text(
                         NyawitStrings.ABOUT_DESC,
                         style = NyawitType.Body,
@@ -96,113 +140,121 @@ fun AboutScreen(
                     )
                 }
             }
-        }
 
-        if (onOpenSettings != null) {
-            Spacer(Modifier.height(18.dp))
-            Surface(
-                color = c.Surface,
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, c.Border),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+            if (onOpenSettings != null) {
+                Spacer(Modifier.height(18.dp))
+                Surface(
+                    color = c.Surface,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, c.BorderHighlight),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            color = c.PrimaryMuted,
-                            shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.dp, c.Primary),
-                            modifier = Modifier.size(38.dp),
-                        ) {
-                            Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                SettingsIcon(Modifier.size(20.dp), color = c.Primary)
+                    Row(
+                        modifier = Modifier.padding(18.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                color = c.PrimaryMuted,
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.4f)),
+                                modifier = Modifier.size(38.dp),
+                            ) {
+                                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                    SettingsIcon(Modifier.size(20.dp), color = c.Primary)
+                                }
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = NyawitStrings.SETTINGS_TITLE,
+                                    style = NyawitType.Subtitle,
+                                    color = c.Text,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = NyawitStrings.SETTINGS_SUBTITLE,
+                                    style = NyawitType.Caption,
+                                    color = c.Muted,
+                                )
                             }
                         }
-                        Spacer(Modifier.width(14.dp))
-                        Column {
-                            Text(
-                                text = NyawitStrings.SETTINGS_TITLE,
-                                style = NyawitType.Subtitle,
-                                color = c.Text,
-                            )
-                            Text(
-                                text = NyawitStrings.SETTINGS_SUBTITLE,
-                                style = NyawitType.Caption,
-                                color = c.Muted,
-                            )
-                        }
-                    }
 
-                    Button(
-                        onClick = onOpenSettings,
-                        colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
-                        shape = RoundedCornerShape(8.dp),
-                    ) {
-                        Text(NyawitStrings.SETTINGS_BTN_OPEN, style = NyawitType.Caption, fontWeight = FontWeight.SemiBold)
+                        Button(
+                            onClick = onOpenSettings,
+                            colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1.05f),
+                        ) {
+                            Text(NyawitStrings.SETTINGS_BTN_OPEN, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
-        }
 
-        Spacer(Modifier.height(20.dp))
-        Text(NyawitStrings.ABOUT_TITLE, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(20.dp))
+            Text(NyawitStrings.ABOUT_TITLE.uppercase(), style = NyawitType.Overline, color = c.Primary)
+            Spacer(Modifier.height(8.dp))
 
-        Surface(
-            color = c.Surface,
-            shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
-                MetaRow(NyawitStrings.ABOUT_LABEL_VERSION, "v$version (${BuildConfig.VERSION_CODE})")
-                MetaDivider()
-                MetaRow(NyawitStrings.ABOUT_LABEL_PLATFORMS, NyawitStrings.ABOUT_VAL_PLATFORMS)
-                MetaDivider()
-                MetaRow(NyawitStrings.ABOUT_LABEL_IDENTIFIER, BuildConfig.APP_ID)
-                MetaDivider()
-                MetaRow(NyawitStrings.ABOUT_LABEL_OWNER, BuildConfig.GITHUB_OWNER)
-                MetaDivider()
-                MetaRow(NyawitStrings.ABOUT_LABEL_LICENSE, NyawitStrings.ABOUT_VAL_LICENSE)
-                MetaDivider()
-                MetaRow(NyawitStrings.ABOUT_LABEL_FRAMEWORK, NyawitStrings.ABOUT_VAL_FRAMEWORK)
+            Surface(
+                color = c.Surface,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, c.BorderHighlight),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
+                    MetaRow(NyawitStrings.ABOUT_LABEL_VERSION, "v$version (${BuildConfig.VERSION_CODE})")
+                    MetaDivider()
+                    MetaRow(NyawitStrings.ABOUT_LABEL_PLATFORMS, NyawitStrings.ABOUT_VAL_PLATFORMS)
+                    MetaDivider()
+                    MetaRow(NyawitStrings.ABOUT_LABEL_IDENTIFIER, BuildConfig.APP_ID)
+                    MetaDivider()
+                    MetaRow(NyawitStrings.ABOUT_LABEL_OWNER, BuildConfig.GITHUB_OWNER)
+                    MetaDivider()
+                    MetaRow(NyawitStrings.ABOUT_LABEL_LICENSE, NyawitStrings.ABOUT_VAL_LICENSE)
+                    MetaDivider()
+                    MetaRow(NyawitStrings.ABOUT_LABEL_FRAMEWORK, NyawitStrings.ABOUT_VAL_FRAMEWORK)
+                }
             }
-        }
 
-        Spacer(Modifier.height(20.dp))
-        Text(NyawitStrings.ABOUT_LINKS_TITLE, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(20.dp))
+            Text(NyawitStrings.ABOUT_LINKS_TITLE.uppercase(), style = NyawitType.Overline, color = c.Primary)
+            Spacer(Modifier.height(8.dp))
 
-        val repoUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}"
-        val catalogUrl = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/main/catalog.json"
-        val orgUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}"
+            val repoUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}"
+            val catalogUrl = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/main/catalog.json"
+            val orgUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}"
 
-        if (isNarrow) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.fillMaxWidth(), platformContext)
-                ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.fillMaxWidth(), platformContext)
-                ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.fillMaxWidth(), platformContext)
+            if (isNarrow) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.fillMaxWidth(), platformContext)
+                    ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.fillMaxWidth(), platformContext)
+                    ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.fillMaxWidth(), platformContext)
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.weight(1f), platformContext)
+                    ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.weight(1f), platformContext)
+                    ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.weight(1f), platformContext)
+                }
             }
-        } else {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.weight(1f), platformContext)
-                ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.weight(1f), platformContext)
-                ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.weight(1f), platformContext)
-            }
-        }
 
-        Spacer(Modifier.height(24.dp))
-        Text(
-            NyawitStrings.ABOUT_SECURITY_FOOTER,
-            style = NyawitType.Caption,
-            color = c.Faint,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+            Surface(
+                color = c.SurfaceRaised,
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, c.Border),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    NyawitStrings.ABOUT_SECURITY_FOOTER,
+                    style = NyawitType.Caption,
+                    color = c.Muted,
+                    modifier = Modifier.padding(14.dp),
+                )
+            }
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
@@ -213,7 +265,7 @@ private fun MetaRow(label: String, value: String) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 11.dp),
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -239,14 +291,15 @@ private fun ExternalLinkCard(title: String, url: String, modifier: Modifier = Mo
     Surface(
         color = c.Surface,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, c.Border),
-        modifier = modifier,
-        onClick = { openUrl(url, platformContext) },
+        border = BorderStroke(1.dp, c.BorderHighlight),
+        modifier = modifier
+            .tvFocusHighlight(RoundedCornerShape(12.dp), 1.02f)
+            .clickable { openUrl(url, platformContext) },
     ) {
-        Column(Modifier.padding(14.dp)) {
-            Text(title, style = NyawitType.Subtitle, color = c.Text)
-            Spacer(Modifier.height(2.dp))
-            Text("github.com ↗", style = NyawitType.Overline, color = c.Primary)
+        Column(Modifier.padding(16.dp)) {
+            Text(title, style = NyawitType.Subtitle, color = c.Text, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text("github.com ↗", style = NyawitType.Overline, color = c.Primary, fontWeight = FontWeight.Bold)
         }
     }
 }
