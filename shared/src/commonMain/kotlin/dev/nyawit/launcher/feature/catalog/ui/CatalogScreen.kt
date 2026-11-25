@@ -498,8 +498,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             statuses = statuses,
                             busyApps = busyApps,
                             progress = progress,
-                            onInstall = ::install,
-                            onOpen = ::open,
+                            onInstall = { install(it) },
+                            onOpen = { open(it) },
                             onDetail = { detailApp = it },
                         )
                         else -> AppGrid(
@@ -508,8 +508,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             statuses = statuses,
                             busyApps = busyApps,
                             progress = progress,
-                            onInstall = ::install,
-                            onOpen = ::open,
+                            onInstall = { install(it) },
+                            onOpen = { open(it) },
                             onDetail = { detailApp = it },
                         )
                     }
@@ -544,7 +544,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                         updateCount = updateCount,
                         selfBusy = selfBusy,
                         onNavigate = { page = it },
-                        onUpdate = ::checkUpdates,
+                        onUpdate = { checkUpdates() },
                         onClose = { scope.launch { drawerState.close() } },
                     )
                 }
@@ -567,7 +567,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                 updateCount = updateCount,
                 selfBusy = selfBusy,
                 onNavigate = { page = it },
-                onUpdate = ::checkUpdates,
+                onUpdate = { checkUpdates() },
                 modifier = Modifier.width(responsiveScale.sidebarWidth),
             )
             Box(Modifier.weight(1f).fillMaxSize().background(c.Background)) { content() }
