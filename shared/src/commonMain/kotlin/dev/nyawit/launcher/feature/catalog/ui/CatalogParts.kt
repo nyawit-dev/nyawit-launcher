@@ -390,85 +390,165 @@ fun FeaturedApp(
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = c.Surface,
-        border = BorderStroke(1.dp, c.BorderHighlight),
+        border = BorderStroke(1.5.dp, c.Primary.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(16.dp), 1f),
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        color = c.PrimaryMuted,
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
-                    ) {
-                        Text(
-                            NyawitStrings.CHIP_FEATURED,
-                            style = NyawitType.Overline,
-                            color = c.Primary,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Surface(color = c.SurfaceRaised, shape = RoundedCornerShape(6.dp)) {
-                        Text(
-                            NyawitStrings.CHIP_PINNED,
-                            style = NyawitType.Overline,
-                            color = c.Muted,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AppIcon(
-                        fullName = app.fullName,
-                        fallbackName = app.name,
-                        size = 56.dp,
-                        shape = RoundedCornerShape(14.dp),
+        Column(Modifier.padding(22.dp)) {
+            // Header: Spotlight Classification & Live Status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = c.PrimaryMuted,
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, c.Primary),
+                ) {
+                    Text(
+                        "UNGGULAN EKOSISTEM // REKOMENDASI",
+                        style = NyawitType.Overline,
+                        color = c.Primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                     )
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(app.name, style = NyawitType.Title, color = c.Text)
-                        Spacer(Modifier.height(4.dp))
-                        Text(app.description, style = NyawitType.Body, color = c.Muted, maxLines = 2)
-                    }
                 }
-                Spacer(Modifier.height(18.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = when (status) {
-                                AppStatus.UPDATE_AVAILABLE -> c.Warning
-                                AppStatus.INSTALLED -> c.SurfaceRaised
-                                else -> c.Primary
-                            },
-                            contentColor = when (status) {
-                                AppStatus.UPDATE_AVAILABLE -> c.OnWarning
-                                AppStatus.INSTALLED -> c.Text
-                                else -> c.OnPrimary
-                            },
-                        ),
-                        shape = RoundedCornerShape(11.dp),
-                        modifier = Modifier.height(44.dp),
-                    ) {
-                        Text(
-                            when (status) {
-                                AppStatus.INSTALLED -> NyawitStrings.BTN_OPEN_APP
-                                AppStatus.UPDATE_AVAILABLE -> NyawitStrings.BTN_UPDATE
-                                else -> NyawitStrings.BTN_INSTALL
-                            },
-                            style = NyawitType.Caption,
-                            fontWeight = FontWeight.Bold,
+
+                Surface(
+                    color = c.SurfaceRaised,
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, c.Border),
+                ) {
+                    Text(
+                        app.category.uppercase(),
+                        style = NyawitType.Overline,
+                        color = c.Muted,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+
+            // Main Core Display
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = c.SurfaceRaised,
+                    border = BorderStroke(1.5.dp, c.BorderHighlight),
+                    modifier = Modifier.size(68.dp),
+                ) {
+                    Box(Modifier.fillMaxSize(), Alignment.Center) {
+                        AppIcon(
+                            fullName = app.fullName,
+                            fallbackName = app.name,
+                            size = 58.dp,
+                            shape = RoundedCornerShape(12.dp),
                         )
                     }
-                    Spacer(Modifier.width(10.dp))
-                    TextButton(onClick = onDetail) {
-                        Text(NyawitStrings.BTN_DETAIL, style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.width(18.dp))
+
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        app.name,
+                        style = NyawitType.Title,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = c.Text,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            app.fullName.substringBefore('/'),
+                            style = NyawitType.Caption,
+                            color = c.Primary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Box(Modifier.size(4.dp).background(c.Border, CircleShape))
+                        Text(
+                            app.packageName,
+                            style = NyawitType.Caption,
+                            color = c.Faint,
+                        )
                     }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        app.description,
+                        style = NyawitType.Body,
+                        color = c.Muted,
+                        maxLines = 2,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // Spotlight Action Command Deck
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Button(
+                    onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = when (status) {
+                            AppStatus.UPDATE_AVAILABLE -> c.Warning
+                            AppStatus.INSTALLED -> c.Primary
+                            else -> c.Primary
+                        },
+                        contentColor = when (status) {
+                            AppStatus.UPDATE_AVAILABLE -> c.OnWarning
+                            else -> c.OnPrimary
+                        },
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .height(44.dp)
+                        .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                ) {
+                    Text(
+                        when (status) {
+                            AppStatus.INSTALLED -> "JALANKAN MODUL"
+                            AppStatus.UPDATE_AVAILABLE -> "PERBARUI VERSI"
+                            else -> "PASANG KE PERANGKAT"
+                        },
+                        style = NyawitType.Caption,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                Button(
+                    onClick = onDetail,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = c.SurfaceRaised,
+                        contentColor = c.Text,
+                    ),
+                    border = BorderStroke(1.dp, c.BorderHighlight),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .height(44.dp)
+                        .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
+                ) {
+                    Text(
+                        NyawitStrings.BTN_DETAIL,
+                        style = NyawitType.Caption,
+                        color = c.Text,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
             }
         }
     }
+}
 
 /** Header atas untuk ponsel: bersih, ada tombol drawer navigasi, tanpa tombol cek update di atas. */
 @Composable

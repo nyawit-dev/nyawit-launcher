@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -531,25 +532,37 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             ) { Text(NyawitStrings.BTN_RETRY) }
                         }
                         visibleApps.isEmpty() -> EmptyState()
-                        responsiveScale.columns == 1 -> AppList(
-                            apps = visibleApps,
-                            statuses = statuses,
-                            busyApps = busyApps,
-                            progress = progress,
-                            onInstall = { install(it) },
-                            onOpen = { open(it) },
-                            onDetail = { detailApp = it },
-                        )
-                        else -> AppGrid(
-                            columns = responsiveScale.columns,
-                            apps = visibleApps,
-                            statuses = statuses,
-                            busyApps = busyApps,
-                            progress = progress,
-                            onInstall = { install(it) },
-                            onOpen = { open(it) },
-                            onDetail = { detailApp = it },
-                        )
+                        else -> {
+                            val showSpotlight = query.isBlank() && (selectedCategory == "__ALL__" || selectedCategory == "Semua" || selectedCategory == "All")
+                            if (responsiveScale.columns == 1) {
+                                AppList(
+                                    apps = visibleApps,
+                                    statuses = statuses,
+                                    busyApps = busyApps,
+                                    progress = progress,
+                                    showSpotlight = showSpotlight,
+                                    selectedCategory = selectedCategory,
+                                    updateCount = updateCount,
+                                    onInstall = { install(it) },
+                                    onOpen = { open(it) },
+                                    onDetail = { detailApp = it },
+                                )
+                            } else {
+                                AppGrid(
+                                    columns = responsiveScale.columns,
+                                    apps = visibleApps,
+                                    statuses = statuses,
+                                    busyApps = busyApps,
+                                    progress = progress,
+                                    showSpotlight = showSpotlight,
+                                    selectedCategory = selectedCategory,
+                                    updateCount = updateCount,
+                                    onInstall = { install(it) },
+                                    onOpen = { open(it) },
+                                    onDetail = { detailApp = it },
+                                )
+                            }
+                        }
                     }
                 }
                 AppPage.SETTINGS -> SettingsScreen(
@@ -631,17 +644,41 @@ private fun AppList(
     statuses: Map<String, AppStatus>,
     busyApps: Set<String>,
     progress: Map<String, Float>,
+    showSpotlight: Boolean,
+    selectedCategory: String,
+    updateCount: Int,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
     onDetail: (CatalogApp) -> Unit,
 ) {
+    val featuredApp = if (showSpotlight && apps.isNotEmpty()) apps.first() else null
+    val listApps = if (showSpotlight && apps.isNotEmpty()) apps.drop(1) else apps
+
     LazyColumn(
         contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(count = apps.size, key = { apps[it].fullName }) { index ->
-            val app = apps[index]
+        if (featuredApp != null) {
+            item(key = "__SPOTLIGHT__") {
+                FeaturedApp(
+                    app = featuredApp,
+                    status = statuses[featuredApp.fullName] ?: AppStatus.NOT_INSTALLED,
+                    onOpen = { onOpen(featuredApp) },
+                    onInstall = { onInstall(featuredApp) },
+                    onDetail = { onDetail(featuredApp) },
+                )
+            }
+        }
+        item(key = "__SECTION_HEADER__") {
+            SectionTitle(
+                category = selectedCategory,
+                total = apps.size,
+                updateCount = updateCount,
+            )
+        }
+        items(count = listApps.size, key = { listApps[it].fullName }) { index ->
+            val app = listApps[index]
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
@@ -662,10 +699,16 @@ private fun AppGrid(
     statuses: Map<String, AppStatus>,
     busyApps: Set<String>,
     progress: Map<String, Float>,
+    showSpotlight: Boolean,
+    selectedCategory: String,
+    updateCount: Int,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
     onDetail: (CatalogApp) -> Unit,
 ) {
+    val featuredApp = if (showSpotlight && apps.isNotEmpty()) apps.first() else null
+    val gridApps = if (showSpotlight && apps.isNotEmpty()) apps.drop(1) else apps
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
         contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 28.dp),
@@ -673,8 +716,26 @@ private fun AppGrid(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(count = apps.size, key = { apps[it].fullName }) { index ->
-            val app = apps[index]
+        if (featuredApp != null) {
+            item(key = "__SPOTLIGHT__", span = { GridItemSpan(columns) }) {
+                FeaturedApp(
+                    app = featuredApp,
+                    status = statuses[featuredApp.fullName] ?: AppStatus.NOT_INSTALLED,
+                    onOpen = { onOpen(featuredApp) },
+                    onInstall = { onInstall(featuredApp) },
+                    onDetail = { onDetail(featuredApp) },
+                )
+            }
+        }
+        item(key = "__SECTION_HEADER__", span = { GridItemSpan(columns) }) {
+            SectionTitle(
+                category = selectedCategory,
+                total = apps.size,
+                updateCount = updateCount,
+            )
+        }
+        items(count = gridApps.size, key = { gridApps[it].fullName }) { index ->
+            val app = gridApps[index]
             AppCard(
                 app = app,
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,

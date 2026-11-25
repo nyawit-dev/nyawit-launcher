@@ -146,44 +146,47 @@ fun AppSidebar(
         // Ecosystem Status Card
         Surface(
             color = c.SurfaceRaised,
-            shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, c.Border),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, c.BorderHighlight),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .size(6.dp)
-                                .background(
-                                    if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
-                                    CircleShape,
-                                ),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            NyawitStrings.STATUS_TITLE,
-                            style = NyawitType.Overline,
-                            color = c.Primary
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        NyawitStrings.statusAppsRegistered(total),
-                        style = NyawitType.Caption,
-                        color = c.Text,
-                        fontWeight = FontWeight.SemiBold,
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .background(
+                                if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
+                                CircleShape,
+                            ),
                     )
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        if (updateCount > 0) NyawitStrings.statusUpdatesAvailable(updateCount)
-                        else if (updateTag != null) NyawitStrings.statusLauncherUpdate(updateTag)
-                        else NyawitStrings.STATUS_UP_TO_DATE,
+                        "STATUS TELEMETRI",
+                        style = NyawitType.Overline,
+                        color = c.Primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Total Modul:", style = NyawitType.Caption, color = c.Muted)
+                    Text("$total Unit", style = NyawitType.Caption, color = c.Text, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(3.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Status Sistem:", style = NyawitType.Caption, color = c.Muted)
+                    Text(
+                        if (updateCount > 0) "$updateCount Pembaruan"
+                        else if (updateTag != null) "Update $updateTag"
+                        else "Terbaru",
                         style = NyawitType.Caption,
-                        color = if (updateCount > 0 || updateTag != null) c.Warning else c.Muted,
+                        color = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             }
+        }
 
         Spacer(Modifier.height(10.dp))
 
@@ -192,13 +195,15 @@ fun AppSidebar(
             onClick = { onUpdate(); onClose?.invoke() },
             enabled = !selfBusy,
             colors = ButtonDefaults.buttonColors(
-                containerColor = c.SurfaceRaised,
-                contentColor = c.Text,
+                containerColor = c.PrimaryMuted,
+                contentColor = c.Primary,
             ),
-            shape = RoundedCornerShape(11.dp),
-            border = BorderStroke(1.dp, c.BorderHighlight),
-            modifier = Modifier.fillMaxWidth().height(42.dp)
-                .tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.45f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(42.dp)
+                .tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
         ) {
             if (selfBusy) {
                 CircularProgressIndicator(
@@ -212,13 +217,13 @@ fun AppSidebar(
                 Spacer(Modifier.width(8.dp))
             }
             Text(
-                NyawitStrings.BTN_CHECK_UPDATES,
+                NyawitStrings.BTN_CHECK_UPDATES.uppercase(),
                 style = NyawitType.Caption,
                 fontWeight = FontWeight.Bold
             )
         }
     }
-    Box(Modifier.fillMaxHeight().width(1.dp).background(c.Border))
+    Box(Modifier.fillMaxHeight().width(1.5.dp).background(c.BorderHighlight))
     }
 }
 

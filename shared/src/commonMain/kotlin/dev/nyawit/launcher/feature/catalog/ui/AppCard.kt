@@ -258,23 +258,31 @@ fun AppCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                val btnContainerColor = when (status) {
-                    AppStatus.INSTALLED -> c.Primary
-                    AppStatus.UPDATE_AVAILABLE -> c.Warning
-                    else -> c.Primary
+                val isInstalled = status == AppStatus.INSTALLED
+                val isUpdate = status == AppStatus.UPDATE_AVAILABLE
+
+                val btnContainerColor = when {
+                    isUpdate -> c.Warning
+                    isInstalled -> c.Primary
+                    else -> c.SurfaceRaised
                 }
-                val btnContentColor = when (status) {
-                    AppStatus.UPDATE_AVAILABLE -> c.OnWarning
-                    else -> c.OnPrimary
+                val btnContentColor = when {
+                    isUpdate -> c.OnWarning
+                    isInstalled -> c.OnPrimary
+                    else -> c.Text
                 }
+                val btnBorder = if (!isInstalled && !isUpdate) {
+                    BorderStroke(1.dp, c.BorderHighlight)
+                } else null
 
                 Button(
-                    onClick = if (status == AppStatus.INSTALLED) onOpen else onInstall,
+                    onClick = if (isInstalled) onOpen else onInstall,
                     enabled = !busy,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = btnContainerColor,
                         contentColor = btnContentColor,
                     ),
+                    border = btnBorder,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .height(44.dp)
@@ -288,19 +296,19 @@ fun AppCard(
                             color = btnContentColor,
                         )
                         Spacer(Modifier.width(8.dp))
-                    } else if (status == AppStatus.INSTALLED) {
+                    } else if (isInstalled) {
                         ArrowIcon(Modifier.size(16.dp), btnContentColor)
                         Spacer(Modifier.width(8.dp))
                     } else if (progress == null) {
-                        DownloadIcon(Modifier.size(16.dp), btnContentColor)
+                        DownloadIcon(Modifier.size(16.dp), if (isUpdate) btnContentColor else c.Primary)
                         Spacer(Modifier.width(8.dp))
                     }
                     Text(
                         when {
                             busy && progress != null -> NyawitStrings.progressDownloadingPercent((progress * 100).toInt())
                             busy -> NyawitStrings.PROGRESS_PROCESSING
-                            status == AppStatus.INSTALLED -> NyawitStrings.BTN_OPEN_APP
-                            status == AppStatus.UPDATE_AVAILABLE -> NyawitStrings.BTN_UPDATE_NOW
+                            isInstalled -> NyawitStrings.BTN_OPEN_APP
+                            isUpdate -> NyawitStrings.BTN_UPDATE_NOW
                             else -> NyawitStrings.BTN_INSTALL_APP
                         },
                         fontWeight = FontWeight.Bold,
@@ -344,15 +352,15 @@ private fun StatusBadge(status: AppStatus) {
         AppStatus.UNKNOWN -> c.Faint
     }
     val bgColor = when (status) {
-        AppStatus.NOT_INSTALLED -> c.SurfaceRaised
+        AppStatus.NOT_INSTALLED -> c.SurfaceHighlight
         AppStatus.INSTALLED -> c.PrimaryMuted
-        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.15f)
+        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.18f)
         AppStatus.UNKNOWN -> c.SurfaceRaised
     }
     val borderColor = when (status) {
-        AppStatus.NOT_INSTALLED -> c.Border
-        AppStatus.INSTALLED -> c.Primary.copy(alpha = 0.35f)
-        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.45f)
+        AppStatus.NOT_INSTALLED -> c.BorderHighlight
+        AppStatus.INSTALLED -> c.Primary.copy(alpha = 0.5f)
+        AppStatus.UPDATE_AVAILABLE -> c.Warning.copy(alpha = 0.6f)
         AppStatus.UNKNOWN -> c.Border
     }
 
