@@ -6,7 +6,7 @@
 #define MyAppPublisher "Nyawit"
 
 [Setup]
-AppId={C723E301-F7DC-4ABA-98B8-FC41B467DFE2}
+AppId={{C723E301-F7DC-4ABA-98B8-FC41B467DFE2}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
