@@ -272,9 +272,14 @@ fun SectionTitle(category: String, total: Int, updateCount: Int) {
     val c = LocalNyawitColors.current
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("KATALOG EKOSISTEM", style = NyawitType.Overline, color = c.Primary)
+            Text(NyawitStrings.SECTION_ECOSYSTEM, style = NyawitType.Overline, color = c.Primary)
             Spacer(Modifier.height(2.dp))
-            Text(if (category == "Semua") "Semua Aplikasi" else "Kategori $category", style = NyawitType.Title, color = c.Text)
+            Text(
+                if (category == "__ALL__" || category == "Semua" || category == "All") NyawitStrings.SECTION_ALL_APPS
+                else NyawitStrings.sectionCategory(category),
+                style = NyawitType.Title,
+                color = c.Text,
+            )
         }
         Surface(
             color = c.SurfaceRaised,
@@ -287,7 +292,7 @@ fun SectionTitle(category: String, total: Int, updateCount: Int) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "$total Aplikasi",
+                    NyawitStrings.sectionAppCount(total),
                     style = NyawitType.Caption,
                     color = c.Text,
                     fontWeight = FontWeight.SemiBold,
@@ -295,7 +300,7 @@ fun SectionTitle(category: String, total: Int, updateCount: Int) {
                 if (updateCount > 0) {
                     Box(Modifier.size(4.dp).background(c.Warning, CircleShape))
                     Text(
-                        "$updateCount update",
+                        NyawitStrings.sectionUpdateCount(updateCount),
                         style = NyawitType.Caption,
                         color = c.Warning,
                         fontWeight = FontWeight.Bold,
@@ -397,7 +402,7 @@ fun FeaturedApp(
                         border = BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
                     ) {
                         Text(
-                            "★ UNGGULAN EKOSISTEM",
+                            NyawitStrings.CHIP_FEATURED,
                             style = NyawitType.Overline,
                             color = accent,
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
@@ -406,7 +411,7 @@ fun FeaturedApp(
                     Spacer(Modifier.weight(1f))
                     Surface(color = c.SurfaceRaised, shape = RoundedCornerShape(6.dp)) {
                         Text(
-                            "PINNED",
+                            NyawitStrings.CHIP_PINNED,
                             style = NyawitType.Overline,
                             color = c.Muted,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -449,9 +454,9 @@ fun FeaturedApp(
                     ) {
                         Text(
                             when (status) {
-                                AppStatus.INSTALLED -> "Buka aplikasi"
-                                AppStatus.UPDATE_AVAILABLE -> "Perbarui"
-                                else -> "Pasang"
+                                AppStatus.INSTALLED -> NyawitStrings.BTN_OPEN_APP
+                                AppStatus.UPDATE_AVAILABLE -> NyawitStrings.BTN_UPDATE
+                                else -> NyawitStrings.BTN_INSTALL
                             },
                             style = NyawitType.Caption,
                             fontWeight = FontWeight.Bold,
@@ -459,7 +464,7 @@ fun FeaturedApp(
                     }
                     Spacer(Modifier.width(10.dp))
                     TextButton(onClick = onDetail) {
-                        Text("Detail Rilis", style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.SemiBold)
+                        Text(NyawitStrings.BTN_DETAIL, style = NyawitType.Caption, color = c.Muted, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
@@ -58,20 +59,20 @@ fun UpdateConfirmDialog(
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    if (isUpToDate) "SUDAH MUTAKHIR" else "PEMBARUAN TERSEDIA",
+                    if (isUpToDate) NyawitStrings.UPDATE_UP_TO_DATE_BADGE else NyawitStrings.UPDATE_AVAILABLE_BADGE,
                     style = NyawitType.Overline,
                     color = c.Primary,
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    if (isUpToDate) "Aplikasi Sudah Versi Terbaru" else "Perbarui ke v$newVersion?",
+                    if (isUpToDate) NyawitStrings.UPDATE_UP_TO_DATE_TITLE else NyawitStrings.updateUpgradePrompt(newVersion),
                     style = NyawitType.Title,
                     color = c.Text,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (isUpToDate) "Versi saat ini v$currentVersion adalah rilis terbaru yang tersedia."
-                    else "Versi terpasang v$currentVersion",
+                    if (isUpToDate) NyawitStrings.updateUpToDateDesc(currentVersion)
+                    else NyawitStrings.updateCurrentVersionDesc(currentVersion),
                     style = NyawitType.Caption,
                     color = c.Muted,
                 )
@@ -128,7 +129,7 @@ fun UpdateConfirmDialog(
                             onClick = onConfirm,
                             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                         ) {
-                            Text("Pasang Ulang", style = NyawitType.Caption, color = c.Muted)
+                            Text(NyawitStrings.BTN_RETRY, style = NyawitType.Caption, color = c.Muted)
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -140,14 +141,14 @@ fun UpdateConfirmDialog(
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
                         ) {
-                            Text("Tutup", style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+                            Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         TextButton(
                             onClick = onDismiss,
                             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
                         ) {
-                            Text("Nanti", style = NyawitType.Caption, color = c.Muted)
+                            Text(NyawitStrings.BTN_LATER, style = NyawitType.Caption, color = c.Muted)
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -159,7 +160,7 @@ fun UpdateConfirmDialog(
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
                         ) {
-                            Text("Perbarui", style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+                            Text(NyawitStrings.BTN_UPDATE, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

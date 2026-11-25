@@ -2,7 +2,7 @@
     <string name="brand_name">NYAWIT</string>
     <string name="brand_subtitle">LAUNCHER</string>
     <string name="brand_full_title">NYAWIT LAUNCHER</string>
-    <string name="brand_tagline">Open-source application ecosystem without intermediary servers</string>
+    <string name="brand_tagline">Open-source application ecosystem with no intermediary server</string>
     <string name="nav_title">NAVIGATION</string>
     <string name="nav_apps">App Catalog</string>
     <string name="nav_settings">Settings</string>
@@ -24,7 +24,10 @@
     <string name="btn_uninstall">Uninstall</string>
     <string name="btn_close">Close</string>
     <string name="btn_cancel">Cancel</string>
-    <string name="btn_retry">Retry</string>
+    <string name="btn_retry">Try again</string>
+    <string name="btn_later">Later</string>
+    <string name="btn_done">Done</string>
+    <string name="btn_detail">Release Details</string>
     <string name="search_placeholder">Search apps or categories…</string>
     <string name="key_esc">ESC</string>
     <string name="category_all">All</string>
@@ -34,6 +37,8 @@
     <string name="chip_update">Update</string>
     <string name="chip_update_available">Update Available</string>
     <string name="chip_unknown">Unknown</string>
+    <string name="chip_featured">★ FEATURED ECOSYSTEM</string>
+    <string name="chip_pinned">PINNED</string>
     <string name="progress_downloading">DOWNLOADING PACKAGE</string>
     <string name="progress_processing">Processing…</string>
     <string name="notice_timeout">Update request timed out — please retry</string>
@@ -41,7 +46,9 @@
     <string name="action_continue">Continue</string>
     <string name="error_catalog_load">Catalog could not be loaded</string>
     <string name="empty_apps_title">No apps found</string>
-    <string name="empty_apps_desc">Try searching with other keywords or choose a different category.</string>
+    <string name="empty_apps_desc">Try using a different keyword or selecting another category.</string>
+    <string name="section_ecosystem">ECOSYSTEM CATALOG</string>
+    <string name="section_all_apps">All Applications</string>
     <string name="detail_developer">DEVELOPER</string>
     <string name="detail_category">CATEGORY</string>
     <string name="detail_platform">PLATFORM</string>
@@ -91,4 +98,15 @@
     <string name="settings_auto_check_desc">Automatically check for new catalog versions when app opens</string>
     <string name="settings_storage_saved_notice">All preferences are saved automatically and persist across restarts</string>
     <string name="settings_btn_open">Open Settings</string>
+
+    <!-- UPDATE DIALOG STRINGS (EN) -->
+    <string name="update_checking">Checking releases</string>
+    <string name="update_downloading">Downloading update</string>
+    <string name="update_ready">Update ready</string>
+    <string name="update_failed">Update failed</string>
+    <string name="update_preparing">Preparing launcher update.</string>
+    <string name="update_up_to_date_badge">UP TO DATE</string>
+    <string name="update_available_badge">UPDATE AVAILABLE</string>
+    <string name="update_up_to_date_title">App is Up to Date</string>
+    <string name="update_package_label">New release package</string>
 </resources>

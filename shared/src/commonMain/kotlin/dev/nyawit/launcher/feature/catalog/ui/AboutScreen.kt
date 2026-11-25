@@ -29,7 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.ui.NyawitStrings
+import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SettingsIcon
+import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 
@@ -41,6 +43,8 @@ fun AboutScreen(
     modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
+    val profile = rememberDeviceProfile()
+    val isNarrow = profile.kind == ScreenKind.PHONE || profile.widthDp < 680f
 
     Column(
         modifier
@@ -164,14 +168,22 @@ fun AboutScreen(
         Text(NyawitStrings.ABOUT_LINKS_TITLE, style = NyawitType.Overline, color = c.Faint)
         Spacer(Modifier.height(8.dp))
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val repoUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}"
-            val catalogUrl = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/main/catalog.json"
-            val orgUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}"
+        val repoUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}"
+        val catalogUrl = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/main/catalog.json"
+        val orgUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}"
 
-            ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.weight(1f), platformContext)
-            ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.weight(1f), platformContext)
-            ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.weight(1f), platformContext)
+        if (isNarrow) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.fillMaxWidth(), platformContext)
+                ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.fillMaxWidth(), platformContext)
+                ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.fillMaxWidth(), platformContext)
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ExternalLinkCard(NyawitStrings.ABOUT_LINK_REPO, repoUrl, Modifier.weight(1f), platformContext)
+                ExternalLinkCard(NyawitStrings.ABOUT_LINK_CATALOG, catalogUrl, Modifier.weight(1f), platformContext)
+                ExternalLinkCard(NyawitStrings.ABOUT_LINK_ORG, orgUrl, Modifier.weight(1f), platformContext)
+            }
         }
 
         Spacer(Modifier.height(24.dp))

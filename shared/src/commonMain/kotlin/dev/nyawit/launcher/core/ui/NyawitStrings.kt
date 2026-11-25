@@ -66,6 +66,9 @@ open class LanguageStrings(
     val BTN_CLOSE: String,
     val BTN_CANCEL: String,
     val BTN_RETRY: String,
+    val BTN_LATER: String,
+    val BTN_DONE: String,
+    val BTN_DETAIL: String,
     val SEARCH_PLACEHOLDER: String,
     val KEY_ESC: String = "ESC",
     val CATEGORY_ALL: String,
@@ -75,6 +78,8 @@ open class LanguageStrings(
     val CHIP_UPDATE: String,
     val CHIP_UPDATE_AVAILABLE: String,
     val CHIP_UNKNOWN: String = "Unknown",
+    val CHIP_FEATURED: String,
+    val CHIP_PINNED: String = "PINNED",
     val PROGRESS_DOWNLOADING: String,
     val PROGRESS_PROCESSING: String,
     val NOTICE_TIMEOUT: String,
@@ -83,6 +88,8 @@ open class LanguageStrings(
     val ERROR_CATALOG_LOAD: String,
     val EMPTY_APPS_TITLE: String,
     val EMPTY_APPS_DESC: String,
+    val SECTION_ECOSYSTEM: String,
+    val SECTION_ALL_APPS: String,
     val DETAIL_DEVELOPER: String,
     val DETAIL_CATEGORY: String,
     val DETAIL_PLATFORM: String,
@@ -130,6 +137,15 @@ open class LanguageStrings(
     val SETTINGS_AUTO_CHECK_DESC: String,
     val SETTINGS_STORAGE_SAVED_NOTICE: String,
     val SETTINGS_BTN_OPEN: String,
+    val UPDATE_CHECKING: String,
+    val UPDATE_DOWNLOADING: String,
+    val UPDATE_READY: String,
+    val UPDATE_FAILED: String,
+    val UPDATE_PREPARING: String,
+    val UPDATE_UP_TO_DATE_BADGE: String,
+    val UPDATE_AVAILABLE_BADGE: String,
+    val UPDATE_UP_TO_DATE_TITLE: String,
+    val UPDATE_PACKAGE_LABEL: String,
     val statusAppsRegistered: (Int) -> String,
     val statusUpdatesAvailable: (Int) -> String,
     val statusLauncherUpdate: (String) -> String,
@@ -142,6 +158,13 @@ open class LanguageStrings(
     val noticeOpeningInstaller: (String) -> String,
     val noticePlatformNotSupported: (String) -> String,
     val noticeOpenFailed: (String, String?) -> String,
+    val sectionCategory: (String) -> String,
+    val sectionAppCount: (Int) -> String,
+    val sectionUpdateCount: (Int) -> String,
+    val updateUpgradePrompt: (String) -> String,
+    val updateCurrentVersionDesc: (String) -> String,
+    val updateUpToDateDesc: (String) -> String,
+    val updateReadyToUse: (String) -> String,
 )
 
 val IndonesianStrings = LanguageStrings(
@@ -171,12 +194,16 @@ val IndonesianStrings = LanguageStrings(
     BTN_CLOSE = "Tutup",
     BTN_CANCEL = "Batal",
     BTN_RETRY = "Coba lagi",
+    BTN_LATER = "Nanti",
+    BTN_DONE = "Selesai",
+    BTN_DETAIL = "Detail Rilis",
     SEARCH_PLACEHOLDER = "Cari aplikasi atau kategori…",
     CATEGORY_ALL = "Semua",
     CHIP_AVAILABLE = "Tersedia",
     CHIP_INSTALLED = "Terpasang",
     CHIP_UPDATE = "Update",
     CHIP_UPDATE_AVAILABLE = "Pembaruan Tersedia",
+    CHIP_FEATURED = "★ UNGGULAN EKOSISTEM",
     PROGRESS_DOWNLOADING = "MENGUNDUH PAKET",
     PROGRESS_PROCESSING = "Memproses…",
     NOTICE_TIMEOUT = "Pembaruan tidak merespons — coba lagi",
@@ -185,6 +212,8 @@ val IndonesianStrings = LanguageStrings(
     ERROR_CATALOG_LOAD = "Katalog tidak dapat dimuat",
     EMPTY_APPS_TITLE = "Tidak ada aplikasi",
     EMPTY_APPS_DESC = "Coba gunakan kata kunci atau pilih kategori lain.",
+    SECTION_ECOSYSTEM = "KATALOG EKOSISTEM",
+    SECTION_ALL_APPS = "Semua Aplikasi",
     DETAIL_DEVELOPER = "PENGEMBANG",
     DETAIL_CATEGORY = "KATEGORI",
     DETAIL_PLATFORM = "PLATFORM",
@@ -227,6 +256,15 @@ val IndonesianStrings = LanguageStrings(
     SETTINGS_AUTO_CHECK_DESC = "Secara otomatis memeriksa versi baru dari katalog saat aplikasi dibuka",
     SETTINGS_STORAGE_SAVED_NOTICE = "Seluruh preferensi tersimpan otomatis dan persisten di perangkat",
     SETTINGS_BTN_OPEN = "Buka Pengaturan",
+    UPDATE_CHECKING = "Mengecek rilis",
+    UPDATE_DOWNLOADING = "Mengunduh pembaruan",
+    UPDATE_READY = "Pembaruan siap",
+    UPDATE_FAILED = "Pembaruan gagal",
+    UPDATE_PREPARING = "Menyiapkan pembaruan launcher.",
+    UPDATE_UP_TO_DATE_BADGE = "SUDAH MUTAKHIR",
+    UPDATE_AVAILABLE_BADGE = "PEMBARUAN TERSEDIA",
+    UPDATE_UP_TO_DATE_TITLE = "Aplikasi Sudah Versi Terbaru",
+    UPDATE_PACKAGE_LABEL = "Paket rilis baru",
     statusAppsRegistered = { "$it aplikasi terdaftar" },
     statusUpdatesAvailable = { "$it pembaruan tersedia" },
     statusLauncherUpdate = { "Update launcher $it" },
@@ -239,6 +277,13 @@ val IndonesianStrings = LanguageStrings(
     noticeOpeningInstaller = { "Membuka installer $it…" },
     noticePlatformNotSupported = { "$it tidak menyediakan installer untuk platform ini" },
     noticeOpenFailed = { name, detail -> if (detail != null) "Gagal membuka $name: $detail" else "Gagal membuka $name" },
+    sectionCategory = { "Kategori $it" },
+    sectionAppCount = { "$it Aplikasi" },
+    sectionUpdateCount = { "$it update" },
+    updateUpgradePrompt = { "Perbarui ke v$it?" },
+    updateCurrentVersionDesc = { "Versi terpasang v$it" },
+    updateUpToDateDesc = { "Versi saat ini v$it adalah rilis terbaru yang tersedia." },
+    updateReadyToUse = { "Versi v$it sudah terpasang dan siap digunakan." },
 )
 
 val EnglishStrings = LanguageStrings(
@@ -268,12 +313,16 @@ val EnglishStrings = LanguageStrings(
     BTN_CLOSE = "Close",
     BTN_CANCEL = "Cancel",
     BTN_RETRY = "Try again",
+    BTN_LATER = "Later",
+    BTN_DONE = "Done",
+    BTN_DETAIL = "Release Details",
     SEARCH_PLACEHOLDER = "Search apps or categories…",
     CATEGORY_ALL = "All",
     CHIP_AVAILABLE = "Available",
     CHIP_INSTALLED = "Installed",
     CHIP_UPDATE = "Update",
     CHIP_UPDATE_AVAILABLE = "Update Available",
+    CHIP_FEATURED = "★ FEATURED ECOSYSTEM",
     PROGRESS_DOWNLOADING = "DOWNLOADING PACKAGE",
     PROGRESS_PROCESSING = "Processing…",
     NOTICE_TIMEOUT = "Update unresponsive — please try again",
@@ -282,6 +331,8 @@ val EnglishStrings = LanguageStrings(
     ERROR_CATALOG_LOAD = "Unable to load catalog",
     EMPTY_APPS_TITLE = "No apps found",
     EMPTY_APPS_DESC = "Try using a different keyword or selecting another category.",
+    SECTION_ECOSYSTEM = "ECOSYSTEM CATALOG",
+    SECTION_ALL_APPS = "All Applications",
     DETAIL_DEVELOPER = "DEVELOPER",
     DETAIL_CATEGORY = "CATEGORY",
     DETAIL_PLATFORM = "PLATFORM",
@@ -324,6 +375,15 @@ val EnglishStrings = LanguageStrings(
     SETTINGS_AUTO_CHECK_DESC = "Automatically check for new catalog versions when app opens",
     SETTINGS_STORAGE_SAVED_NOTICE = "All preferences are saved automatically and persist across restarts",
     SETTINGS_BTN_OPEN = "Open Settings",
+    UPDATE_CHECKING = "Checking releases",
+    UPDATE_DOWNLOADING = "Downloading update",
+    UPDATE_READY = "Update ready",
+    UPDATE_FAILED = "Update failed",
+    UPDATE_PREPARING = "Preparing launcher update.",
+    UPDATE_UP_TO_DATE_BADGE = "UP TO DATE",
+    UPDATE_AVAILABLE_BADGE = "UPDATE AVAILABLE",
+    UPDATE_UP_TO_DATE_TITLE = "App is Up to Date",
+    UPDATE_PACKAGE_LABEL = "New release package",
     statusAppsRegistered = { "$it apps registered" },
     statusUpdatesAvailable = { "$it updates available" },
     statusLauncherUpdate = { "Launcher update $it" },
@@ -336,6 +396,13 @@ val EnglishStrings = LanguageStrings(
     noticeOpeningInstaller = { "Opening installer for $it…" },
     noticePlatformNotSupported = { "$it does not provide an installer for this platform" },
     noticeOpenFailed = { name, detail -> if (detail != null) "Failed to open $name: $detail" else "Failed to open $name" },
+    sectionCategory = { "Category $it" },
+    sectionAppCount = { "$it Apps" },
+    sectionUpdateCount = { "$it updates" },
+    updateUpgradePrompt = { "Update to v$it?" },
+    updateCurrentVersionDesc = { "Installed version v$it" },
+    updateUpToDateDesc = { "Current version v$it is the latest release available." },
+    updateReadyToUse = { "Version v$it is installed and ready to use." },
 )
 
 fun stringsFor(lang: AppLanguage): LanguageStrings = when (lang) {
@@ -377,6 +444,9 @@ object NyawitStrings {
     val BTN_CLOSE: String get() = active.BTN_CLOSE
     val BTN_CANCEL: String get() = active.BTN_CANCEL
     val BTN_RETRY: String get() = active.BTN_RETRY
+    val BTN_LATER: String get() = active.BTN_LATER
+    val BTN_DONE: String get() = active.BTN_DONE
+    val BTN_DETAIL: String get() = active.BTN_DETAIL
     val SEARCH_PLACEHOLDER: String get() = active.SEARCH_PLACEHOLDER
     const val KEY_ESC: String = "ESC"
     val CATEGORY_ALL: String get() = active.CATEGORY_ALL
@@ -386,6 +456,8 @@ object NyawitStrings {
     val CHIP_UPDATE: String get() = active.CHIP_UPDATE
     val CHIP_UPDATE_AVAILABLE: String get() = active.CHIP_UPDATE_AVAILABLE
     const val CHIP_UNKNOWN: String = "Unknown"
+    val CHIP_FEATURED: String get() = active.CHIP_FEATURED
+    const val CHIP_PINNED: String = "PINNED"
     val PROGRESS_DOWNLOADING: String get() = active.PROGRESS_DOWNLOADING
     val PROGRESS_PROCESSING: String get() = active.PROGRESS_PROCESSING
     val NOTICE_TIMEOUT: String get() = active.NOTICE_TIMEOUT
@@ -394,6 +466,8 @@ object NyawitStrings {
     val ERROR_CATALOG_LOAD: String get() = active.ERROR_CATALOG_LOAD
     val EMPTY_APPS_TITLE: String get() = active.EMPTY_APPS_TITLE
     val EMPTY_APPS_DESC: String get() = active.EMPTY_APPS_DESC
+    val SECTION_ECOSYSTEM: String get() = active.SECTION_ECOSYSTEM
+    val SECTION_ALL_APPS: String get() = active.SECTION_ALL_APPS
     val DETAIL_DEVELOPER: String get() = active.DETAIL_DEVELOPER
     val DETAIL_CATEGORY: String get() = active.DETAIL_CATEGORY
     val DETAIL_PLATFORM: String get() = active.DETAIL_PLATFORM
@@ -443,6 +517,16 @@ object NyawitStrings {
     val SETTINGS_STORAGE_SAVED_NOTICE: String get() = active.SETTINGS_STORAGE_SAVED_NOTICE
     val SETTINGS_BTN_OPEN: String get() = active.SETTINGS_BTN_OPEN
 
+    val UPDATE_CHECKING: String get() = active.UPDATE_CHECKING
+    val UPDATE_DOWNLOADING: String get() = active.UPDATE_DOWNLOADING
+    val UPDATE_READY: String get() = active.UPDATE_READY
+    val UPDATE_FAILED: String get() = active.UPDATE_FAILED
+    val UPDATE_PREPARING: String get() = active.UPDATE_PREPARING
+    val UPDATE_UP_TO_DATE_BADGE: String get() = active.UPDATE_UP_TO_DATE_BADGE
+    val UPDATE_AVAILABLE_BADGE: String get() = active.UPDATE_AVAILABLE_BADGE
+    val UPDATE_UP_TO_DATE_TITLE: String get() = active.UPDATE_UP_TO_DATE_TITLE
+    val UPDATE_PACKAGE_LABEL: String get() = active.UPDATE_PACKAGE_LABEL
+
     fun statusAppsRegistered(total: Int): String = active.statusAppsRegistered(total)
     fun statusUpdatesAvailable(count: Int): String = active.statusUpdatesAvailable(count)
     fun statusLauncherUpdate(tag: String): String = active.statusLauncherUpdate(tag)
@@ -455,4 +539,11 @@ object NyawitStrings {
     fun noticeOpeningInstaller(name: String): String = active.noticeOpeningInstaller(name)
     fun noticePlatformNotSupported(name: String): String = active.noticePlatformNotSupported(name)
     fun noticeOpenFailed(name: String, detail: String?): String = active.noticeOpenFailed(name, detail)
+    fun sectionCategory(name: String): String = active.sectionCategory(name)
+    fun sectionAppCount(count: Int): String = active.sectionAppCount(count)
+    fun sectionUpdateCount(count: Int): String = active.sectionUpdateCount(count)
+    fun updateUpgradePrompt(tag: String): String = active.updateUpgradePrompt(tag)
+    fun updateCurrentVersionDesc(ver: String): String = active.updateCurrentVersionDesc(ver)
+    fun updateUpToDateDesc(ver: String): String = active.updateUpToDateDesc(ver)
+    fun updateReadyToUse(ver: String): String = active.updateReadyToUse(ver)
 }

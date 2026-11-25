@@ -32,20 +32,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.nyawit.launcher.core.platform.LocalSettingsController
 import dev.nyawit.launcher.core.platform.clearCatalogCache
 import dev.nyawit.launcher.core.ui.AppLanguage
 import dev.nyawit.launcher.core.ui.CheckIcon
 import dev.nyawit.launcher.core.ui.GlobeIcon
 import dev.nyawit.launcher.core.ui.NyawitStrings
-import dev.nyawit.launcher.core.ui.PaletteIcon
 import dev.nyawit.launcher.core.ui.ScalePreference
+import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SettingsIcon
+import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
@@ -60,6 +58,8 @@ fun SettingsScreen(
 ) {
     val c = LocalNyawitColors.current
     val settingsController = LocalSettingsController.current
+    val profile = rememberDeviceProfile()
+    val isNarrow = profile.kind == ScreenKind.PHONE || profile.widthDp < 680f
     var cacheClearedNotice by remember { mutableStateOf(false) }
 
     Column(
@@ -67,8 +67,11 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(c.Background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 28.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+            .padding(
+                horizontal = if (isNarrow) 16.dp else 28.dp,
+                vertical = if (isNarrow) 16.dp else 24.dp,
+            ),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         // Header
         Row(
@@ -105,55 +108,37 @@ fun SettingsScreen(
             title = NyawitStrings.SETTINGS_SEC_APPEARANCE,
             description = NyawitStrings.SETTINGS_SEC_APPEARANCE_DESC,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                ThemeMode.entries.forEach { mode ->
-                    val isSelected = settingsController.themeController.mode == mode
-                    val modeColors = colorsFor(mode)
-                    val modeName = when (mode) {
-                        ThemeMode.CYBER_OBSIDIAN -> "Obsidian"
-                        ThemeMode.MIDNIGHT_SAPPHIRE -> "Sapphire"
-                        ThemeMode.OLED_BLACK -> "OLED Black"
-                        ThemeMode.NORDIC_LIGHT -> "Nordic Light"
-                    }
-
-                    Surface(
-                        color = if (isSelected) c.PrimaryMuted else c.SurfaceRaised,
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) c.Primary else c.Border,
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusable()
-                            .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
-                            .clickable { settingsController.setTheme(mode) },
-                    ) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Box(Modifier.size(12.dp).background(modeColors.Background, CircleShape).border(1.dp, c.Border, CircleShape))
-                                    Box(Modifier.size(12.dp).background(modeColors.Surface, CircleShape).border(1.dp, c.Border, CircleShape))
-                                    Box(Modifier.size(12.dp).background(modeColors.Primary, CircleShape))
-                                }
-                                if (isSelected) {
-                                    CheckIcon(Modifier.size(14.dp), color = c.Primary)
-                                }
+            val modes = ThemeMode.entries
+            if (isNarrow) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    modes.chunked(2).forEach { rowModes ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            rowModes.forEach { mode ->
+                                ThemeModeCard(
+                                    mode = mode,
+                                    selected = settingsController.themeController.mode == mode,
+                                    onClick = { settingsController.setTheme(mode) },
+                                    modifier = Modifier.weight(1f),
+                                )
                             }
-                            Text(
-                                text = modeName,
-                                style = NyawitType.Subtitle,
-                                color = if (isSelected) c.Primary else c.Text,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            )
                         }
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    modes.forEach { mode ->
+                        ThemeModeCard(
+                            mode = mode,
+                            selected = settingsController.themeController.mode == mode,
+                            onClick = { settingsController.setTheme(mode) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
@@ -164,51 +149,30 @@ fun SettingsScreen(
             title = NyawitStrings.SETTINGS_SEC_LANGUAGE,
             description = NyawitStrings.SETTINGS_SEC_LANGUAGE_DESC,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                AppLanguage.entries.forEach { lang ->
-                    val isSelected = settingsController.languageController.language == lang
-                    Surface(
-                        color = if (isSelected) c.PrimaryMuted else c.SurfaceRaised,
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) c.Primary else c.Border,
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusable()
-                            .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
-                            .clickable { settingsController.setLanguage(lang) },
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                GlobeIcon(Modifier.size(18.dp), color = if (isSelected) c.Primary else c.Muted)
-                                Spacer(Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = lang.nativeName,
-                                        style = NyawitType.Subtitle,
-                                        color = if (isSelected) c.Primary else c.Text,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    )
-                                    Text(
-                                        text = lang.label,
-                                        style = NyawitType.Caption,
-                                        color = c.Muted,
-                                    )
-                                }
-                            }
-                            if (isSelected) {
-                                CheckIcon(Modifier.size(16.dp), color = c.Primary)
-                            }
-                        }
+            val languages = AppLanguage.entries
+            if (isNarrow) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    languages.forEach { lang ->
+                        LanguageCard(
+                            lang = lang,
+                            selected = settingsController.languageController.language == lang,
+                            onClick = { settingsController.setLanguage(lang) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    languages.forEach { lang ->
+                        LanguageCard(
+                            lang = lang,
+                            selected = settingsController.languageController.language == lang,
+                            onClick = { settingsController.setLanguage(lang) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
@@ -219,48 +183,48 @@ fun SettingsScreen(
             title = NyawitStrings.SETTINGS_SEC_SCALE,
             description = NyawitStrings.SETTINGS_SEC_SCALE_DESC,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ScalePreference.entries.forEach { pref ->
-                    val isSelected = settingsController.scalePreference == pref
-                    val label = when (pref) {
-                        ScalePreference.AUTO -> NyawitStrings.SETTINGS_SCALE_AUTO
-                        ScalePreference.COMPACT -> NyawitStrings.SETTINGS_SCALE_COMPACT
-                        ScalePreference.STANDARD -> NyawitStrings.SETTINGS_SCALE_STANDARD
-                        ScalePreference.LARGE -> NyawitStrings.SETTINGS_SCALE_LARGE
-                        ScalePreference.EXTRA_LARGE -> NyawitStrings.SETTINGS_SCALE_XLARGE
-                    }
-
-                    Surface(
-                        color = if (isSelected) c.PrimaryMuted else c.SurfaceRaised,
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) c.Primary else c.Border,
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusable()
-                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.02f)
-                            .clickable { settingsController.setScale(pref) },
+            val prefs = ScalePreference.entries
+            if (isNarrow) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Text(
-                                text = label,
-                                style = NyawitType.Caption,
-                                color = if (isSelected) c.Primary else c.Text,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        prefs.take(3).forEach { pref ->
+                            ScalePreferenceChip(
+                                pref = pref,
+                                selected = settingsController.scalePreference == pref,
+                                onClick = { settingsController.setScale(pref) },
+                                modifier = Modifier.weight(1f),
                             )
-                            if (isSelected) {
-                                CheckIcon(Modifier.size(12.dp), color = c.Primary)
-                            }
                         }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        prefs.drop(3).forEach { pref ->
+                            ScalePreferenceChip(
+                                pref = pref,
+                                selected = settingsController.scalePreference == pref,
+                                onClick = { settingsController.setScale(pref) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    prefs.forEach { pref ->
+                        ScalePreferenceChip(
+                            pref = pref,
+                            selected = settingsController.scalePreference == pref,
+                            onClick = { settingsController.setScale(pref) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
@@ -277,7 +241,9 @@ fun SettingsScreen(
                 border = BorderStroke(1.dp, c.Border),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) },
+                    .clickable { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) }
+                    .focusable()
+                    .tvFocusHighlight(RoundedCornerShape(10.dp)),
             ) {
                 Row(
                     modifier = Modifier.padding(14.dp),
@@ -290,21 +256,22 @@ fun SettingsScreen(
                             style = NyawitType.Subtitle,
                             color = c.Text,
                         )
+                        Spacer(Modifier.height(3.dp))
                         Text(
                             text = NyawitStrings.SETTINGS_AUTO_CHECK_DESC,
                             style = NyawitType.Body,
                             color = c.Muted,
                         )
                     }
+                    Spacer(Modifier.width(12.dp))
                     Surface(
                         color = if (settingsController.autoCheckUpdates) c.Primary else c.SurfaceHighlight,
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, if (settingsController.autoCheckUpdates) c.Primary else c.Border),
-                        modifier = Modifier.padding(start = 12.dp),
                     ) {
                         Text(
                             text = if (settingsController.autoCheckUpdates) "ON" else "OFF",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                             style = NyawitType.Overline,
                             color = if (settingsController.autoCheckUpdates) c.OnPrimary else c.Muted,
                             fontWeight = FontWeight.Bold,
@@ -335,7 +302,9 @@ fun SettingsScreen(
                                 cacheClearedNotice = true
                                 onCatalogCacheCleared?.invoke()
                             }
-                        },
+                        }
+                        .focusable()
+                        .tvFocusHighlight(RoundedCornerShape(8.dp)),
                 ) {
                     Text(
                         text = NyawitStrings.SETTINGS_BTN_CLEAR_CACHE,
@@ -379,6 +348,154 @@ fun SettingsScreen(
                 style = NyawitType.Caption,
                 color = c.Muted,
             )
+        }
+    }
+}
+
+@Composable
+private fun ThemeModeCard(
+    mode: ThemeMode,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = LocalNyawitColors.current
+    val modeColors = colorsFor(mode)
+    val modeName = when (mode) {
+        ThemeMode.CYBER_OBSIDIAN -> "Obsidian"
+        ThemeMode.MIDNIGHT_SAPPHIRE -> "Sapphire"
+        ThemeMode.OLED_BLACK -> "OLED Black"
+        ThemeMode.NORDIC_LIGHT -> "Nordic Light"
+    }
+
+    Surface(
+        color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(
+            width = if (selected) 1.5.dp else 1.dp,
+            color = if (selected) c.Primary else c.Border,
+        ),
+        modifier = modifier
+            .focusable()
+            .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
+            .clickable { onClick() },
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(Modifier.size(12.dp).background(modeColors.Background, CircleShape).border(1.dp, c.Border, CircleShape))
+                    Box(Modifier.size(12.dp).background(modeColors.Surface, CircleShape).border(1.dp, c.Border, CircleShape))
+                    Box(Modifier.size(12.dp).background(modeColors.Primary, CircleShape))
+                }
+                if (selected) {
+                    CheckIcon(Modifier.size(14.dp), color = c.Primary)
+                }
+            }
+            Text(
+                text = modeName,
+                style = NyawitType.Subtitle,
+                color = if (selected) c.Primary else c.Text,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LanguageCard(
+    lang: AppLanguage,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = LocalNyawitColors.current
+    Surface(
+        color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(
+            width = if (selected) 1.5.dp else 1.dp,
+            color = if (selected) c.Primary else c.Border,
+        ),
+        modifier = modifier
+            .focusable()
+            .tvFocusHighlight(RoundedCornerShape(10.dp), 1.02f)
+            .clickable { onClick() },
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlobeIcon(Modifier.size(18.dp), color = if (selected) c.Primary else c.Muted)
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = lang.nativeName,
+                        style = NyawitType.Subtitle,
+                        color = if (selected) c.Primary else c.Text,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    )
+                    Text(
+                        text = lang.label,
+                        style = NyawitType.Caption,
+                        color = c.Muted,
+                    )
+                }
+            }
+            if (selected) {
+                CheckIcon(Modifier.size(16.dp), color = c.Primary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScalePreferenceChip(
+    pref: ScalePreference,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = LocalNyawitColors.current
+    val label = when (pref) {
+        ScalePreference.AUTO -> NyawitStrings.SETTINGS_SCALE_AUTO
+        ScalePreference.COMPACT -> NyawitStrings.SETTINGS_SCALE_COMPACT
+        ScalePreference.STANDARD -> NyawitStrings.SETTINGS_SCALE_STANDARD
+        ScalePreference.LARGE -> NyawitStrings.SETTINGS_SCALE_LARGE
+        ScalePreference.EXTRA_LARGE -> NyawitStrings.SETTINGS_SCALE_XLARGE
+    }
+
+    Surface(
+        color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            width = if (selected) 1.5.dp else 1.dp,
+            color = if (selected) c.Primary else c.Border,
+        ),
+        modifier = modifier
+            .focusable()
+            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.02f)
+            .clickable { onClick() },
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = label,
+                style = NyawitType.Caption,
+                color = if (selected) c.Primary else c.Text,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            )
+            if (selected) {
+                CheckIcon(Modifier.size(12.dp), color = c.Primary)
+            }
         }
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.feature.catalog.ui.FlowPhase
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
@@ -71,10 +72,10 @@ fun UpdateDialog(
                     Spacer(Modifier.width(12.dp))
                     Text(
                         when (phase) {
-                            FlowPhase.CHECKING -> "Mengecek rilis"
-                            FlowPhase.DOWNLOADING -> "Mengunduh pembaruan"
-                            FlowPhase.DONE -> "Pembaruan siap"
-                            FlowPhase.ERROR -> "Pembaruan gagal"
+                            FlowPhase.CHECKING -> NyawitStrings.UPDATE_CHECKING
+                            FlowPhase.DOWNLOADING -> NyawitStrings.UPDATE_DOWNLOADING
+                            FlowPhase.DONE -> NyawitStrings.UPDATE_READY
+                            FlowPhase.ERROR -> NyawitStrings.UPDATE_FAILED
                             FlowPhase.IDLE -> ""
                         },
                         style = NyawitType.Title,
@@ -83,7 +84,7 @@ fun UpdateDialog(
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    message.ifBlank { "Menyiapkan pembaruan launcher." },
+                    message.ifBlank { NyawitStrings.UPDATE_PREPARING },
                     style = NyawitType.Caption,
                     color = if (phase == FlowPhase.ERROR) tone else c.Muted,
                 )
@@ -107,7 +108,7 @@ fun UpdateDialog(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = if (busy) onCancel else onDismiss) {
                         Text(
-                            if (busy) "Batal" else "Tutup",
+                            if (busy) NyawitStrings.BTN_CANCEL else NyawitStrings.BTN_CLOSE,
                             style = NyawitType.Caption,
                             color = if (busy) c.Danger else c.Primary,
                         )

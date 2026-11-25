@@ -385,6 +385,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         matchCategory && matchQuery
     }
 
+    val isCompactLayout = profile.kind == ScreenKind.PHONE || profile.widthDp < 860f
     val isPhone = profile.kind == ScreenKind.PHONE
     val c = LocalNyawitColors.current
     val responsiveScale = LocalResponsiveScale.current
@@ -394,11 +395,11 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = if (isPhone) 16.dp else 24.dp,
-                    vertical = if (isPhone) 14.dp else 20.dp,
+                    horizontal = if (isCompactLayout) 16.dp else 24.dp,
+                    vertical = if (isCompactLayout) 14.dp else 20.dp,
                 ),
         ) {
-            if (isPhone) {
+            if (isCompactLayout) {
                 MobileHeader(
                     version = version,
                     onOpenDrawer = { scope.launch { drawerState.open() } },
@@ -525,7 +526,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         }
     }
 
-    if (isPhone) {
+    if (isCompactLayout) {
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {

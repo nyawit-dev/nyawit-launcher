@@ -66,8 +66,6 @@ fun AppSidebar(
     onClose: (() -> Unit)? = null,
 ) {
     val c = LocalNyawitColors.current
-    val themeController = LocalThemeController.current
-    val languageController = LocalLanguageController.current
 
     Column(
         modifier
@@ -86,7 +84,11 @@ fun AppSidebar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(5.dp).background(c.Primary, CircleShape))
                     Spacer(Modifier.width(5.dp))
-                    Text(NyawitStrings.BRAND_SUBTITLE, style = NyawitType.Overline, color = c.Primary)
+                    Text(
+                        NyawitStrings.BRAND_SUBTITLE,
+                        style = NyawitType.Overline,
+                        color = c.Primary
+                    )
                 }
             }
             if (onClose != null) {
@@ -97,129 +99,47 @@ fun AppSidebar(
                     modifier = Modifier.size(32.dp).clickable { onClose() },
                 ) {
                     Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        Text(NyawitStrings.SYMBOL_CLOSE, color = c.Muted, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+                        Text(
+                            NyawitStrings.SYMBOL_CLOSE,
+                            color = c.Muted,
+                            style = NyawitType.Caption,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-        Text(NyawitStrings.NAV_TITLE, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.height(24.dp))
+            Text(NyawitStrings.NAV_TITLE, style = NyawitType.Overline, color = c.Faint)
+            Spacer(Modifier.height(8.dp))
 
-        NavItem(
-            label = NyawitStrings.NAV_APPS,
-            selected = page == AppPage.APPS,
-            icon = { iconColor -> GridIcon(Modifier.size(16.dp), iconColor) },
-            onClick = { onNavigate(AppPage.APPS); onClose?.invoke() },
-        )
-        Spacer(Modifier.height(5.dp))
-        NavItem(
-            label = NyawitStrings.NAV_SETTINGS,
-            selected = page == AppPage.SETTINGS,
-            icon = { iconColor -> SettingsIcon(Modifier.size(16.dp), iconColor) },
-            onClick = { onNavigate(AppPage.SETTINGS); onClose?.invoke() },
-        )
-        Spacer(Modifier.height(5.dp))
-        NavItem(
-            label = NyawitStrings.NAV_ABOUT,
-            selected = page == AppPage.ABOUT,
-            icon = { iconColor -> InfoIcon(Modifier.size(16.dp), iconColor) },
-            onClick = { onNavigate(AppPage.ABOUT); onClose?.invoke() },
-        )
+            NavItem(
+                label = NyawitStrings.NAV_APPS,
+                selected = page == AppPage.APPS,
+                icon = { iconColor -> GridIcon(Modifier.size(16.dp), iconColor) },
+                onClick = { onNavigate(AppPage.APPS); onClose?.invoke() },
+            )
+            Spacer(Modifier.height(5.dp))
+            NavItem(
+                label = NyawitStrings.NAV_SETTINGS,
+                selected = page == AppPage.SETTINGS,
+                icon = { iconColor -> SettingsIcon(Modifier.size(16.dp), iconColor) },
+                onClick = { onNavigate(AppPage.SETTINGS); onClose?.invoke() },
+            )
+            Spacer(Modifier.height(5.dp))
+            NavItem(
+                label = NyawitStrings.NAV_ABOUT,
+                selected = page == AppPage.ABOUT,
+                icon = { iconColor -> InfoIcon(Modifier.size(16.dp), iconColor) },
+                onClick = { onNavigate(AppPage.ABOUT); onClose?.invoke() },
+            )
 
-        Spacer(Modifier.height(22.dp))
-        Text(NyawitStrings.THEME_SECTION, style = NyawitType.Overline, color = c.Faint)
-        Spacer(Modifier.height(8.dp))
 
-        // Theme Switcher Card
-        Surface(
-            color = c.SurfaceRaised,
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { themeController.next() }
-                .focusable()
-                .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
-        ) {
-            Row(
-                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PaletteIcon(Modifier.size(16.dp), c.Primary)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        themeController.mode.label,
-                        style = NyawitType.Caption,
-                        color = c.Text,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        NyawitStrings.THEME_TAP_TO_CHANGE,
-                        style = NyawitType.Overline,
-                        color = c.Muted,
-                    )
-                }
-                Box(
-                    Modifier
-                        .size(14.dp)
-                        .background(c.Primary, CircleShape)
-                        .border(1.dp, c.BorderHighlight, CircleShape),
-                )
-            }
+            Spacer(Modifier.height(8.dp))
         }
 
-        Spacer(Modifier.height(8.dp))
-
-        // Language Switcher Card
-        Surface(
-            color = c.SurfaceRaised,
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { languageController.toggle() }
-                .focusable()
-                .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
-        ) {
-            Row(
-                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlobeIcon(Modifier.size(16.dp), c.Primary)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        languageController.language.label,
-                        style = NyawitType.Caption,
-                        color = c.Text,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        NyawitStrings.LANGUAGE_TAP_TO_CHANGE,
-                        style = NyawitType.Overline,
-                        color = c.Muted,
-                    )
-                }
-                Surface(
-                    color = c.PrimaryMuted,
-                    shape = RoundedCornerShape(4.dp),
-                ) {
-                    Text(
-                        languageController.language.code.uppercase(),
-                        style = NyawitType.Overline,
-                        color = c.Primary,
-                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(26.dp))
 
         // Ecosystem Status Card
         Surface(
@@ -250,7 +170,11 @@ fun AppSidebar(
                                 ),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text(NyawitStrings.STATUS_TITLE, style = NyawitType.Overline, color = c.Primary)
+                        Text(
+                            NyawitStrings.STATUS_TITLE,
+                            style = NyawitType.Overline,
+                            color = c.Primary
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -283,25 +207,26 @@ fun AppSidebar(
             ),
             shape = RoundedCornerShape(11.dp),
             border = BorderStroke(1.dp, c.BorderHighlight),
-            modifier = Modifier.fillMaxWidth().height(42.dp).tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
+            modifier = Modifier.fillMaxWidth().height(42.dp)
+                .tvFocusHighlight(RoundedCornerShape(11.dp), 1f),
         ) {
             if (selfBusy) {
-                CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp, color = c.Primary)
+                CircularProgressIndicator(
+                    Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = c.Primary
+                )
                 Spacer(Modifier.width(8.dp))
             } else {
                 SyncIcon(Modifier.size(15.dp), c.Primary)
                 Spacer(Modifier.width(8.dp))
             }
-            Text(NyawitStrings.BTN_CHECK_UPDATES, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
+            Text(
+                NyawitStrings.BTN_CHECK_UPDATES,
+                style = NyawitType.Caption,
+                fontWeight = FontWeight.Bold
+            )
         }
-
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "v$version",
-            style = NyawitType.Overline,
-            color = c.Faint,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
     }
 }
 

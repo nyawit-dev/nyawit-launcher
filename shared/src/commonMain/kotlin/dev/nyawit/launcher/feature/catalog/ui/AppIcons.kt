@@ -16,7 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.nyawit.launcher.theme.NyawitColors
+import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 import nyawit_launcher.shared.generated.resources.Res
 import nyawit_launcher.shared.generated.resources.garis_arcade
@@ -46,13 +46,16 @@ fun AppIcon(
     fallbackName: String,
     size: Dp,
     shape: Shape,
-    fallbackColor: Color = NyawitColors.Primary,
-    containerColor: Color = Color.Transparent,
+    fallbackColor: Color? = null,
+    containerColor: Color? = null,
     borderColor: Color? = null,
     modifier: Modifier = Modifier,
 ) {
+    val c = LocalNyawitColors.current
+    val effectiveFallbackColor = fallbackColor ?: c.Primary
+    val effectiveContainerColor = containerColor ?: Color.Transparent
     val icon = iconOf(fullName)
-    var boxModifier = modifier.size(size).clip(shape).background(containerColor)
+    var boxModifier = modifier.size(size).clip(shape).background(effectiveContainerColor)
     if (borderColor != null) boxModifier = boxModifier.border(1.dp, borderColor, shape)
     Box(boxModifier, Alignment.Center) {
         if (icon != null) {
@@ -65,7 +68,7 @@ fun AppIcon(
         } else {
             androidx.compose.material3.Text(
                 fallbackName.first().uppercase(),
-                color = fallbackColor,
+                color = effectiveFallbackColor,
                 style = NyawitType.Title,
                 fontWeight = FontWeight.Black,
             )
