@@ -23,33 +23,35 @@ function getLogoNewHtml() {
     ${COMMON_FONT}
   }
   .mark-container {
-    width: 160px;
-    height: 160px;
-    background: linear-gradient(135deg, #1F2C38 0%, #141C24 100%);
+    width: 176px;
+    height: 176px;
+    background: linear-gradient(135deg, #1C2732 0%, #101720 100%);
     border: 4px solid #273741;
-    border-radius: 36px;
+    border-radius: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 16px 36px rgba(0,0,0,0.4), 0 0 24px rgba(61, 220, 151, 0.15);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.5), 0 0 24px rgba(61, 220, 151, 0.2);
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
   }
-  .mark-circle {
-    width: 100px;
-    height: 100px;
-    background: linear-gradient(135deg, #4EEDB0 0%, #2EC484 100%);
+  .mark-glow {
+    position: absolute;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 16px rgba(61, 220, 151, 0.35);
+    background: radial-gradient(circle, rgba(61, 220, 151, 0.35) 0%, transparent 70%);
   }
-  .mark-n {
-    width: 96px;
-    height: 96px;
+  .mark-img {
+    width: 142px;
+    height: 142px;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
   }
   .text-content {
-    margin-left: 40px;
+    margin-left: 44px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -57,55 +59,102 @@ function getLogoNewHtml() {
   .wordmark-row {
     display: flex;
     align-items: baseline;
+    gap: 16px;
   }
-  .brand-title {
-    font-size: 68px;
+  .brand-nyawit {
+    font-size: 70px;
     font-weight: 900;
     letter-spacing: 4px;
-    color: #F1F5F7;
+    color: #FFFFFF;
     line-height: 1;
+    text-shadow: 0 4px 16px rgba(0,0,0,0.4);
   }
-  .brand-dot {
-    width: 14px;
-    height: 14px;
-    background: #3DDC97;
-    border-radius: 50%;
-    margin-left: 10px;
-    box-shadow: 0 0 12px #3DDC97;
-  }
-  .brand-subtitle {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 8px;
+  .brand-launcher {
+    font-size: 70px;
+    font-weight: 900;
+    letter-spacing: 4px;
     color: #3DDC97;
-    margin-top: 10px;
-    text-transform: uppercase;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(61, 220, 151, 0.3);
   }
   .brand-tagline {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 2.5px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 4.5px;
     color: #94A3B0;
-    margin-top: 8px;
+    margin-top: 14px;
     text-transform: uppercase;
   }
 </style>
 </head>
 <body>
   <div class="mark-container">
-    <div class="mark-circle">
-      <svg class="mark-n" viewBox="0 0 100 100">
-        <image href="${BRAND_MARK_URI}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
-      </svg>
-    </div>
+    <div class="mark-glow"></div>
+    <img class="mark-img" src="${BRAND_MARK_URI}" alt="Nyawit Emblem" />
   </div>
   <div class="text-content">
     <div class="wordmark-row">
-      <div class="brand-title">NYAWIT</div>
-      <div class="brand-dot"></div>
+      <span class="brand-nyawit">NYAWIT</span>
+      <span class="brand-launcher">LAUNCHER</span>
     </div>
-    <div class="brand-subtitle">LAUNCHER</div>
     <div class="brand-tagline">ANDROID &bull; ANDROID TV &bull; DESKTOP</div>
+  </div>
+</body>
+</html>`;
+}
+
+// Dedicated Nyawit Launcher Icon (512x512, transparent, NO text, emerald accent)
+function getNyawitLauncherIconHtml() {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 512px;
+    height: 512px;
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ${COMMON_FONT}
+  }
+  .card {
+    width: 440px;
+    height: 440px;
+    background: linear-gradient(145deg, #182620 0%, #0F1713 100%);
+    border: 6px solid #3DDC97;
+    border-radius: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.6), 0 0 40px rgba(61, 220, 151, 0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .glow-overlay {
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(61, 220, 151, 0.25) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .emblem-img {
+    width: 330px;
+    height: 330px;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5));
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="glow-overlay"></div>
+    <img class="emblem-img" src="${BRAND_MARK_URI}" alt="Nyawit Launcher" />
   </div>
 </body>
 </html>`;

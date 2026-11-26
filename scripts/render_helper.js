@@ -5,9 +5,9 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-// Brand mark tunggal: emblem komik tanpa teks dipakai semua generator aset.
+// Brand mark tunggal: emblem komik circular tanpa teks dipakai semua generator aset (1024x1024).
 export const BRAND_MARK_URI =
-  "data:image/png;base64," + fs.readFileSync(path.join(ROOT_DIR, "assets", "emblem-tight.png")).toString("base64");
+  "data:image/png;base64," + fs.readFileSync(path.join(ROOT_DIR, "assets", "app-icon.png")).toString("base64");
 
 const BROWSER_CANDIDATES = [
   process.env.NYAWIT_BROWSER_PATH,
