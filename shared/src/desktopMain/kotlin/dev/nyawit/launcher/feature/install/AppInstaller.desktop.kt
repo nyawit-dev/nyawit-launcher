@@ -34,11 +34,46 @@ private enum class InstallerLaunch {
 }
 
 private fun openWithDesktop(file: File): InstallerLaunch = try {
-    // ShellExecute lewat Desktop memicu UAC bila installer butuh hak admin.
     Desktop.getDesktop().open(file)
     InstallerLaunch.MANUAL
 } catch (_: Throwable) {
     InstallerLaunch.FAILED
+}
+
+/**
+ * Installer per-machine (MSI jpackage) menolak install tanpa hak admin (Error 1925).
+ * ProcessBuilder tidak bisa memicu UAC, jadi minta ShellExecute via PowerShell dengan verb RunAs.
+ */
+private fun runElevated(file: File): InstallerLaunch {
+    val isMsi = file.extension.equals("msi", true)
+    val command = if (isMsi) {
+        "Start-Process -FilePath 'msiexec' -ArgumentList @('/i', '${file.absolutePath}', '/norestart') -Verb RunAs -Wait"
+    } else {
+        "Start-Process -FilePath '${file.absolutePath}' -Verb RunAs -Wait"
+    }
+    val process = try {
+        ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start()
+    } catch (_: Throwable) {
+        return InstallerLaunch.FAILED
+    }
+    val finished = try {
+        process.waitFor(10, TimeUnit.MINUTES)
+    } catch (_: Throwable) {
+        false
+    }
+    if (!finished) {
+        process.destroyForcibly()
+        return InstallerLaunch.FAILED
+    }
+    return if (process.exitValue() == 0) InstallerLaunch.MANUAL else InstallerLaunch.FAILED
+}
+
+private fun fallbackInstaller(file: File): InstallerLaunch {
+    val os = System.getProperty("os.name").lowercase()
+    return if (os.contains("win")) runElevated(file) else openWithDesktop(file)
 }
 
 private fun silentSucceeded(exitCode: Int, ext: String): Boolean = when (ext) {
@@ -55,7 +90,7 @@ private fun runSilentInstaller(command: List<String>, file: File): InstallerLaun
             .redirectError(ProcessBuilder.Redirect.DISCARD)
             .start()
     } catch (_: Throwable) {
-        return openWithDesktop(file)
+        return fallbackInstaller(file)
     }
     val finished = try {
         process.waitFor(10, TimeUnit.MINUTES)
@@ -64,13 +99,13 @@ private fun runSilentInstaller(command: List<String>, file: File): InstallerLaun
     }
     if (!finished) {
         process.destroyForcibly()
-        return openWithDesktop(file)
+        return fallbackInstaller(file)
     }
     return if (silentSucceeded(process.exitValue(), file.extension.lowercase())) {
         InstallerLaunch.SILENT
     } else {
-        // Exit code gagal (mis. butuh hak admin) — buka installer agar pengguna bisa menyelesaikan.
-        openWithDesktop(file)
+        // Exit code gagal (mis. butuh hak admin) — minta elevasi UAC.
+        fallbackInstaller(file)
     }
 }
 
