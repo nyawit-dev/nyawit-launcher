@@ -33,12 +33,9 @@ class UpdateRepository(
     /**
      * Memilih installer bawaan platform: .msi/.exe (Windows), .deb/.rpm (Linux),
      * .dmg/.pkg (macOS), .apk (Android).
-     * Windows memakai .exe hanya bila [preferExe] true (update launcher, yang
-     * EXE-nya adalah installer Inno Setup lengkap). Aplikasi katalog tetap .msi
-     * karena .exe mereka umumnya app-image tanpa app/runtime.
      * File .jar tidak didukung — hanya installer native resmi platform yang dipilih.
      */
-    fun pickAsset(release: ReleaseInfo, preferExe: Boolean = false): ReleaseAsset? {
+    fun pickAsset(release: ReleaseInfo): ReleaseAsset? {
         val key = platformKey()
         val candidates = release.assets.filter {
             val n = it.name.lowercase()
@@ -50,34 +47,18 @@ class UpdateRepository(
             }
         }
         val primary = when (key) {
-            // Hanya launcher yang punya EXE Inno Setup lengkap dengan wizard kustom.
-            // Aplikasi katalog biasanya menerbitkan .exe app-image (tanpa app/runtime)
-            // yang tidak bisa dipasang sendiri, jadi default tetap .msi.
-            "windows" -> if (preferExe) ".exe" else ".msi"
+            "windows" -> ".msi"
             "mac" -> ".dmg"
             "linux" -> ".deb"
             else -> ".apk"
         }
         val secondary = when (key) {
-            "windows" -> if (preferExe) ".msi" else ".exe"
+            "windows" -> ".exe"
             "mac" -> ".pkg"
             "linux" -> ".rpm"
             else -> null
         }
         return candidates.firstOrNull { it.name.endsWith(primary, true) }
             ?: secondary?.let { ext -> candidates.firstOrNull { it.name.endsWith(ext, true) } }
-    }
-
-    /** Semua installer native yang tersedia untuk platform saat ini, diurutkan berdasarkan preferensi. */
-    fun installerAssets(release: ReleaseInfo): List<ReleaseAsset> {
-        val extensions = when (platformKey()) {
-            "windows" -> listOf(".msi", ".exe")
-            "mac" -> listOf(".dmg", ".pkg")
-            "linux" -> listOf(".deb", ".rpm")
-            else -> listOf(".apk")
-        }
-        return release.assets
-            .filter { asset -> extensions.any { asset.name.endsWith(it, true) } }
-            .sortedBy { asset -> extensions.indexOfFirst { asset.name.endsWith(it, true) } }
     }
 }

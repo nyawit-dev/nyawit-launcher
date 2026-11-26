@@ -47,7 +47,7 @@ private fun silentSucceeded(exitCode: Int, ext: String): Boolean = when (ext) {
     else -> exitCode == 0
 }
 
-/** Menjalankan installer silent dan menunggu hasilnya. Fallback ke wizard bila gagal. */
+/** Menjalankan installer silent dan menunggu hasilnya. Fallback membuka installer bila gagal. */
 private fun runSilentInstaller(command: List<String>, file: File): InstallerLaunch {
     val process = try {
         ProcessBuilder(command)
@@ -69,7 +69,7 @@ private fun runSilentInstaller(command: List<String>, file: File): InstallerLaun
     return if (silentSucceeded(process.exitValue(), file.extension.lowercase())) {
         InstallerLaunch.SILENT
     } else {
-        // Exit code gagal (mis. butu hak admin) — buka wizard agar pengguna bisa menyelesaikan.
+        // Exit code gagal (mis. butuh hak admin) — buka installer agar pengguna bisa menyelesaikan.
         openWithDesktop(file)
     }
 }
@@ -79,11 +79,11 @@ private fun openNativeInstaller(file: File): InstallerLaunch {
     val os = System.getProperty("os.name").lowercase()
     val ext = file.extension.lowercase()
     return when {
-        // /quiet: tanpa wizard, /norestart: jangan reboot otomatis.
+        // /quiet: tanpa UI, /norestart: jangan reboot otomatis.
         os.contains("win") && ext == "msi" -> runSilentInstaller(
             listOf("msiexec", "/i", file.absolutePath, "/quiet", "/norestart"), file,
         )
-        // NSIS (/S) dan Inno Setup (/VERYSILENT); flag yang tak didukung diabaikan installer.
+        // Flag tambahan diabaikan oleh installer yang tidak mendukungnya.
         os.contains("win") && ext == "exe" -> runSilentInstaller(
             listOf(file.absolutePath, "/S", "/VERYSILENT", "/NORESTART"), file,
         )
