@@ -192,7 +192,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     /** Pembaruan launcher berjalan sendiri tanpa dialog konfirmasi. */
     fun autoUpdate(release: ReleaseInfo) {
         if (selfBusy) return
-        val asset = updater.pickAsset(release) ?: return
+        val asset = updater.pickAsset(release, preferExe = true) ?: return
         selfBusy = true
         notice = Notice(NyawitStrings.noticeUpdatingLauncher(release.tag))
         applyUpdate(

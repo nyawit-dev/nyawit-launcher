@@ -31,13 +31,14 @@ class UpdateRepository(
     fun close() { client.close() }
 
     /**
-     * Memilih installer bawaan platform: .exe/.msi (Windows), .deb/.rpm (Linux),
+     * Memilih installer bawaan platform: .msi/.exe (Windows), .deb/.rpm (Linux),
      * .dmg/.pkg (macOS), .apk (Android).
-     * Windows mengutamakan .exe Inno Setup karena memuat wizard komik kustom;
-     * .msi jpackage dipakai sebagai fallback.
+     * Windows memakai .exe hanya bila [preferExe] true (update launcher, yang
+     * EXE-nya adalah installer Inno Setup lengkap). Aplikasi katalog tetap .msi
+     * karena .exe mereka umumnya app-image tanpa app/runtime.
      * File .jar tidak didukung — hanya installer native resmi platform yang dipilih.
      */
-    fun pickAsset(release: ReleaseInfo): ReleaseAsset? {
+    fun pickAsset(release: ReleaseInfo, preferExe: Boolean = false): ReleaseAsset? {
         val key = platformKey()
         val candidates = release.assets.filter {
             val n = it.name.lowercase()
@@ -49,13 +50,16 @@ class UpdateRepository(
             }
         }
         val primary = when (key) {
-            "windows" -> ".exe"
+            // Hanya launcher yang punya EXE Inno Setup lengkap dengan wizard kustom.
+            // Aplikasi katalog biasanya menerbitkan .exe app-image (tanpa app/runtime)
+            // yang tidak bisa dipasang sendiri, jadi default tetap .msi.
+            "windows" -> if (preferExe) ".exe" else ".msi"
             "mac" -> ".dmg"
             "linux" -> ".deb"
             else -> ".apk"
         }
         val secondary = when (key) {
-            "windows" -> ".msi"
+            "windows" -> if (preferExe) ".msi" else ".exe"
             "mac" -> ".pkg"
             "linux" -> ".rpm"
             else -> null
