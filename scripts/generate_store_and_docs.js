@@ -1,4 +1,4 @@
-import { renderHtmlToPng, ROOT_DIR } from "./render_helper.js";
+import { renderHtmlToPng, ROOT_DIR, BRAND_MARK_URI } from "./render_helper.js";
 import path from "path";
 
 const COMMON_FONT = `font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;`;
@@ -45,8 +45,8 @@ function getPlayIconHtml() {
     box-shadow: 0 16px 40px rgba(61, 220, 151, 0.4);
   }
   .svg-n {
-    width: 120px;
-    height: 124px;
+    width: 240px;
+    height: 240px;
   }
   .corner-light {
     position: absolute;
@@ -63,7 +63,7 @@ function getPlayIconHtml() {
     <div class="corner-light"></div>
     <div class="circle-core">
       <svg class="svg-n" viewBox="0 0 34 38">
-        <polyline points="4,34 4,4 30,34 30,4" fill="none" stroke="#07130E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <image href="${BRAND_MARK_URI}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
       </svg>
     </div>
   </div>
@@ -371,7 +371,7 @@ function getPromoGraphicHtml() {
     <div class="logo-box">
       <div class="core">
         <svg viewBox="0 0 34 38" width="40" height="44">
-          <polyline points="4,34 4,4 30,34 30,4" fill="none" stroke="#07130E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          <image href="${BRAND_MARK_URI}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
         </svg>
       </div>
     </div>
@@ -632,7 +632,7 @@ function getReadmeHeroHtml() {
     <div class="mark-box">
       <div class="mark-circle">
         <svg viewBox="0 0 34 38" width="36" height="40">
-          <polyline points="4,34 4,4 30,34 30,4" fill="none" stroke="#07130E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          <image href="${BRAND_MARK_URI}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
         </svg>
       </div>
     </div>

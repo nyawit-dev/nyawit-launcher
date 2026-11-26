@@ -1,4 +1,4 @@
-import { renderHtmlToPng, ROOT_DIR } from "./render_helper.js";
+import { renderHtmlToPng, ROOT_DIR, BRAND_MARK_URI } from "./render_helper.js";
 import path from "path";
 
 // Common SVG & CSS components
@@ -45,8 +45,8 @@ function getLogoNewHtml() {
     box-shadow: 0 4px 16px rgba(61, 220, 151, 0.35);
   }
   .mark-n {
-    width: 44px;
-    height: 48px;
+    width: 96px;
+    height: 96px;
   }
   .text-content {
     margin-left: 40px;
@@ -94,8 +94,8 @@ function getLogoNewHtml() {
 <body>
   <div class="mark-container">
     <div class="mark-circle">
-      <svg class="mark-n" viewBox="0 0 34 38">
-        <polyline points="4,34 4,4 30,34 30,4" fill="none" stroke="#07130E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg class="mark-n" viewBox="0 0 100 100">
+        <image href="${BRAND_MARK_URI}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
       </svg>
     </div>
   </div>
@@ -536,7 +536,7 @@ async function run() {
         subtitle: "LAUNCHER",
         innerSvg: `<svg viewBox="0 0 100 100" width="160" height="160">
           <circle cx="50" cy="50" r="42" fill="#3DDC97"/>
-          <polyline points="32,68 32,32 68,68 68,32" fill="none" stroke="#07130E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+          <image href="${BRAND_MARK_URI}" x="4" y="4" width="92" height="92" preserveAspectRatio="xMidYMid meet"/>
         </svg>`
       }),
       out: path.join(ROOT_DIR, "assets", "app-icons", "nyawit-launcher.png"),

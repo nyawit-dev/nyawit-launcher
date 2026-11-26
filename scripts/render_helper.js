@@ -5,6 +5,10 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+// Brand mark tunggal: emblem komik tanpa teks dipakai semua generator aset.
+export const BRAND_MARK_URI =
+  "data:image/png;base64," + fs.readFileSync(path.join(ROOT_DIR, "assets", "emblem-tight.png")).toString("base64");
+
 const BROWSER_CANDIDATES = [
   process.env.NYAWIT_BROWSER_PATH,
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",

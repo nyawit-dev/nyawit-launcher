@@ -1,4 +1,4 @@
-import { renderHtmlToPng, ROOT_DIR } from "./render_helper.js";
+import { renderHtmlToPng, ROOT_DIR, BRAND_MARK_URI } from "./render_helper.js";
 import path from "path";
 
 const COMMON_FONT = `font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;`;
@@ -55,7 +55,7 @@ function getBrandMarkSvg(size = 46) {
   return `<svg viewBox="0 0 100 100" width="${size}" height="${size}">
     <rect x="4" y="4" width="92" height="92" rx="22" fill="#1B2630" stroke="#273741" stroke-width="4"/>
     <circle cx="50" cy="50" r="30" fill="#3DDC97"/>
-    <polyline points="35,66 35,34 65,66 65,34" fill="none" stroke="#07130E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <image href="${BRAND_MARK_URI}" x="4" y="4" width="92" height="92" preserveAspectRatio="xMidYMid meet"/>
   </svg>`;
 }
 
