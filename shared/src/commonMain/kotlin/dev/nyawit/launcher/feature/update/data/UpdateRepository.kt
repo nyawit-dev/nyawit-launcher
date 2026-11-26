@@ -67,4 +67,17 @@ class UpdateRepository(
         return candidates.firstOrNull { it.name.endsWith(primary, true) }
             ?: secondary?.let { ext -> candidates.firstOrNull { it.name.endsWith(ext, true) } }
     }
+
+    /** Semua installer native yang tersedia untuk platform saat ini, diurutkan berdasarkan preferensi. */
+    fun installerAssets(release: ReleaseInfo): List<ReleaseAsset> {
+        val extensions = when (platformKey()) {
+            "windows" -> listOf(".msi", ".exe")
+            "mac" -> listOf(".dmg", ".pkg")
+            "linux" -> listOf(".deb", ".rpm")
+            else -> listOf(".apk")
+        }
+        return release.assets
+            .filter { asset -> extensions.any { asset.name.endsWith(it, true) } }
+            .sortedBy { asset -> extensions.indexOfFirst { asset.name.endsWith(it, true) } }
+    }
 }

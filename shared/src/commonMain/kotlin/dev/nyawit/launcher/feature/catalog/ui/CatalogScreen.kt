@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -92,6 +93,14 @@ private data class Notice(
     val onAction: () -> Unit = {},
 )
 
+private data class InstallerChoice(val name: String, val url: String)
+
+private data class InstallerChoices(
+    val app: CatalogApp,
+    val version: String,
+    val options: List<InstallerChoice>,
+)
+
 private fun isNewer(latest: String, installed: String): Boolean {
     fun parse(v: String) = v.removePrefix("v").trim().split(".").mapNotNull { it.toIntOrNull() }
     val a = parse(latest)
@@ -137,6 +146,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var reloadKey by remember { mutableStateOf(0) }
     var statusKey by remember { mutableStateOf(0) }
     var detailApp by remember { mutableStateOf<CatalogApp?>(null) }
+    var installerChoices by remember { mutableStateOf<InstallerChoices?>(null) }
     var page by remember { mutableStateOf(AppPage.APPS) }
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("__ALL__") }
@@ -289,31 +299,52 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     fun install(app: CatalogApp) {
         if (app.fullName in busyApps) return
         scope.launch {
-            val selected = withContext(Dispatchers.Default) {
-                if (currentPlatform == AppPlatform.DESKTOP) {
-                    val release = updater.latestFor(app.fullName)
-                    val asset = release?.let { updater.pickAsset(it) }
-                    Triple(asset?.downloadUrl, asset?.name, release?.tag?.removePrefix("v") ?: "1.0.0")
-                } else {
-                    Triple(catalog.latestApkUrl(app.fullName), "${app.fullName.replace('/', '_')}.apk", "1.0.0")
+            if (currentPlatform == AppPlatform.DESKTOP) {
+                val release = withContext(Dispatchers.Default) { updater.latestFor(app.fullName) }
+                val assets = release?.let { updater.installerAssets(it) }.orEmpty()
+                val version = release?.tag?.removePrefix("v") ?: "1.0.0"
+                if (assets.isEmpty()) {
+                    notice = Notice(NyawitStrings.noticePlatformNotSupported(app.name), error = true)
+                    return@launch
                 }
+                // Beberapa format tersedia → biarkan pengguna memilih sendiri.
+                if (assets.size > 1) {
+                    detailApp = null
+                    installerChoices = InstallerChoices(
+                        app = app,
+                        version = version,
+                        options = assets.map { InstallerChoice(it.name, it.downloadUrl) },
+                    )
+                    return@launch
+                }
+                val asset = assets.first()
+                startInstall(
+                    app,
+                    InstallRequest(
+                        url = asset.downloadUrl,
+                        fileName = asset.name,
+                        version = version,
+                        registryKey = app.packageName,
+                        platformContext = platformContext,
+                    ),
+                )
+            } else {
+                val url = withContext(Dispatchers.Default) { catalog.latestApkUrl(app.fullName) }
+                if (url == null) {
+                    notice = Notice(NyawitStrings.noticePlatformNotSupported(app.name), error = true)
+                    return@launch
+                }
+                startInstall(
+                    app,
+                    InstallRequest(
+                        url = url,
+                        fileName = "${app.fullName.replace('/', '_')}.apk",
+                        version = "1.0.0",
+                        registryKey = app.packageName,
+                        platformContext = platformContext,
+                    ),
+                )
             }
-            val url = selected.first
-            val fileName = selected.second
-            if (url == null || fileName == null) {
-                notice = Notice(NyawitStrings.noticePlatformNotSupported(app.name), error = true)
-                return@launch
-            }
-            startInstall(
-                app,
-                InstallRequest(
-                    url = url,
-                    fileName = fileName,
-                    version = selected.third,
-                    registryKey = app.packageName,
-                    platformContext = platformContext,
-                ),
-            )
         }
     }
 
@@ -714,6 +745,39 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             onOpen = { open(app) },
             onUninstall = { uninstall(app) },
             onDismiss = { detailApp = null },
+        )
+    }
+
+    installerChoices?.let { choices ->
+        AlertDialog(
+            onDismissRequest = { installerChoices = null },
+            title = { Text("${NyawitStrings.BTN_INSTALL_APP} — ${choices.app.name}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    choices.options.forEach { option ->
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                installerChoices = null
+                                startInstall(
+                                    choices.app,
+                                    InstallRequest(
+                                        url = option.url,
+                                        fileName = option.name,
+                                        version = choices.version,
+                                        registryKey = choices.app.packageName,
+                                        platformContext = platformContext,
+                                    ),
+                                )
+                            },
+                        ) { Text(option.name) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                Button(onClick = { installerChoices = null }) { Text(NyawitStrings.BTN_CANCEL) }
+            },
         )
     }
 }
