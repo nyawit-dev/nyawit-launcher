@@ -10,6 +10,11 @@ internal data class NativeAppInfo(
     val uninstallString: String? = null,
 )
 
+private val NAME_NON_ALNUM = Regex("[^a-z0-9]")
+
+/** "Nyawit Music" dan "NyawitMusic" harus dianggap sama. */
+private fun normalizedName(value: String): String = NAME_NON_ALNUM.replace(value.lowercase(), "")
+
 private fun runCommand(vararg command: String): String? = try {
     val process = ProcessBuilder(*command).redirectErrorStream(true).start()
     val output = process.inputStream.bufferedReader().use { it.readText() }
@@ -38,8 +43,8 @@ private fun executableFromLocation(path: String, wanted: String): String? {
     val candidates = File(path).listFiles { f ->
         f.isFile && f.extension.equals("exe", true) && !f.name.startsWith("unins", true)
     }.orEmpty()
-    val token = wanted.replace(Regex("[^a-z0-9]"), "")
-    return candidates.firstOrNull { token.isNotBlank() && it.nameWithoutExtension.lowercase().contains(token) }
+    val token = normalizedName(wanted)
+    return candidates.firstOrNull { token.isNotBlank() && normalizedName(it.nameWithoutExtension).contains(token) }
         ?.absolutePath ?: candidates.firstOrNull()?.absolutePath
 }
 
@@ -55,13 +60,13 @@ private fun windowsApp(displayName: String): NativeAppInfo? {
         "Windows: ${chunks.count { it.second != null }}/${chunks.size} root registry terbaca untuk '$displayName'",
     )
     val dump = chunks.mapNotNull { it.second }.joinToString("\n")
-    val wanted = displayName.lowercase().trim()
+    val wanted = normalizedName(displayName)
     for (block in dump.split("HKEY_")) {
         val name = Regex("DisplayName\\s+REG_(?:SZ|EXPAND_SZ)\\s+(.+)").find(block)
             ?.groupValues?.get(1)?.trim()
         if (name.isNullOrBlank() || name.length < 3) continue
-        val lower = name.lowercase()
-        if (!lower.contains(wanted) && !wanted.contains(lower)) continue
+        val candidate = normalizedName(name)
+        if (!candidate.contains(wanted) && !wanted.contains(candidate)) continue
 
         fun value(key: String) = Regex("$key\\s+REG_(?:SZ|EXPAND_SZ)\\s+(.+)").find(block)
             ?.groupValues?.get(1)?.trim()?.removeSurrounding("\"")
@@ -100,7 +105,7 @@ private fun linuxApp(displayName: String, packageName: String): NativeAppInfo? {
     }
 
     var executable: String? = null
-    val wanted = displayName.lowercase().trim()
+    val wanted = normalizedName(displayName)
     val dirs = listOf(
         File("/usr/share/applications"),
         File(System.getProperty("user.home"), ".local/share/applications"),
@@ -110,8 +115,9 @@ private fun linuxApp(displayName: String, packageName: String): NativeAppInfo? {
         for (file in files) {
             val text = runCatching { file.readText() }.getOrNull() ?: continue
             val name = Regex("^Name=(.+)$", RegexOption.MULTILINE).find(text)
-                ?.groupValues?.get(1)?.trim()?.lowercase() ?: continue
-            if (!name.contains(wanted) && !wanted.contains(name)) continue
+                ?.groupValues?.get(1)?.trim() ?: continue
+            val candidate = normalizedName(name)
+            if (!candidate.contains(wanted) && !wanted.contains(candidate)) continue
             executable = Regex("^Exec=(.+)$", RegexOption.MULTILINE).find(text)
                 ?.groupValues?.get(1)?.trim()
                 ?.substringBefore(" ")
@@ -139,7 +145,7 @@ private fun linuxApp(displayName: String, packageName: String): NativeAppInfo? {
 }
 
 private fun macApp(displayName: String): NativeAppInfo? {
-    val wanted = displayName.lowercase().trim()
+    val wanted = normalizedName(displayName)
     val dirs = listOf(
         File("/Applications"),
         File(System.getProperty("user.home"), "Applications"),
@@ -147,7 +153,7 @@ private fun macApp(displayName: String): NativeAppInfo? {
     for (dir in dirs) {
         val apps = dir.listFiles { f -> f.isDirectory && f.extension == "app" } ?: continue
         for (app in apps) {
-            val name = app.nameWithoutExtension.lowercase()
+            val name = normalizedName(app.nameWithoutExtension)
             if (!name.contains(wanted) && !wanted.contains(name)) continue
             val plist = File(app, "Contents/Info.plist")
             val version = if (plist.isFile) {
