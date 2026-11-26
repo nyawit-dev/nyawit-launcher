@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -61,8 +62,13 @@ import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicArcadeIllustration
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
+import dev.nyawit.launcher.core.ui.ComicFilterChip
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
+import dev.nyawit.launcher.core.ui.ComicNotice
 import dev.nyawit.launcher.core.ui.ComicPanel
+import dev.nyawit.launcher.core.ui.ComicSearchBar
 import dev.nyawit.launcher.core.ui.ComicSpeechBubble
 import dev.nyawit.launcher.core.ui.ComicSpeedLines
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
@@ -120,62 +126,13 @@ fun BrandMark(size: Int = 46) {
 
 @Composable
 fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: FocusRequester) {
-    val c = LocalNyawitColors.current
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQuery,
-        placeholder = { Text(NyawitStrings.SEARCH_PLACEHOLDER, style = NyawitType.Body, color = c.Faint) },
-        leadingIcon = { SearchIcon(Modifier.size(19.dp), c.Muted) },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                Surface(
-                    color = c.SurfaceHighlight,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
-                    modifier = Modifier
-                        .clickable { onQuery("") }
-                        .padding(end = 12.dp),
-                ) {
-                    Text(
-                        NyawitStrings.SYMBOL_CLOSE,
-                        color = c.Text,
-                        style = NyawitType.Caption,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
-            } else {
-                Surface(
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, c.Border),
-                    modifier = Modifier.padding(end = 12.dp),
-                ) {
-                    Text(
-                        NyawitStrings.KEY_ESC,
-                        style = NyawitType.Overline,
-                        color = c.Faint,
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                    )
-                }
-            }
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        textStyle = NyawitType.Body,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = c.SurfaceRaised,
-            unfocusedContainerColor = c.Surface,
-            focusedBorderColor = c.Primary,
-            unfocusedBorderColor = c.BorderHighlight,
-            focusedTextColor = c.Text,
-            unfocusedTextColor = c.Text,
-            cursorColor = c.Primary,
-        ),
+    ComicSearchBar(
+        query = query,
+        onQueryChange = onQuery,
+        focusRequester = focusRequester,
         modifier = Modifier
             .fillMaxWidth()
-            .focusRequester(focusRequester)
-            .tvFocusHighlight(RoundedCornerShape(12.dp), 1f),
+            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
     )
 }
 
@@ -188,7 +145,6 @@ fun CategoryFilterChips(
     modifier: Modifier = Modifier.fillMaxWidth(),
     initialFocusRequester: FocusRequester? = null,
 ) {
-    val c = LocalNyawitColors.current
     LazyRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -197,53 +153,14 @@ fun CategoryFilterChips(
             val cat = categories[index]
             val isSelected = cat == selectedCategory
             val count = counts[cat]
-            Surface(
-                color = if (isSelected) c.Primary else c.Surface,
-                shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(
-                    2.dp,
-                    if (isSelected) (if (c.isDark) c.Primary else Color(0xFF0F172A)) else (if (c.isDark) c.BorderHighlight else Color(0xFF334155)),
-                ),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable { onSelectCategory(cat) }
-                    .focusable()
-                    .tvFocusHighlight(RoundedCornerShape(6.dp), 1f)
-                    .then(
-                        if (index == 0 && initialFocusRequester != null) {
-                            Modifier.focusRequester(initialFocusRequester)
-                        } else Modifier
-                    ),
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val label = if (cat == "__ALL__") NyawitStrings.CATEGORY_ALL else cat
-                    Text(
-                        label.uppercase(),
-                        style = NyawitType.Caption,
-                        color = if (isSelected) c.OnPrimary else c.Text,
-                        fontWeight = FontWeight.Black,
-                    )
-                    if (count != null && count > 0) {
-                        Surface(
-                            color = if (isSelected) c.OnPrimary.copy(alpha = 0.25f) else c.SurfaceHighlight,
-                            shape = RoundedCornerShape(4.dp),
-                            border = BorderStroke(1.dp, if (isSelected) c.OnPrimary else c.Border),
-                        ) {
-                            Text(
-                                "$count",
-                                style = NyawitType.Overline,
-                                color = if (isSelected) c.OnPrimary else c.Muted,
-                                fontWeight = FontWeight.Black,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                            )
-                        }
-                    }
-                }
-            }
+            val label = if (cat == "__ALL__") NyawitStrings.CATEGORY_ALL else cat
+            ComicFilterChip(
+                text = label,
+                selected = isSelected,
+                count = count,
+                onClick = { onSelectCategory(cat) },
+                focusRequester = if (index == 0) initialFocusRequester else null,
+            )
         }
     }
 }
@@ -259,46 +176,15 @@ fun NoticeBanner(
     onAction: () -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
-    val c = LocalNyawitColors.current
-    val tone = if (isError) c.Danger else c.Primary
-    Surface(
-        color = if (isError) c.Danger.copy(alpha = 0.15f) else c.SurfaceRaised,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(2.dp, tone),
+    ComicNotice(
+        text = text,
+        isError = isError,
+        actionLabel = if (busy && progress != null) NyawitStrings.BTN_CANCEL else actionLabel,
+        onAction = if (busy && progress != null) onCancel else onAction,
+        onDismiss = if (!busy && actionLabel != null) onDismiss else null,
+        progress = if (busy) progress else null,
         modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(4.dp).height(32.dp).background(tone, RoundedCornerShape(2.dp)))
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(text, style = NyawitType.Caption, color = if (isError) tone else c.Text, fontWeight = FontWeight.Bold)
-                if (busy && progress != null) {
-                    Spacer(Modifier.height(6.dp))
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)),
-                        color = tone,
-                        trackColor = c.Border,
-                    )
-                }
-            }
-            if (actionLabel != null && !busy) {
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onAction, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1f)) {
-                    Text(actionLabel, style = NyawitType.Caption, color = c.Primary, fontWeight = FontWeight.Black)
-                }
-                TextButton(onClick = onDismiss, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1f)) {
-                    Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, color = c.Muted)
-                }
-            }
-            if (busy && progress != null) {
-                Spacer(Modifier.width(12.dp))
-                TextButton(onClick = onCancel, modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1f)) {
-                    Text(NyawitStrings.BTN_CANCEL, style = NyawitType.Caption, color = c.Danger, fontWeight = FontWeight.Black)
-                }
-            }
-        }
-    }
+    )
 }
 
 @Composable
@@ -523,59 +409,25 @@ fun FeaturedApp(
                 ) {
                     val isInstalled = status == AppStatus.INSTALLED
                     val isUpdate = status == AppStatus.UPDATE_AVAILABLE
-                    Button(
+                    ComicButton(
+                        text = when {
+                            isInstalled -> "BUKA!"
+                            isUpdate -> "UPDATE!"
+                            else -> "PASANG!"
+                        },
                         onClick = if (isInstalled) onOpen else onInstall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = when {
-                                isUpdate -> c.Warning
-                                isInstalled -> c.Primary
-                                else -> c.Primary
-                            },
-                            contentColor = when {
-                                isUpdate -> c.OnWarning
-                                else -> c.OnPrimary
-                            },
-                        ),
-                        border = BorderStroke(2.dp, Color(0xFF0F172A)),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .height(42.dp)
-                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.05f),
-                    ) {
-                        Text(
-                            when {
-                                isInstalled -> "BUKA ➔"
-                                isUpdate -> "UPDATE ➔"
-                                else -> "PASANG ➔"
-                            },
-                            style = NyawitType.Caption,
-                            fontWeight = FontWeight.Black,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
+                        variant = if (isUpdate) ComicButtonVariant.WARNING else ComicButtonVariant.PRIMARY,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                    )
 
-                    Button(
+                    ComicButton(
+                        text = "DETAIL",
                         onClick = onDetail,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = c.SurfaceRaised,
-                            contentColor = c.Text,
-                        ),
-                        border = BorderStroke(1.5.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .height(42.dp)
-                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1.05f),
-                    ) {
-                        Text(
-                            "DETAIL",
-                            style = NyawitType.Caption,
-                            color = c.Text,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
+                        variant = ComicButtonVariant.SECONDARY,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Bold),
+                    )
                 }
             }
         } else {
@@ -682,61 +534,27 @@ fun FeaturedApp(
                 ) {
                     val isInstalled = status == AppStatus.INSTALLED
                     val isUpdate = status == AppStatus.UPDATE_AVAILABLE
-                    Button(
+                    ComicButton(
+                        text = when {
+                            isInstalled -> "BUKA!"
+                            isUpdate -> "UPDATE!"
+                            else -> "PASANG!"
+                        },
                         onClick = if (isInstalled) onOpen else onInstall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = when {
-                                isUpdate -> c.Warning
-                                isInstalled -> c.Primary
-                                else -> c.Primary
-                            },
-                            contentColor = when {
-                                isUpdate -> c.OnWarning
-                                else -> c.OnPrimary
-                            },
-                        ),
-                        border = BorderStroke(2.dp, Color(0xFF0F172A)),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .weight(1.3f)
-                            .height(42.dp)
-                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                    ) {
-                        Text(
-                            when {
-                                isInstalled -> "BUKA ➔"
-                                isUpdate -> "UPDATE ➔"
-                                else -> "PASANG ➔"
-                            },
-                            style = NyawitType.Caption,
-                            fontWeight = FontWeight.Black,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
+                        variant = if (isUpdate) ComicButtonVariant.WARNING else ComicButtonVariant.PRIMARY,
+                        modifier = Modifier.weight(1.3f).height(42.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                    )
 
-                    Button(
+                    ComicButton(
+                        text = "DETAIL",
                         onClick = onDetail,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = c.SurfaceRaised,
-                            contentColor = c.Text,
-                        ),
-                        border = BorderStroke(1.5.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(42.dp)
-                            .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                    ) {
-                        Text(
-                            "DETAIL",
-                            style = NyawitType.Caption,
-                            color = c.Text,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
+                        variant = ComicButtonVariant.SECONDARY,
+                        modifier = Modifier.weight(1f).height(42.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Bold),
+                    )
                 }
             } else {
                 // Wide Desktop / Tablet Layout: Balanced 2-Column Hero Layout
@@ -823,61 +641,27 @@ fun FeaturedApp(
                         ) {
                             val isInstalled = status == AppStatus.INSTALLED
                             val isUpdate = status == AppStatus.UPDATE_AVAILABLE
-                            Button(
+                            ComicButton(
+                                text = when {
+                                    isInstalled -> "BUKA SEKARANG!"
+                                    isUpdate -> "PERBARUI!"
+                                    else -> "PASANG!"
+                                },
                                 onClick = if (isInstalled) onOpen else onInstall,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = when {
-                                        isUpdate -> c.Warning
-                                        isInstalled -> c.Primary
-                                        else -> c.Primary
-                                    },
-                                    contentColor = when {
-                                        isUpdate -> c.OnWarning
-                                        else -> c.OnPrimary
-                                    },
-                                ),
-                                border = BorderStroke(2.5.dp, Color(0xFF0F172A)),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .defaultMinSize(minHeight = 44.dp)
-                                    .heightIn(min = 44.dp)
-                                    .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                            ) {
-                                Text(
-                                    when {
-                                        isInstalled -> "BUKA SEKARANG ➔"
-                                        isUpdate -> "PERBARUI ➔"
-                                        else -> "PASANG ➔"
-                                    },
-                                    style = NyawitType.Caption,
-                                    fontWeight = FontWeight.Black,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
+                                variant = if (isUpdate) ComicButtonVariant.WARNING else ComicButtonVariant.PRIMARY,
+                                modifier = Modifier.defaultMinSize(minHeight = 44.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                            )
 
-                            Button(
+                            ComicButton(
+                                text = "DETAIL",
                                 onClick = onDetail,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = c.SurfaceRaised,
-                                    contentColor = c.Text,
-                                ),
-                                border = BorderStroke(2.dp, if (c.isDark) Color(0xFF64748B) else Color(0xFF0F172A)),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .defaultMinSize(minHeight = 44.dp)
-                                    .heightIn(min = 44.dp)
-                                    .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                            ) {
-                                Text(
-                                    "DETAIL",
-                                    style = NyawitType.Caption,
-                                    color = c.Text,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
+                                variant = ComicButtonVariant.SECONDARY,
+                                modifier = Modifier.defaultMinSize(minHeight = 44.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Bold),
+                            )
                         }
                     }
 

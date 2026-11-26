@@ -10,6 +10,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -39,6 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.GridIcon
@@ -281,56 +284,18 @@ fun AppSidebar(
                         }
                     }
 
-                    // Check Update Action Button with Comic Offset Shadow
-                    Box(Modifier.fillMaxWidth()) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(42.dp)
-                                .offset(3.dp, 3.dp)
-                                .background(
-                                    if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
-                                    RoundedCornerShape(8.dp),
-                                )
-                        )
-
-                        Button(
-                            onClick = { onUpdate(); onClose?.invoke() },
-                            enabled = !selfBusy,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (updateCount > 0 || updateTag != null) c.Warning else c.Primary,
-                                contentColor = if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(2.dp, if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(42.dp)
-                                .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                        ) {
-                            if (selfBusy) {
-                                CircularProgressIndicator(
-                                    Modifier.size(14.dp),
-                                    strokeWidth = 2.dp,
-                                    color = if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
-                                )
-                                Spacer(Modifier.width(8.dp))
-                            } else {
-                                SyncIcon(
-                                    Modifier.size(15.dp),
-                                    if (updateCount > 0 || updateTag != null) c.OnWarning else c.OnPrimary,
-                                )
-                                Spacer(Modifier.width(8.dp))
-                            }
-                            Text(
-                                "CEK PEMBARUAN! ➔",
-                                style = NyawitType.Caption,
-                                fontWeight = FontWeight.Black,
-                                maxLines = 1,
-                                softWrap = false,
-                            )
-                        }
-                    }
+                    // Check Update Action Button with Comic Tactile Push
+                    ComicButton(
+                        text = if (selfBusy) "MEMERIKSA..." else "CEK PEMBARUAN!",
+                        onClick = { onUpdate(); onClose?.invoke() },
+                        enabled = !selfBusy,
+                        loading = selfBusy,
+                        variant = if (updateCount > 0 || updateTag != null) ComicButtonVariant.WARNING else ComicButtonVariant.PRIMARY,
+                        icon = { iconColor -> SyncIcon(Modifier.size(15.dp), iconColor) },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+                        textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                    )
                 }
             }
         }

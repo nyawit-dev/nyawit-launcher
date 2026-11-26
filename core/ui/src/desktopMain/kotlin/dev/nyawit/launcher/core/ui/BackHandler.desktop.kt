@@ -4,5 +4,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
-    // Di desktop, tidak ada tombol hardware Back seperti Android
+    // Di desktop, tombol fisik/sistem "Back" tidak ada; tombol navigasi UI ditangani via callback.
 }

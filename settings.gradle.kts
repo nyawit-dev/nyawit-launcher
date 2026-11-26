@@ -8,6 +8,7 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral(); gradlePluginPortal() }
 }
 rootProject.name = "nyawit-launcher"
+include(":core:ui")
 include(":shared")
 include(":androidApp")
 include(":desktopApp")

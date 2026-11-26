@@ -1,8 +1,13 @@
+@file:Suppress("DEPRECATION")
 package dev.nyawit.launcher.core.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
@@ -28,9 +33,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.nyawit.launcher.theme.LocalNyawitColors
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
- * ComicIcon: Wrapper ikon Material 3 bertema komik pop-art.
+ * ComicIcon: Wrapper ikon bertema komik pop-art.
  * Menggabungkan siluet resmi Material 3 dengan efek bayangan jatuh tinta keras
  * (hard comic drop shadow offset) khas cetakan komik retro/manga.
  */
@@ -107,30 +113,20 @@ fun GridIcon(modifier: Modifier = Modifier, color: Color) {
 }
 
 @Composable
-fun GamepadIcon(modifier: Modifier = Modifier, color: Color) {
+fun SettingsIcon(modifier: Modifier = Modifier, color: Color) {
     ComicIcon(
-        imageVector = Icons.Filled.SportsEsports,
-        contentDescription = "Games",
+        imageVector = Icons.Filled.Settings,
+        contentDescription = "Settings",
         modifier = modifier,
         tint = color,
     )
 }
 
 @Composable
-fun MusicIcon(modifier: Modifier = Modifier, color: Color) {
+fun RefreshIcon(modifier: Modifier = Modifier, color: Color) {
     ComicIcon(
-        imageVector = Icons.Filled.MusicNote,
-        contentDescription = "Music",
-        modifier = modifier,
-        tint = color,
-    )
-}
-
-@Composable
-fun RocketIcon(modifier: Modifier = Modifier, color: Color) {
-    ComicIcon(
-        imageVector = Icons.Filled.RocketLaunch,
-        contentDescription = "Rocket",
+        imageVector = Icons.Filled.Refresh,
+        contentDescription = "Refresh",
         modifier = modifier,
         tint = color,
     )
@@ -138,22 +134,7 @@ fun RocketIcon(modifier: Modifier = Modifier, color: Color) {
 
 @Composable
 fun SyncIcon(modifier: Modifier = Modifier, color: Color) {
-    ComicIcon(
-        imageVector = Icons.Filled.Refresh,
-        contentDescription = "Sync",
-        modifier = modifier,
-        tint = color,
-    )
-}
-
-@Composable
-fun MenuIcon(modifier: Modifier = Modifier, color: Color) {
-    ComicIcon(
-        imageVector = Icons.Filled.Menu,
-        contentDescription = "Menu",
-        modifier = modifier,
-        tint = color,
-    )
+    RefreshIcon(modifier = modifier, color = color)
 }
 
 @Composable
@@ -161,6 +142,26 @@ fun InfoIcon(modifier: Modifier = Modifier, color: Color) {
     ComicIcon(
         imageVector = Icons.Filled.Info,
         contentDescription = "Info",
+        modifier = modifier,
+        tint = color,
+    )
+}
+
+@Composable
+fun CheckIcon(modifier: Modifier = Modifier, color: Color) {
+    ComicIcon(
+        imageVector = Icons.Filled.Check,
+        contentDescription = "Check",
+        modifier = modifier,
+        tint = color,
+    )
+}
+
+@Composable
+fun CloseIcon(modifier: Modifier = Modifier, color: Color) {
+    ComicIcon(
+        imageVector = Icons.Filled.Close,
+        contentDescription = "Close",
         modifier = modifier,
         tint = color,
     )
@@ -177,18 +178,7 @@ fun PaletteIcon(modifier: Modifier = Modifier, color: Color) {
 }
 
 @Composable
-fun CheckIcon(modifier: Modifier = Modifier, color: Color) {
-    ComicIcon(
-        imageVector = Icons.Filled.Check,
-        contentDescription = "Check",
-        modifier = modifier,
-        tint = color,
-        shadowOffset = 1.dp,
-    )
-}
-
-@Composable
-fun GlobeIcon(modifier: Modifier = Modifier, color: Color) {
+fun WebIcon(modifier: Modifier = Modifier, color: Color) {
     ComicIcon(
         imageVector = Icons.Filled.Public,
         contentDescription = "Language",
@@ -198,21 +188,68 @@ fun GlobeIcon(modifier: Modifier = Modifier, color: Color) {
 }
 
 @Composable
-fun SettingsIcon(modifier: Modifier = Modifier, color: Color) {
+fun GlobeIcon(modifier: Modifier = Modifier, color: Color) {
+    WebIcon(modifier = modifier, color = color)
+}
+
+@Composable
+fun GameIcon(modifier: Modifier = Modifier, color: Color) {
     ComicIcon(
-        imageVector = Icons.Filled.Settings,
-        contentDescription = "Settings",
+        imageVector = Icons.Filled.SportsEsports,
+        contentDescription = "Game",
         modifier = modifier,
         tint = color,
     )
 }
 
 @Composable
-fun CrossIcon(modifier: Modifier = Modifier, color: Color) {
+fun MusicIcon(modifier: Modifier = Modifier, color: Color) {
     ComicIcon(
-        imageVector = Icons.Filled.Close,
-        contentDescription = "Close",
+        imageVector = Icons.Filled.MusicNote,
+        contentDescription = "Music",
         modifier = modifier,
         tint = color,
     )
+}
+
+@Composable
+fun MenuIcon(modifier: Modifier = Modifier, color: Color) {
+    ComicIcon(
+        imageVector = Icons.Filled.Menu,
+        contentDescription = "Menu",
+        modifier = modifier,
+        tint = color,
+    )
+}
+
+@Composable
+fun RocketIcon(modifier: Modifier = Modifier, color: Color) {
+    ComicIcon(
+        imageVector = Icons.Filled.RocketLaunch,
+        contentDescription = "Rocket",
+        modifier = modifier,
+        tint = color,
+    )
+}
+
+@Preview
+@Composable
+private fun ComicIconsPreview() {
+    ComicPreviewTheme {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SearchIcon(Modifier.size(22.dp), LocalNyawitColors.current.Primary)
+            DownloadIcon(Modifier.size(22.dp), LocalNyawitColors.current.Primary)
+            ArrowIcon(Modifier.size(22.dp), LocalNyawitColors.current.Text)
+            GridIcon(Modifier.size(22.dp), LocalNyawitColors.current.Primary)
+            SettingsIcon(Modifier.size(22.dp), LocalNyawitColors.current.Primary)
+            RefreshIcon(Modifier.size(22.dp), LocalNyawitColors.current.Primary)
+            InfoIcon(Modifier.size(22.dp), LocalNyawitColors.current.Primary)
+            CheckIcon(Modifier.size(22.dp), Color(0xFF10B981))
+            RocketIcon(Modifier.size(22.dp), Color(0xFFFF4757))
+        }
+    }
 }

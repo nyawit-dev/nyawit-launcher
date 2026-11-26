@@ -6,9 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,13 +19,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.nyawit.launcher.core.platform.AppPlatform
-import dev.nyawit.launcher.core.platform.currentAppPlatform
-import dev.nyawit.launcher.core.platform.isTvPlatform
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import kotlinx.coroutines.launch
 
@@ -45,7 +40,7 @@ val LocalWindowSize = staticCompositionLocalOf { WindowSize(1280, 720) }
 val LocalUiScale = staticCompositionLocalOf { 1f }
 
 /**
- * Global UI scale calculation dari WindowSize (mengadopsi arsitektur teruji Diggo POS).
+ * Global UI scale calculation dari WindowSize.
  * Menghitung skala density secara seragam di tingkat root aplikasi.
  */
 fun calculateUiScale(widthDp: Int, heightDp: Int, isTv: Boolean = false): Float {
@@ -132,7 +127,7 @@ fun rememberDeviceProfile(): DeviceProfile = LocalDeviceProfile.current
  */
 fun calculateAutoScale(profile: DeviceProfile): Float {
     if (profile.kind == ScreenKind.TV) {
-        return 1.0f // Android TV sudah memiliki DisplayMetrics terkalibrasi untuk 10-foot UI
+        return 1.0f
     }
     return when (profile.kind) {
         ScreenKind.PHONE -> when {
@@ -152,7 +147,7 @@ fun calculateAutoScale(profile: DeviceProfile): Float {
             profile.widthDp <= 1680f -> 1.04f
             profile.widthDp <= 1920f -> 1.08f
             profile.widthDp <= 2560f -> 1.15f
-            else -> 1.25f // 4K UHD Ultra-wide
+            else -> 1.25f
         }
         ScreenKind.TV -> 1.0f
     }

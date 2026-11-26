@@ -31,6 +31,7 @@ kotlin {
             // BuildConfig hasil generasi ikut terkompilasi di semua platform.
             kotlin.srcDir(buildConfigDir)
             dependencies {
+                api(project(":core:ui"))
                 implementation(libs.runtime)
                 implementation(libs.foundation)
                 implementation(libs.material3)

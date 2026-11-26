@@ -50,8 +50,12 @@ import dev.nyawit.launcher.core.ui.ArrowIcon
 import dev.nyawit.launcher.core.ui.CheckIcon
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
+import dev.nyawit.launcher.core.ui.ComicIconButton
 import dev.nyawit.launcher.core.ui.ComicPanel
+import dev.nyawit.launcher.core.ui.ComicProgressBar
 import dev.nyawit.launcher.core.ui.DownloadIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
@@ -239,31 +243,11 @@ fun AppCard(
 
             // Dynamic Progress Indicator
             if (busy && progress != null) {
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        NyawitStrings.PROGRESS_DOWNLOADING,
-                        style = NyawitType.Caption,
-                        fontWeight = FontWeight.Bold,
-                        color = c.Primary,
-                    )
-                    Text(
-                        "${(progress * 100).toInt()}%",
-                        style = NyawitType.Caption,
-                        fontWeight = FontWeight.Black,
-                        color = c.Text,
-                    )
-                }
-                Spacer(Modifier.height(5.dp))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                    color = c.Primary,
-                    trackColor = c.SurfaceRaised,
+                Spacer(Modifier.height(10.dp))
+                ComicProgressBar(
+                    progress = progress,
+                    height = 20.dp,
+                    label = NyawitStrings.progressDownloadingPercent((progress * 100).toInt()),
                 )
             }
 
@@ -278,85 +262,44 @@ fun AppCard(
                 val isInstalled = status == AppStatus.INSTALLED
                 val isUpdate = status == AppStatus.UPDATE_AVAILABLE
 
-                val btnContainerColor = when {
-                    isUpdate -> c.Warning
-                    isInstalled -> c.Primary
-                    else -> c.SurfaceRaised
+                val btnVariant = when {
+                    isUpdate -> ComicButtonVariant.WARNING
+                    isInstalled -> ComicButtonVariant.PRIMARY
+                    else -> ComicButtonVariant.SECONDARY
                 }
-                val btnContentColor = when {
-                    isUpdate -> c.OnWarning
-                    isInstalled -> c.OnPrimary
-                    else -> c.Text
-                }
-                val btnBorder = BorderStroke(
-                    2.dp,
-                    when {
-                        isUpdate -> if (c.isDark) c.Warning else Color(0xFF0F172A)
-                        isInstalled -> if (c.isDark) c.Primary else Color(0xFF0F172A)
-                        else -> c.BorderHighlight
-                    },
-                )
 
-                Button(
+                ComicButton(
+                    text = when {
+                        busy && progress != null -> NyawitStrings.progressDownloadingPercent((progress * 100).toInt())
+                        busy -> NyawitStrings.PROGRESS_PROCESSING
+                        isInstalled -> "JALANKAN!"
+                        isUpdate -> "PERBARUI!"
+                        else -> "PASANG!"
+                    },
                     onClick = if (isInstalled) onOpen else onInstall,
                     enabled = !busy,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = btnContainerColor,
-                        contentColor = btnContentColor,
-                    ),
-                    border = btnBorder,
-                    shape = RoundedCornerShape(8.dp),
+                    loading = busy && progress == null,
+                    variant = btnVariant,
+                    icon = when {
+                        isInstalled -> { iconColor -> ArrowIcon(Modifier.size(responsiveScale.dp(16)), iconColor) }
+                        progress == null && !isInstalled -> { iconColor -> DownloadIcon(Modifier.size(responsiveScale.dp(16)), iconColor) }
+                        else -> null
+                    },
+                    modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(
                         horizontal = responsiveScale.dp(12),
                         vertical = responsiveScale.dp(8),
                     ),
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = responsiveScale.dp(44))
-                        .heightIn(min = responsiveScale.dp(44))
-                        .weight(1f)
-                        .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                ) {
-                    if (busy) {
-                        CircularProgressIndicator(
-                            Modifier.size(responsiveScale.dp(16)),
-                            strokeWidth = 2.dp,
-                            color = btnContentColor,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    } else if (isInstalled) {
-                        ArrowIcon(Modifier.size(responsiveScale.dp(16)), btnContentColor)
-                        Spacer(Modifier.width(8.dp))
-                    } else if (progress == null) {
-                        DownloadIcon(Modifier.size(responsiveScale.dp(16)), if (isUpdate) btnContentColor else c.Primary)
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(
-                        when {
-                            busy && progress != null -> NyawitStrings.progressDownloadingPercent((progress * 100).toInt())
-                            busy -> NyawitStrings.PROGRESS_PROCESSING
-                            isInstalled -> "JALANKAN! ➔"
-                            isUpdate -> "PERBARUI! ➔"
-                            else -> "PASANG! ➔"
-                        },
-                        fontWeight = FontWeight.Black,
-                        style = NyawitType.Caption,
-                    )
-                }
+                    textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                )
 
                 // Comic Detail Trigger
-                Surface(
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(2.dp, c.BorderHighlight),
-                    modifier = Modifier
-                        .size(responsiveScale.dp(44))
-                        .clickable { onDetail?.invoke() }
-                        .focusable()
-                        .tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
+                ComicIconButton(
+                    onClick = { onDetail?.invoke() },
+                    variant = ComicButtonVariant.SECONDARY,
+                    size = responsiveScale.dp(44),
                 ) {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        InfoIcon(Modifier.size(responsiveScale.dp(18)), c.Text)
-                    }
+                    InfoIcon(Modifier.size(responsiveScale.dp(18)), c.Text)
                 }
             }
         }

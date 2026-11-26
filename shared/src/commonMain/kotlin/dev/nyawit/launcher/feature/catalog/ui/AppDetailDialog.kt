@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
+import dev.nyawit.launcher.core.ui.ComicDivider
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
@@ -143,7 +147,7 @@ fun AppDetailDialog(
                                 SpecItem(NyawitStrings.DETAIL_DEVELOPER, app.fullName.substringBefore('/'), c)
                                 SpecItem(NyawitStrings.DETAIL_CATEGORY, app.category.uppercase(), c, c.Primary)
                             }
-                            HorizontalDivider(color = c.Border.copy(alpha = 0.6f))
+                            ComicDivider(dashed = true)
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 SpecItem(NyawitStrings.DETAIL_PLATFORM, app.platforms.joinToString(", ") { it.label() }, c)
                                 SpecItem(
@@ -162,7 +166,7 @@ fun AppDetailDialog(
                                     },
                                 )
                             }
-                            HorizontalDivider(color = c.Border.copy(alpha = 0.6f))
+                            ComicDivider(dashed = true)
                             SpecItem(NyawitStrings.DETAIL_PACKAGE_ID, app.packageName, c)
                         }
                     }
@@ -182,62 +186,47 @@ fun AppDetailDialog(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         when (status) {
-                            AppStatus.INSTALLED -> Button(
+                            AppStatus.INSTALLED -> ComicButton(
+                                text = "JALANKAN!",
                                 onClick = { onOpen(); onDismiss() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = c.Primary,
-                                    contentColor = c.OnPrimary,
-                                ),
-                                border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                            ) { Text("JALANKAN! ➔", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
+                                variant = ComicButtonVariant.PRIMARY,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                            )
 
-                            AppStatus.UPDATE_AVAILABLE -> Button(
+                            AppStatus.UPDATE_AVAILABLE -> ComicButton(
+                                text = "PERBARUI!",
                                 onClick = { onUpdate(); onDismiss() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = c.Warning,
-                                    contentColor = c.OnWarning,
-                                ),
-                                border = BorderStroke(2.dp, if (c.isDark) c.Warning else Color(0xFF0F172A)),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                            ) { Text("PERBARUI! ➔", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
+                                variant = ComicButtonVariant.WARNING,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                            )
 
-                            else -> Button(
+                            else -> ComicButton(
+                                text = "PASANG SEKARANG!",
                                 onClick = { onInstall(); onDismiss() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = c.Primary,
-                                    contentColor = c.OnPrimary,
-                                ),
-                                border = BorderStroke(2.dp, if (c.isDark) c.Primary else Color(0xFF0F172A)),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                            ) { Text("PASANG SEKARANG! ➔", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
+                                variant = ComicButtonVariant.PRIMARY,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                            )
                         }
                         if (status == AppStatus.INSTALLED || status == AppStatus.UPDATE_AVAILABLE) {
-                            Button(
+                            ComicButton(
+                                text = "HAPUS!",
                                 onClick = { onUninstall(); onDismiss() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = c.Danger.copy(alpha = 0.15f),
-                                    contentColor = c.Danger,
-                                ),
-                                border = BorderStroke(2.dp, c.Danger),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                            ) { Text("HAPUS! ✕", style = NyawitType.Caption, fontWeight = FontWeight.Black) }
+                                variant = ComicButtonVariant.DANGER,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                            )
                         }
                         Spacer(Modifier.weight(1f))
-                        Button(
+                        ComicButton(
+                            text = NyawitStrings.BTN_CLOSE,
                             onClick = onDismiss,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = c.SurfaceRaised,
-                                contentColor = c.Text,
-                            ),
-                            border = BorderStroke(2.dp, c.BorderHighlight),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                        ) { Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, fontWeight = FontWeight.Bold) }
+                            variant = ComicButtonVariant.SECONDARY,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Bold),
+                        )
                     }
                 }
             }

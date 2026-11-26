@@ -59,7 +59,8 @@ import dev.nyawit.launcher.core.platform.localCatalogOverride
 import dev.nyawit.launcher.core.ui.BackHandler
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
-import dev.nyawit.launcher.core.ui.ComicHalftonePattern
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
@@ -615,11 +616,11 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                             Spacer(Modifier.height(6.dp))
                             Text(error ?: "", style = NyawitType.Caption, color = c.Muted)
                             Spacer(Modifier.height(18.dp))
-                            Button(
+                            ComicButton(
+                                text = NyawitStrings.BTN_RETRY,
                                 onClick = { error = null; loading = true; reloadKey++ },
-                                colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
-                                shape = RoundedCornerShape(10.dp),
-                            ) { Text(NyawitStrings.BTN_RETRY) }
+                                variant = ComicButtonVariant.PRIMARY,
+                            )
                         }
                         visibleApps.isEmpty() -> EmptyState()
                         else -> {
