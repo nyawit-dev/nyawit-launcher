@@ -35,8 +35,8 @@ internal fun checksumMatches(downloadUrl: String, file: File): Boolean {
     var connection: HttpURLConnection? = null
     return try {
         connection = URI("$downloadUrl.sha256").toURL().openConnection() as HttpURLConnection
-        connection.connectTimeout = 10000
-        connection.readTimeout = 10000
+        connection.connectTimeout = 3000
+        connection.readTimeout = 3000
         if (connection.responseCode !in 200..299) return true
         val expected = connection.inputStream.bufferedReader().use { it.readText() }
             .trim().split(Regex("\\s+")).firstOrNull().orEmpty()

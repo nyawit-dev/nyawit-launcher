@@ -68,6 +68,7 @@ import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
 import dev.nyawit.launcher.feature.catalog.data.GitHubCatalog
 import dev.nyawit.launcher.feature.install.InstallRequest
+import dev.nyawit.launcher.feature.install.cleanupDownloadedFiles
 import dev.nyawit.launcher.feature.install.downloadedInstallerPath
 import dev.nyawit.launcher.feature.install.installApp
 import dev.nyawit.launcher.feature.install.uninstallApp
@@ -143,6 +144,12 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val searchFocus = remember { FocusRequester() }
     val initialTvFocus = remember { FocusRequester() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.Default) {
+            cleanupDownloadedFiles(platformContext)
+        }
+    }
 
     LaunchedEffect(page) {
         if (page == AppPage.APPS && profile.kind == ScreenKind.TV) {
@@ -266,6 +273,11 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         ) { ok, msg ->
             busyApps = busyApps - app.fullName
             progress = progress - app.fullName
+            if (ok) {
+                scope.launch(Dispatchers.Default) {
+                    cleanupDownloadedFiles(platformContext)
+                }
+            }
             scope.launch {
                 val installed = withContext(Dispatchers.Default) {
                     installedVersion(app.packageName, platformContext, app.name)
@@ -312,6 +324,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     version = selected.third,
                     registryKey = app.packageName,
                     platformContext = platformContext,
+                    appName = app.name,
                 ),
             )
         }

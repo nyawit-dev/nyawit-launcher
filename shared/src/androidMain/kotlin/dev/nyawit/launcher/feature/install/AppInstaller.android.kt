@@ -48,8 +48,8 @@ private fun checksumMatches(downloadUrl: String, file: File): Boolean {
     var connection: HttpURLConnection? = null
     return try {
         connection = URI("$downloadUrl.sha256").toURL().openConnection() as HttpURLConnection
-        connection.connectTimeout = 10000
-        connection.readTimeout = 10000
+        connection.connectTimeout = 3000
+        connection.readTimeout = 3000
         if (connection.responseCode !in 200..299) {
             connection.errorStream?.close()
             return true
@@ -137,13 +137,17 @@ private fun fileProviderAuthority(context: Context): String {
 private class InstallResultReceiver(
     private val sessionId: Int,
     private val action: String,
+    private val file: File?,
     private val onDone: (Boolean, String) -> Unit,
 ) : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != action) return
         if (intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1) != sessionId) return
         when (val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
-            PackageInstaller.STATUS_SUCCESS -> onDone(true, "Pemasangan berhasil")
+            PackageInstaller.STATUS_SUCCESS -> {
+                runCatching { file?.delete() }
+                onDone(true, "Pemasangan berhasil")
+            }
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 @Suppress("DEPRECATION")
                 val confirm: Intent? = intent.getParcelableExtra(Intent.EXTRA_INTENT)
@@ -185,7 +189,7 @@ private fun installWithPackageInstaller(context: Context, file: File, onDone: (B
             }
             session.fsync(out)
         }
-        receiver = InstallResultReceiver(sessionId, action) { ok, msg ->
+        receiver = InstallResultReceiver(sessionId, action, file) { ok, msg ->
             mainHandler.removeCallbacks(timeout)
             if (finished.compareAndSet(false, true)) {
                 runCatching { context.unregisterReceiver(receiver) }
@@ -329,6 +333,10 @@ actual fun installApp(
                             if (total > 0) {
                                 val fraction = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
                                 onMain { onProgress(fraction) }
+                            } else {
+                                val mb = written / (1024 * 1024f)
+                                val fraction = (mb / (mb + 10f)).coerceIn(0.05f, 0.95f)
+                                onMain { onProgress(fraction) }
                             }
                         }
                     }
@@ -377,4 +385,17 @@ actual fun installApp(
             connection?.disconnect()
         }
     }.start()
+}
+
+actual fun cleanupDownloadedFiles(platformContext: Any?) {
+    val context = platformContext as? Context ?: return
+    try {
+        val files = context.filesDir.listFiles() ?: return
+        val now = System.currentTimeMillis()
+        for (file in files) {
+            if (file.name.endsWith(".part") && (now - file.lastModified() > 30 * 60 * 1000L)) {
+                file.delete()
+            }
+        }
+    } catch (_: Throwable) {}
 }

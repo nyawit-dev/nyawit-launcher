@@ -13,6 +13,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeSource
 
 private val catalogJson = Json { ignoreUnknownKeys = true }
 
@@ -385,12 +387,22 @@ class GitHubCatalog(
         return combined
     }
 
+    private val releaseTagCache = mutableMapOf<String, Pair<String?, TimeSource.Monotonic.ValueTimeMark>>()
+
     fun close() { client.close() }
 
-    suspend fun latestReleaseTag(fullName: String): String? = try {
-        val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
-        release.tag.ifBlank { null }
-    } catch (_: Throwable) { null }
+    suspend fun latestReleaseTag(fullName: String, forceRefresh: Boolean = false): String? {
+        val cached = releaseTagCache[fullName]
+        if (!forceRefresh && cached != null && cached.second.elapsedNow() < 5.minutes) {
+            return cached.first
+        }
+        val tag = try {
+            val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
+            release.tag.ifBlank { null }
+        } catch (_: Throwable) { null }
+        releaseTagCache[fullName] = tag to TimeSource.Monotonic.markNow()
+        return tag
+    }
 
     suspend fun latestApkUrl(fullName: String): String? = try {
         val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()

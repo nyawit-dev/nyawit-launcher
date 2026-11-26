@@ -8,3 +8,12 @@ actual fun platformKey(): String {
         else -> "linux"
     }
 }
+
+actual fun platformArch(): String {
+    val arch = System.getProperty("os.arch")?.lowercase().orEmpty()
+    return when {
+        arch.contains("aarch64") || arch.contains("arm64") -> "arm64"
+        arch.contains("64") || arch.contains("x86_64") || arch.contains("amd64") -> "x64"
+        else -> "x86"
+    }
+}

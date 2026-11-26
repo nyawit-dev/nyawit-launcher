@@ -1,9 +1,11 @@
 package dev.nyawit.launcher.feature.install
 
 import dev.nyawit.launcher.BuildConfig
-import dev.nyawit.launcher.core.platform.checksumMatches
 import dev.nyawit.launcher.core.platform.DesktopLog
+import dev.nyawit.launcher.core.platform.checksumMatches
+import dev.nyawit.launcher.core.platform.invalidateNativeRegistryCache
 import dev.nyawit.launcher.core.platform.launcherHome
+import dev.nyawit.launcher.core.platform.terminateAppProcesses
 import java.awt.Desktop
 import java.awt.EventQueue
 import java.io.File
@@ -19,7 +21,7 @@ private val NATIVE_EXTENSIONS = setOf("msi", "exe", "dmg", "pkg", "deb", "rpm", 
 private fun safeFileName(fileName: String) =
     fileName.replace(Regex("[^A-Za-z0-9._-]"), "_")
 
-private fun downloadDir(): File = launcherHome().resolve("downloads").apply { mkdirs() }
+internal fun downloadDir(): File = launcherHome().resolve("downloads").apply { mkdirs() }
 
 actual fun downloadedInstallerPath(request: InstallRequest): String =
     File(downloadDir(), safeFileName(request.fileName)).absolutePath
@@ -27,7 +29,7 @@ actual fun downloadedInstallerPath(request: InstallRequest): String =
 private enum class InstallerLaunch {
     /** Installer selesai dipasang tanpa interaksi (silent). */
     SILENT,
-    /** Installer dibuka; pengguna harus menyelesaikan konfirmasi. */
+    /** Installer dibuka; pengguna menyelesaikan wizard pemasangan. */
     MANUAL,
     /** Installer gagal dibuka sama sekali. */
     FAILED,
@@ -40,88 +42,95 @@ private fun openWithDesktop(file: File): InstallerLaunch = try {
     InstallerLaunch.FAILED
 }
 
+private fun runPowershell(command: String, timeoutMinutes: Long = 5): Int = try {
+    val process = ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
+        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+        .redirectError(ProcessBuilder.Redirect.DISCARD)
+        .start()
+    val finished = process.waitFor(timeoutMinutes, TimeUnit.MINUTES)
+    if (finished) process.exitValue() else {
+        process.destroyForcibly()
+        -1
+    }
+} catch (_: Throwable) {
+    -1
+}
+
+private fun runPowershellAsync(command: String): Boolean = try {
+    ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
+        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+        .redirectError(ProcessBuilder.Redirect.DISCARD)
+        .start()
+    true
+} catch (_: Throwable) {
+    false
+}
+
 /**
- * Installer per-machine (MSI jpackage) menolak install tanpa hak admin (Error 1925).
- * ProcessBuilder tidak bisa memicu UAC, jadi minta ShellExecute via PowerShell dengan verb RunAs.
+ * Menjalankan installer native di desktop.
+ * Di Windows:
+ * - MSI: dijalankan elevated dengan REBOOT=ReallySuppress /norestart.
+ * - EXE: dicoba silent dengan flags non-konflik, jika interaktif langsung dibuka tanpa memblokir thread.
  */
-private fun runElevated(file: File): InstallerLaunch {
-    val isMsi = file.extension.equals("msi", true)
-    val command = if (isMsi) {
-        "Start-Process -FilePath 'msiexec' -ArgumentList @('/i', '${file.absolutePath}', '/norestart') -Verb RunAs -Wait"
-    } else {
-        "Start-Process -FilePath '${file.absolutePath}' -Verb RunAs -Wait"
-    }
-    val process = try {
-        ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
-            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .start()
-    } catch (_: Throwable) {
-        return InstallerLaunch.FAILED
-    }
-    val finished = try {
-        process.waitFor(10, TimeUnit.MINUTES)
-    } catch (_: Throwable) {
-        false
-    }
-    if (!finished) {
-        process.destroyForcibly()
-        return InstallerLaunch.FAILED
-    }
-    return if (process.exitValue() == 0) InstallerLaunch.MANUAL else InstallerLaunch.FAILED
-}
-
-private fun fallbackInstaller(file: File): InstallerLaunch {
-    val os = System.getProperty("os.name").lowercase()
-    return if (os.contains("win")) runElevated(file) else openWithDesktop(file)
-}
-
-private fun silentSucceeded(exitCode: Int, ext: String): Boolean = when (ext) {
-    // MSI: 0 sukses, 3010 sukses tapi perlu restart, 1641 sukses + restart dimulai.
-    "msi" -> exitCode == 0 || exitCode == 3010 || exitCode == 1641
-    else -> exitCode == 0
-}
-
-/** Menjalankan installer silent dan menunggu hasilnya. Fallback membuka installer bila gagal. */
-private fun runSilentInstaller(command: List<String>, file: File): InstallerLaunch {
-    val process = try {
-        ProcessBuilder(command)
-            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .start()
-    } catch (_: Throwable) {
-        return fallbackInstaller(file)
-    }
-    val finished = try {
-        process.waitFor(10, TimeUnit.MINUTES)
-    } catch (_: Throwable) {
-        false
-    }
-    if (!finished) {
-        process.destroyForcibly()
-        return fallbackInstaller(file)
-    }
-    return if (silentSucceeded(process.exitValue(), file.extension.lowercase())) {
-        InstallerLaunch.SILENT
-    } else {
-        // Exit code gagal (mis. butuh hak admin) — minta elevasi UAC.
-        fallbackInstaller(file)
-    }
-}
-
-/** Menjalankan installer native. Di Windows dijalankan silent agar langsung terpasang. */
 private fun openNativeInstaller(file: File): InstallerLaunch {
     val os = System.getProperty("os.name").lowercase()
     val ext = file.extension.lowercase()
+    val path = file.absolutePath.replace("'", "''")
+
     return when {
-        // /quiet: tanpa UI, /norestart: jangan reboot otomatis.
-        os.contains("win") && ext == "msi" -> runSilentInstaller(
-            listOf("msiexec", "/i", file.absolutePath, "/quiet", "/norestart"), file,
-        )
-        // Flag tambahan diabaikan oleh installer yang tidak mendukungnya.
-        os.contains("win") && ext == "exe" -> runSilentInstaller(
-            listOf(file.absolutePath, "/S", "/VERYSILENT", "/NORESTART"), file,
-        )
+        os.contains("win") && ext == "msi" -> {
+            // Coba silent elevated MSI terlebih dahulu dengan menyupresi reboot secara total
+            DesktopLog.debug("Install", "Menjalankan MSI installer elevated silent: $path")
+            val psSilent = "Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', '$path', '/qn', '/norestart', 'REBOOT=ReallySuppress') -Verb RunAs -Wait -PassThru"
+            val exitCode = runPowershell(psSilent, timeoutMinutes = 5)
+            DesktopLog.debug("Install", "Hasil MSI silent exit code: $exitCode")
+
+            if (exitCode == 0 || exitCode == 3010 || exitCode == 1641) {
+                runCatching { file.delete() }
+                InstallerLaunch.SILENT
+            } else {
+                // Fallback: Luncurkan wizard MSI elevated interaktif tanpa memblokir thread 10 menit.
+                // Hapus berkas installer otomatis di latar belakang setelah wizard ditutup pengguna.
+                DesktopLog.debug("Install", "Membuka wizard MSI interaktif elevated: $path")
+                val psGui = "Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', '$path', '/norestart', 'REBOOT=ReallySuppress') -Verb RunAs -Wait; Remove-Item -LiteralPath '$path' -Force -ErrorAction SilentlyContinue"
+                if (runPowershellAsync(psGui)) InstallerLaunch.MANUAL else openWithDesktop(file)
+            }
+        }
+
+        os.contains("win") && ext == "exe" -> {
+            DesktopLog.debug("Install", "Menjalankan EXE installer: $path")
+            // Cek tipe installer: Inno Setup vs NSIS
+            val isLikelyInno = file.name.contains("setup", ignoreCase = true)
+            val psSilent = if (isLikelyInno) {
+                "Start-Process -FilePath '$path' -ArgumentList @('/VERYSILENT', '/NORESTART', '/SP-', '/SUPPRESSMSGBOXES') -Wait -PassThru"
+            } else {
+                "Start-Process -FilePath '$path' -ArgumentList @('/S', '/NORESTART') -Wait -PassThru"
+            }
+            val exitCode = runPowershell(psSilent, timeoutMinutes = 3)
+            DesktopLog.debug("Install", "Hasil EXE silent exit code: $exitCode")
+
+            if (exitCode == 0 || exitCode == 3010) {
+                runCatching { file.delete() }
+                InstallerLaunch.SILENT
+            } else {
+                // Luncurkan wizard EXE interaktif dengan elevasi jika diperlukan.
+                // Hapus berkas installer otomatis di latar belakang setelah wizard ditutup pengguna.
+                val psGui = "Start-Process -FilePath '$path' -Verb RunAs -Wait; Remove-Item -LiteralPath '$path' -Force -ErrorAction SilentlyContinue"
+                if (runPowershellAsync(psGui)) InstallerLaunch.MANUAL else openWithDesktop(file)
+            }
+        }
+
+        os.contains("linux") && ext == "deb" -> {
+            val process = try {
+                ProcessBuilder("pkexec", "dpkg", "-i", file.absolutePath).start()
+            } catch (_: Throwable) { null }
+            val ok = process?.waitFor(60, TimeUnit.SECONDS) == true && process.exitValue() == 0
+            if (ok) {
+                runCatching { file.delete() }
+                InstallerLaunch.SILENT
+            } else openWithDesktop(file)
+        }
+
         else -> openWithDesktop(file)
     }
 }
@@ -164,15 +173,15 @@ actual fun installApp(
                 val temp = File(downloadDir(), "$safeName.part")
                 connection = URI(request.url).toURL().openConnection() as HttpURLConnection
                 connection.instanceFollowRedirects = true
-                connection.connectTimeout = 15000
-                connection.readTimeout = 60000
+                connection.connectTimeout = 10000
+                connection.readTimeout = 30000
                 val code = connection.responseCode
                 if (code !in 200..299) {
                     throw IllegalStateException("HTTP $code")
                 }
                 connection.inputStream.use { input ->
                     FileOutputStream(temp).use { output ->
-                        val buffer = ByteArray(16 * 1024)
+                        val buffer = ByteArray(32 * 1024)
                         var read: Int
                         var written = 0L
                         val total = connection.contentLengthLong
@@ -186,6 +195,11 @@ actual fun installApp(
                             written += read
                             if (total > 0) {
                                 val p = (written.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                                EventQueue.invokeLater { onProgress(p) }
+                            } else {
+                                // Jika ukuran tidak dilaporkan server (chunked), tampilkan progres dinamis agar UI aktif
+                                val mb = written / (1024 * 1024f)
+                                val p = (mb / (mb + 10f)).coerceIn(0.05f, 0.95f)
                                 EventQueue.invokeLater { onProgress(p) }
                             }
                         }
@@ -202,19 +216,67 @@ actual fun installApp(
                 throw IllegalStateException("Checksum SHA-256 tidak cocok — unduhan dibatalkan")
             }
 
-            // Installer native (.msi/.exe/.deb/.rpm/.dmg/.pkg/.apk): serahkan ke OS.
+            // Hentikan proses lama aplikasi ini jika sedang berjalan agar file biner tidak terkunci saat pembaruan/instalasi
+            val targetAppName = request.appName ?: safeName.substringBefore('-').substringBefore('.')
+            terminateAppProcesses(null, null, targetAppName)
+
+            val os = System.getProperty("os.name").lowercase()
+            // Jika ini pembaruan mandiri launcher sendiri (self-update):
+            // Proses launcher yang sedang berjalan saat ini mengunci berkas .cfg (nyawit-launcher.cfg) dan runtime.
+            // Gunakan skrip terpisah yang memberi jeda agar proses ini keluar terlebih dahulu sebelum installer menulis berkas .cfg.
+            if (request.restartAfterInstall && os.contains("win")) {
+                val pid = ProcessHandle.current().pid()
+                val scriptFile = File(System.getProperty("java.io.tmpdir"), "nyawit_self_update.bat")
+                val installerPath = target.absolutePath.replace("'", "''")
+                val isMsi = target.extension.equals("msi", ignoreCase = true)
+                val installCmd = if (isMsi) {
+                    "msiexec.exe /i \"$installerPath\" /qn /norestart REBOOT=ReallySuppress"
+                } else {
+                    "\"$installerPath\" /VERYSILENT /NORESTART"
+                }
+
+                scriptFile.writeText(
+                    "@echo off\r\n" +
+                    "timeout /t 2 /nobreak > nul\r\n" +
+                    "taskkill /F /PID $pid > nul 2>&1\r\n" +
+                    "$installCmd\r\n" +
+                    "del \"$installerPath\" > nul 2>&1\r\n" +
+                    "del \"%~f0\" > nul 2>&1\r\n" +
+                    "exit\r\n"
+                )
+
+                DesktopLog.debug("Install", "Meluncurkan skrip self-update launcher: ${scriptFile.absolutePath}")
+                ProcessBuilder("cmd.exe", "/c", "start", "/min", scriptFile.absolutePath).start()
+
+                EventQueue.invokeLater {
+                    onResult(true, "Memasang pembaruan launcher... Aplikasi akan dimulai ulang.")
+                }
+                Thread {
+                    Thread.sleep(800)
+                    kotlin.system.exitProcess(0)
+                }.start()
+                return@Thread
+            }
+
+            // Jalankan installer native (.msi/.exe/.deb/.rpm/.dmg/.pkg/.apk)
             val launch = openNativeInstaller(target)
+            invalidateNativeRegistryCache()
             DesktopLog.debug("Install", "Hasil peluncuran installer ${target.name}: $launch")
+
             when (launch) {
-                InstallerLaunch.SILENT -> EventQueue.invokeLater {
-                    onResult(
-                        true,
-                        if (request.restartAfterInstall) {
-                            "Pembaruan ${target.name} berhasil dipasang — restart launcher untuk menerapkannya"
-                        } else {
-                            "${target.name} berhasil dipasang"
-                        },
-                    )
+                InstallerLaunch.SILENT -> {
+                    // Berkas installer telah terpasang secara silent, hapus untuk menghemat ruang disk
+                    runCatching { target.delete() }
+                    EventQueue.invokeLater {
+                        onResult(
+                            true,
+                            if (request.restartAfterInstall) {
+                                "Pembaruan ${target.name} berhasil dipasang — restart launcher untuk menerapkannya"
+                            } else {
+                                "${target.name} berhasil dipasang"
+                            },
+                        )
+                    }
                 }
 
                 InstallerLaunch.MANUAL -> EventQueue.invokeLater {
@@ -237,6 +299,39 @@ actual fun installApp(
     }.start()
 }
 
-
 actual fun canInstallPackages(platformContext: Any?): Boolean = true
 actual fun openInstallPermissionSettings(platformContext: Any?): Boolean = false
+
+actual fun cleanupDownloadedFiles(platformContext: Any?) {
+    try {
+        val dir = downloadDir()
+        val files = dir.listFiles() ?: return
+        val now = System.currentTimeMillis()
+        for (file in files) {
+            // Hapus file part yang usang (> 30 menit)
+            if (file.name.endsWith(".part") && (now - file.lastModified() > 30 * 60 * 1000L)) {
+                file.delete()
+                continue
+            }
+            // Hapus installer launcher versi lama
+            val nameLower = file.name.lowercase()
+            if (nameLower.contains("nyawit-launcher") || nameLower.contains("nyawitlauncher")) {
+                if (!nameLower.contains(BuildConfig.VERSION.lowercase())) {
+                    file.delete()
+                }
+            }
+        }
+    } catch (_: Throwable) {}
+}
+
+fun cleanupDownloadedInstallersForApp(displayName: String, packageName: String) {
+    runCatching {
+        val dir = downloadDir()
+        val nameClean = displayName.lowercase().replace(Regex("[^a-z0-9]"), "")
+        val pkgClean = packageName.substringAfterLast('.').lowercase().replace(Regex("[^a-z0-9]"), "")
+        dir.listFiles()?.filter { file ->
+            val f = file.name.lowercase().replace(Regex("[^a-z0-9]"), "")
+            (nameClean.isNotBlank() && f.contains(nameClean)) || (pkgClean.isNotBlank() && f.contains(pkgClean))
+        }?.forEach { it.delete() }
+    }
+}

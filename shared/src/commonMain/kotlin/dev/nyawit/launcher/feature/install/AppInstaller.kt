@@ -12,6 +12,7 @@ data class InstallRequest(
     val restartAfterInstall: Boolean = false,
     /** Path installer yang sudah terunduh; bila ada, unduhan dilewati (dipakai tombol Lanjutkan). */
     val filePath: String? = null,
+    val appName: String? = null,
 )
 
 /** Path tempat installer disimpan. Dipakai UI untuk melanjutkan pemasangan tanpa mengunduh ulang. */
@@ -30,3 +31,6 @@ expect fun installApp(
     shouldCancel: () -> Boolean,
     onResult: (Boolean, String) -> Unit,
 )
+
+/** Membersihkan sisa installer atau berkas sementara yang sudah selesai digunakan. */
+expect fun cleanupDownloadedFiles(platformContext: Any? = null)
