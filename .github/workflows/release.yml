@@ -174,9 +174,6 @@ jobs:
         run: |
           VERSION="${{ inputs.tag || github.ref_name }}"
           echo "RELEASE_VERSION=${VERSION#v}" >> "$GITHUB_ENV"
-      - name: Generate wizard art
-        shell: bash
-        run: node scripts/generate_wizard_art.js
       - name: Build Windows app image
         shell: bash
         run: ./gradlew --no-daemon :desktopApp:createDistributable -PreleaseVersion=$RELEASE_VERSION --stacktrace

@@ -73,9 +73,12 @@ Ikon per aplikasi (PNG transparan 512×512, tajam untuk dialog maupun kartu kata
 | `installer/windows/wizard-image.bmp` | 336×643 | Gambar panel kiri wizard Inno Setup | ✅ |
 | `installer/windows/wizard-small-image.png` | 294×294 | Ikon kecil di kanan atas wizard | ✅ |
 
-Keduanya dihasilkan ulang dengan `node scripts/generate_wizard_art.js` dan dipakai oleh
-`installer/windows/nyawit-launcher.iss`. Workflow Release menjalankan generator ini sebelum
-kompilasi ISCC, jadi aset tidak perlu diedit manual.
+Keduanya adalah aset statis yang disiapkan manual dan dipakai oleh
+`installer/windows/nyawit-launcher.iss`. Workflow Release **tidak** mengubah keduanya, jadi
+perubahan gambar cukup dengan mengganti file di folder tersebut.
+
+`wizard-image.bmp` wajib berformat BMP 24-bit dengan rasio 164:314; ukuran 336×643 dipakai
+agar tajam di DPI tinggi. `wizard-small-image.png` harus persegi.
 
 ## Script Generator
 
@@ -83,6 +86,5 @@ Aset otomatis dihasilkan ulang melalui script di folder `scripts/`:
 - `scripts/render_helper.js` — Helper rendering headless browser beresolusi tinggi. Mencari Edge/Chrome otomatis; bisa ditimpa dengan `NYAWIT_BROWSER_PATH`.
 - `scripts/generate_brand_and_icons.js` — Wordmark baru, ikon aplikasi katalog, dan UI ilustrasi.
 - `scripts/process_icon.js` — Ikon launcher bersih untuk Android/desktop dan banner TV dari `ic_launcher-playstore.png`.
-- `scripts/generate_wizard_art.js` — Gambar wizard installer Windows (BMP 336×643 + PNG 294×294).
 - `scripts/generate_store_and_docs.js` — Ikon Play Store, feature graphic, promo, dan social preview.
 - `scripts/generate_screenshots.js` — Seluruh screenshot Phone, Tablet, Android TV, dan mockup desktop rilis (Windows, Linux, macOS).
