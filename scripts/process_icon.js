@@ -179,7 +179,6 @@ async function main() {
     { path: path.join(ROOT_DIR, "shared", "src", "commonMain", "composeResources", "drawable", "app_icon.png"), size: 512 },
     { path: path.join(ROOT_DIR, "desktopApp", "src", "desktopMain", "resources", "nyawit.png"), size: 512 },
     { path: path.join(ROOT_DIR, "desktopApp", "icons", "linux", "nyawit.png"), size: 512 },
-    { path: "C:/Users/ringga/.gemini/antigravity-cli/brain/7a45cf05-e3fd-40fd-8ec9-17ebd9d2c7ba/refined_icon.png", size: 512 },
   ];
 
   for (const t of targets) {
@@ -188,9 +187,6 @@ async function main() {
 
   const tvBannerPath = path.join(ROOT_DIR, "androidApp", "src", "main", "res", "drawable-nodpi", "tv_banner.png");
   await generateTvBanner(tvBannerPath);
-
-  const artifactBannerPath = "C:/Users/ringga/.gemini/antigravity-cli/brain/7a45cf05-e3fd-40fd-8ec9-17ebd9d2c7ba/refined_tv_banner.png";
-  await generateTvBanner(artifactBannerPath);
 
   console.log("All icons and banners successfully generated!");
 }

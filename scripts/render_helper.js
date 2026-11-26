@@ -1,9 +1,39 @@
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const EDGE_PATH = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-const ROOT_DIR = process.cwd();
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const BROWSER_CANDIDATES = [
+  process.env.NYAWIT_BROWSER_PATH,
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+].filter(Boolean);
+
+function resolveBrowser() {
+  const found = BROWSER_CANDIDATES.find((candidate) => {
+    try {
+      return fs.existsSync(candidate);
+    } catch {
+      return false;
+    }
+  });
+  if (!found) {
+    throw new Error(
+      "Browser headless tidak ditemukan. Pasang Edge/Chrome atau set NYAWIT_BROWSER_PATH ke executable browser."
+    );
+  }
+  return found;
+}
+
+const BROWSER_PATH = resolveBrowser();
 
 // Helper to ensure directory exists
 function ensureDir(filePath) {
@@ -13,7 +43,7 @@ function ensureDir(filePath) {
   }
 }
 
-// Render HTML template via Headless Edge to PNG
+// Render HTML template via headless browser to PNG
 function renderHtmlToPng(htmlContent, outputPath, width, height, transparent = true) {
   return new Promise((resolve, reject) => {
     ensureDir(outputPath);
@@ -30,7 +60,7 @@ function renderHtmlToPng(htmlContent, outputPath, width, height, transparent = t
       `file:///${tempHtmlPath.replace(/\\/g, "/")}`
     ];
 
-    const proc = spawn(EDGE_PATH, args);
+    const proc = spawn(BROWSER_PATH, args);
 
     proc.on("error", (err) => {
       try { fs.unlinkSync(tempHtmlPath); } catch {}
@@ -47,7 +77,7 @@ function renderHtmlToPng(htmlContent, outputPath, width, height, transparent = t
           reject(new Error(`Generated file is empty: ${outputPath}`));
         }
       } else {
-        reject(new Error(`Edge exited with code ${code} but output file was not found: ${outputPath}`));
+        reject(new Error(`Browser exited with code ${code} but output file was not found: ${outputPath}`));
       }
     });
   });
