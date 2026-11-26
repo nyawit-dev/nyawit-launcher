@@ -4,6 +4,7 @@
 
 #define MyAppName "Nyawit Launcher"
 #define MyAppPublisher "Nyawit"
+#define AppImageDir "..\..\desktopApp\build\compose\binaries\main\app\nyawit-launcher"
 
 [Setup]
 AppId={{C723E301-F7DC-4ABA-98B8-FC41B467DFE2}
@@ -11,8 +12,9 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+UninstallDisplayName={#MyAppName}
 DefaultDirName={userpf}\{#MyAppName}
-DefaultGroupName={#MyAppPublisher}
+DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 AllowNoIcons=yes
@@ -50,7 +52,7 @@ ButtonFinish=&Selesai
 ButtonCancel=Batal
 
 [Files]
-Source: "..\..\desktopApp\build\compose\binaries\main\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#AppImageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\nyawit-launcher.exe"; IconFilename: "{app}\nyawit-launcher.exe"

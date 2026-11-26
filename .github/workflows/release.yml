@@ -180,6 +180,11 @@ jobs:
       - name: Build Windows app image
         shell: bash
         run: ./gradlew --no-daemon :desktopApp:createDistributable -PreleaseVersion=$RELEASE_VERSION --stacktrace
+      - name: Verify app image executable path
+        shell: bash
+        run: |
+          EXE="desktopApp/build/compose/binaries/main/app/nyawit-launcher/nyawit-launcher.exe"
+          test -f "$EXE" || { echo "::error::$EXE tidak ditemukan — path di nyawit-launcher.iss harus disesuaikan"; exit 1; }
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
