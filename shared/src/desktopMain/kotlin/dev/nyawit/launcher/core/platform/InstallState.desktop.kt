@@ -15,14 +15,14 @@ actual fun installedVersion(
     // Versi launcher sendiri harus mengikuti biner yang sedang berjalan.
     // Registry lama (mis. sisa installer JAR 1.2.7) tidak boleh menimpa versi build.
     if (packageName == BuildConfig.APP_ID) return BuildConfig.VERSION
-    readRegistry(packageName).firstOrNull()?.let { return it }
-    val native = findNativeApp(displayName ?: packageName, packageName) ?: return null
-    // Pastikan jika path executable diketahui, file executable benar-benar ada di disk
-    if (native.executable != null && !java.io.File(native.executable).exists()) {
-        DesktopLog.debug("Registry", "Executable '${native.executable}' tidak ada di disk — dianggap belum terpasang")
-        return null
+    val native = findNativeApp(displayName ?: packageName, packageName)
+    if (native != null) {
+        // Pastikan jika path executable diketahui, file executable benar-benar ada di disk
+        if (native.executable == null || java.io.File(native.executable).exists()) {
+            return native.version ?: "1.0.0"
+        }
     }
-    return native.version ?: "1.0.0"
+    return readRegistry(packageName).firstOrNull()
 }
 
 actual fun launchInstalledApp(

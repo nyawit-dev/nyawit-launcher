@@ -208,9 +208,34 @@ private fun windowsApp(displayName: String): NativeAppInfo? {
     appsMap[wanted]?.let { return it }
 
     // 2. Pencarian substring/token
-    return appsMap.entries.firstOrNull { (k, _) ->
+    val matched = appsMap.entries.firstOrNull { (k, _) ->
         (k.length >= 3 && wanted.contains(k)) || (wanted.length >= 3 && k.contains(wanted))
     }?.value
+    if (matched != null) return matched
+
+    // 3. Fallback: telusuri direktori instalasi standar Windows
+    val commonDirs = listOfNotNull(
+        System.getenv("LOCALAPPDATA")?.let { File(it, "Programs") },
+        System.getenv("ProgramFiles")?.let { File(it) },
+        System.getenv("ProgramFiles(x86)")?.let { File(it) },
+    )
+    for (parent in commonDirs) {
+        if (!parent.exists() || !parent.isDirectory) continue
+        val match = parent.listFiles { f ->
+            f.isDirectory && normalizedName(f.name).let { it.contains(wanted) || wanted.contains(it) }
+        }?.firstOrNull() ?: continue
+
+        val exe = executableFromLocation(match.absolutePath, displayName)
+        if (exe != null) {
+            return NativeAppInfo(
+                version = "1.0.0",
+                executable = exe,
+                installLocation = match.absolutePath,
+            )
+        }
+    }
+
+    return null
 }
 
 private fun linuxApp(displayName: String, packageName: String): NativeAppInfo? {

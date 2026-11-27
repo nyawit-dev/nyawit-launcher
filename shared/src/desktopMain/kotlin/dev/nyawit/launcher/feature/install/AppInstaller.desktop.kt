@@ -5,6 +5,7 @@ import dev.nyawit.launcher.core.platform.DesktopLog
 import dev.nyawit.launcher.core.platform.checksumMatches
 import dev.nyawit.launcher.core.platform.invalidateNativeRegistryCache
 import dev.nyawit.launcher.core.platform.launcherHome
+import dev.nyawit.launcher.core.platform.recordInstalled
 import dev.nyawit.launcher.core.platform.terminateAppProcesses
 import java.awt.Desktop
 import java.awt.EventQueue
@@ -161,15 +162,19 @@ actual fun installApp(
         return
     }
 
-    DesktopLog.debug("Install", "Mulai unduh: ${request.url} → $safeName")
+    DesktopLog.debug("Install", "Mulai unduh/pasang: ${request.url} → $safeName")
     Thread {
         var connection: HttpURLConnection? = null
         try {
             val installer = File(downloadDir(), safeName)
-            val reusable = request.filePath?.let(::File)
-                ?.takeIf { it.isFile && it.length() > 1024 }
+            val reusable = (request.filePath?.let(::File) ?: installer)
+                .takeIf { it.isFile && it.length() > 1024 }
 
-            if (reusable == null) {
+            val target = if (reusable != null && checksumMatches(request.url, reusable)) {
+                DesktopLog.debug("Install", "Menggunakan file installer yang sudah ada di disk: ${reusable.absolutePath}")
+                EventQueue.invokeLater { onProgress(1f) }
+                reusable
+            } else {
                 val temp = File(downloadDir(), "$safeName.part")
                 connection = URI(request.url).toURL().openConnection() as HttpURLConnection
                 connection.instanceFollowRedirects = true
@@ -207,14 +212,14 @@ actual fun installApp(
                 }
                 if (temp.length() < 1024) throw IllegalStateException("File installer kosong atau rusak")
                 Files.move(temp.toPath(), installer.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                if (!checksumMatches(request.url, installer)) {
+                    installer.delete()
+                    throw IllegalStateException("Checksum SHA-256 tidak cocok — unduhan dibatalkan")
+                }
+                installer
             }
 
-            val target = reusable ?: installer
-            DesktopLog.debug("Install", "Unduhan selesai: ${target.absolutePath} (${target.length()} byte)")
-            if (!checksumMatches(request.url, target)) {
-                target.delete()
-                throw IllegalStateException("Checksum SHA-256 tidak cocok — unduhan dibatalkan")
-            }
+            DesktopLog.debug("Install", "Berkas installer siap: ${target.absolutePath} (${target.length()} byte)")
 
             // Hentikan proses lama aplikasi ini jika sedang berjalan agar file biner tidak terkunci saat pembaruan/instalasi
             val targetAppName = request.appName ?: safeName.substringBefore('-').substringBefore('.')
@@ -265,6 +270,7 @@ actual fun installApp(
 
             when (launch) {
                 InstallerLaunch.SILENT -> {
+                    recordInstalled(request.registryKey, request.version)
                     // Berkas installer telah terpasang secara silent, hapus untuk menghemat ruang disk
                     runCatching { target.delete() }
                     EventQueue.invokeLater {
@@ -279,11 +285,14 @@ actual fun installApp(
                     }
                 }
 
-                InstallerLaunch.MANUAL -> EventQueue.invokeLater {
-                    onResult(
-                        true,
-                        "Installer ${target.name} dibuka — ikuti konfirmasi pemasangan hingga selesai",
-                    )
+                InstallerLaunch.MANUAL -> {
+                    recordInstalled(request.registryKey, request.version)
+                    EventQueue.invokeLater {
+                        onResult(
+                            true,
+                            "Installer ${target.name} dibuka — ikuti konfirmasi pemasangan hingga selesai",
+                        )
+                    }
                 }
 
                 InstallerLaunch.FAILED -> EventQueue.invokeLater {

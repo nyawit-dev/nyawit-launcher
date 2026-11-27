@@ -304,7 +304,9 @@ actual fun installApp(
         try {
             val target = File(downloadedInstallerPath(request))
             target.parentFile?.mkdirs()
-            val provided = request.filePath?.let(::File)?.takeIf { it.isFile && it.length() > 1024 }
+            val provided = (request.filePath?.let(::File) ?: target)
+                .takeIf { it.isFile && it.length() > 1024 && checksumMatches(request.url, it) }
+
             if (provided != null && provided.absolutePath != target.absolutePath) {
                 provided.copyTo(target, overwrite = true)
             }

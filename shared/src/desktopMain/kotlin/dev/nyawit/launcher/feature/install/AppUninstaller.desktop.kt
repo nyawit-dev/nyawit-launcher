@@ -3,6 +3,7 @@ package dev.nyawit.launcher.feature.install
 import dev.nyawit.launcher.core.platform.DesktopLog
 import dev.nyawit.launcher.core.platform.findNativeApp
 import dev.nyawit.launcher.core.platform.invalidateNativeRegistryCache
+import dev.nyawit.launcher.core.platform.removeInstalledRecord
 import dev.nyawit.launcher.core.platform.terminateAppProcesses
 import java.awt.EventQueue
 import java.io.File
@@ -151,6 +152,7 @@ actual fun uninstallApp(
         // Hapus cache registry agar status langsung terbarui tanpa restart
         invalidateNativeRegistryCache()
         if (ok) {
+            removeInstalledRecord(packageName)
             cleanupDownloadedInstallersForApp(displayName, packageName)
         }
 

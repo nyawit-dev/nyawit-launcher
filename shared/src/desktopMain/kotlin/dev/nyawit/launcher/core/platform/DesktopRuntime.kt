@@ -15,6 +15,18 @@ internal fun keyFile(key: String): File =
 internal fun readRegistry(key: String): List<String> =
     keyFile(key).takeIf { it.exists() }?.readLines()?.filter { it.isNotBlank() } ?: emptyList()
 
+internal fun recordInstalled(key: String, version: String) {
+    runCatching {
+        keyFile(key).writeText(version)
+    }
+}
+
+internal fun removeInstalledRecord(key: String) {
+    runCatching {
+        keyFile(key).delete()
+    }
+}
+
 internal fun sha256Of(file: File): String {
     val digest = MessageDigest.getInstance("SHA-256")
     file.inputStream().use { input ->

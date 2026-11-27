@@ -150,11 +150,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var detailApp by remember { mutableStateOf<CatalogApp?>(null) }
     var page by remember { mutableStateOf(AppPage.APPS) }
     var query by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("__ALL__") }
-    var statusFilter by remember { mutableStateOf(CatalogStatusFilter.ALL) }
-    var sortOrder by remember { mutableStateOf(CatalogSortOrder.A_TO_Z) }
     val searchFocus = remember { FocusRequester() }
-    val initialTvFocus = remember { FocusRequester() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     LaunchedEffect(Unit) {
@@ -166,7 +162,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     LaunchedEffect(page) {
         if (page == AppPage.APPS && profile.kind == ScreenKind.TV) {
             delay(200)
-            runCatching { initialTvFocus.requestFocus() }
+            runCatching { searchFocus.requestFocus() }
         }
     }
 
@@ -438,58 +434,14 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         }
     }
 
-    val favoriteCount = remember(platformMatchedApps, favoritesSet) {
-        platformMatchedApps.count { it.packageName in favoritesSet }
-    }
-
-    val categories = remember(platformMatchedApps) {
-        val raw = platformMatchedApps.map { it.category.trim() }.filter { it.isNotBlank() }.distinct().sorted()
-        listOf("__ALL__") + raw
-    }
-
-    val categoryCounts = remember(platformMatchedApps) {
-        val counts = mutableMapOf<String, Int>()
-        counts["__ALL__"] = platformMatchedApps.size
-        platformMatchedApps.forEach { app ->
-            val cat = app.category.trim()
-            counts[cat] = (counts[cat] ?: 0) + 1
-        }
-        counts
-    }
-
     val visibleApps = platformMatchedApps
         .filter { app ->
-            val appStatus = statuses[app.fullName] ?: AppStatus.UNKNOWN
-            val matchStatus = when (statusFilter) {
-                CatalogStatusFilter.ALL -> true
-                CatalogStatusFilter.FAVORITES -> app.packageName in favoritesSet
-                CatalogStatusFilter.INSTALLED -> appStatus == AppStatus.INSTALLED || appStatus == AppStatus.UPDATE_AVAILABLE
-                CatalogStatusFilter.UPDATE -> appStatus == AppStatus.UPDATE_AVAILABLE
-            }
-            val matchCategory = selectedCategory == "__ALL__" ||
-                app.category.equals(selectedCategory, ignoreCase = true)
-            val matchQuery = query.isBlank() ||
+            query.isBlank() ||
                 app.name.contains(query, true) ||
                 app.description.contains(query, true) ||
                 app.category.contains(query, true)
-            matchStatus && matchCategory && matchQuery
         }
-        .let { list ->
-            when (sortOrder) {
-                CatalogSortOrder.FAVORITES_FIRST -> list.sortedWith(
-                    compareByDescending<CatalogApp> { it.packageName in favoritesSet }
-                        .thenBy { it.name.lowercase() },
-                )
-                CatalogSortOrder.A_TO_Z -> list.sortedBy { it.name.lowercase() }
-                CatalogSortOrder.Z_TO_A -> list.sortedByDescending { it.name.lowercase() }
-                CatalogSortOrder.CATEGORY -> list.sortedWith(compareBy({ it.category.lowercase() }, { it.name.lowercase() }))
-                CatalogSortOrder.UPDATE_FIRST -> list.sortedWith(
-                    compareByDescending<CatalogApp> { statuses[it.fullName] == AppStatus.UPDATE_AVAILABLE }
-                        .thenByDescending { statuses[it.fullName] == AppStatus.INSTALLED }
-                        .thenBy { it.name.lowercase() },
-                )
-            }
-        }
+        .sortedBy { it.name.lowercase() }
 
     val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
     val isPhone = profile.kind == ScreenKind.PHONE
@@ -531,24 +483,14 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    if (categories.size > 1) {
-                        CategoryFilterChips(
-                            categories = categories,
-                            selectedCategory = selectedCategory,
-                            onSelectCategory = { selectedCategory = it },
-                            counts = categoryCounts,
-                            modifier = Modifier.weight(1f, fill = false),
-                            initialFocusRequester = initialTvFocus,
-                        )
+                    Box(Modifier.width(280.dp)) {
+                        CatalogSearchBar(query, { query = it }, searchFocus)
                     }
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Box(Modifier.width(220.dp)) {
-                            CatalogSearchBar(query, { query = it }, searchFocus)
-                        }
                         ComicBadge(
                             text = "${visibleApps.size} MODUL",
                             containerColor = c.SurfaceRaised,
@@ -653,89 +595,72 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     }
                 },
                 label = "ComicPageTransition",
+                modifier = Modifier.weight(1f).fillMaxWidth(),
             ) { targetPage ->
                 when (targetPage) {
                     AppPage.APPS -> {
-                        if (profile.kind != ScreenKind.TV) {
-                            CatalogSearchBar(query, { query = it }, searchFocus)
-
-                            Spacer(Modifier.height(10.dp))
-                            QuickFilterAndSortRow(
-                                statusFilter = statusFilter,
-                                onStatusFilterChange = { statusFilter = it },
-                                sortOrder = sortOrder,
-                                onSortOrderChange = { sortOrder = it },
-                                installedCount = installedCount,
-                                updateCount = updateCount,
-                                favoriteCount = favoriteCount,
-                            )
-
-                            if (categories.size > 1) {
-                                Spacer(Modifier.height(10.dp))
-                                CategoryFilterChips(
-                                    categories = categories,
-                                    selectedCategory = selectedCategory,
-                                    onSelectCategory = { selectedCategory = it },
-                                    counts = categoryCounts,
-                                )
+                        Column(Modifier.fillMaxSize()) {
+                            if (profile.kind != ScreenKind.TV) {
+                                CatalogSearchBar(query, { query = it }, searchFocus)
+                                Spacer(Modifier.height(14.dp))
                             }
 
-                            Spacer(Modifier.height(14.dp))
-                        }
-
-                        when {
-                            loading -> LoadingPlaceholder()
-                            error != null -> Column(
-                                Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                            ) {
-                                Text(NyawitStrings.ERROR_CATALOG_LOAD, style = NyawitType.Title, color = c.Text)
-                                Spacer(Modifier.height(6.dp))
-                                Text(error ?: "", style = NyawitType.Caption, color = c.Muted)
-                                Spacer(Modifier.height(18.dp))
-                                ComicButton(
-                                    text = NyawitStrings.BTN_RETRY,
-                                    onClick = { error = null; loading = true; reloadKey++ },
-                                    variant = ComicButtonVariant.PRIMARY,
-                                )
-                            }
-                            visibleApps.isEmpty() -> EmptyState()
-                            else -> {
-                                val showSpotlight = query.isBlank() && (selectedCategory == "__ALL__" || selectedCategory == "Semua" || selectedCategory == "All")
-                                if (responsiveScale.columns == 1) {
-                                    AppList(
-                                        apps = visibleApps,
-                                        statuses = statuses,
-                                        busyApps = busyApps,
-                                        progress = progress,
-                                        favorites = favoritesSet,
-                                        showSpotlight = showSpotlight,
-                                        selectedCategory = selectedCategory,
-                                        updateCount = updateCount,
-                                        onInstall = { install(it) },
-                                        onOpen = { open(it) },
-                                        onDetail = { detailApp = it },
-                                        onToggleFavorite = { settingsController.toggleFavorite(it.packageName) },
-                                        onCancel = { cancelInstall(it) },
-                                    )
-                                } else {
-                                    AppGrid(
-                                        columns = responsiveScale.columns,
-                                        apps = visibleApps,
-                                        statuses = statuses,
-                                        busyApps = busyApps,
-                                        progress = progress,
-                                        favorites = favoritesSet,
-                                        showSpotlight = showSpotlight,
-                                        selectedCategory = selectedCategory,
-                                        updateCount = updateCount,
-                                        onInstall = { install(it) },
-                                        onOpen = { open(it) },
-                                        onDetail = { detailApp = it },
-                                        onToggleFavorite = { settingsController.toggleFavorite(it.packageName) },
-                                        onCancel = { cancelInstall(it) },
-                                    )
+                            Box(Modifier.weight(1f).fillMaxWidth()) {
+                                when {
+                                    loading -> LoadingPlaceholder()
+                                    error != null -> Column(
+                                        Modifier.fillMaxSize(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center,
+                                    ) {
+                                        Text(NyawitStrings.ERROR_CATALOG_LOAD, style = NyawitType.Title, color = c.Text)
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(error ?: "", style = NyawitType.Caption, color = c.Muted)
+                                        Spacer(Modifier.height(18.dp))
+                                        ComicButton(
+                                            text = NyawitStrings.BTN_RETRY,
+                                            onClick = { error = null; loading = true; reloadKey++ },
+                                            variant = ComicButtonVariant.PRIMARY,
+                                        )
+                                    }
+                                    visibleApps.isEmpty() -> EmptyState()
+                                    else -> {
+                                        val showSpotlight = query.isBlank()
+                                        if (responsiveScale.columns == 1) {
+                                            AppList(
+                                                apps = visibleApps,
+                                                statuses = statuses,
+                                                busyApps = busyApps,
+                                                progress = progress,
+                                                favorites = favoritesSet,
+                                                showSpotlight = showSpotlight,
+                                                selectedCategory = "__ALL__",
+                                                updateCount = updateCount,
+                                                onInstall = { install(it) },
+                                                onOpen = { open(it) },
+                                                onDetail = { detailApp = it },
+                                                onToggleFavorite = { settingsController.toggleFavorite(it.packageName) },
+                                                onCancel = { cancelInstall(it) },
+                                            )
+                                        } else {
+                                            AppGrid(
+                                                columns = responsiveScale.columns,
+                                                apps = visibleApps,
+                                                statuses = statuses,
+                                                busyApps = busyApps,
+                                                progress = progress,
+                                                favorites = favoritesSet,
+                                                showSpotlight = showSpotlight,
+                                                selectedCategory = "__ALL__",
+                                                updateCount = updateCount,
+                                                onInstall = { install(it) },
+                                                onOpen = { open(it) },
+                                                onDetail = { detailApp = it },
+                                                onToggleFavorite = { settingsController.toggleFavorite(it.packageName) },
+                                                onCancel = { cancelInstall(it) },
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
