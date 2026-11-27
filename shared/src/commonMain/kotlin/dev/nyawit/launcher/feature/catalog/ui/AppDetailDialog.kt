@@ -118,7 +118,7 @@ fun AppDetailDialog(
                                     containerColor = if (isFavorite) c.Warning else c.SurfaceHighlight,
                                     contentColor = if (isFavorite) c.OnWarning else c.Text,
                                     borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
-                                    modifier = Modifier.clickable { onToggleFavorite() },
+                                    onClick = onToggleFavorite,
                                 )
                             }
                         }

@@ -56,6 +56,8 @@ import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicIconButton
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.ComicProgressBar
+import dev.nyawit.launcher.core.ui.ComicSound
+import dev.nyawit.launcher.core.ui.ComicSoundPlayer
 import dev.nyawit.launcher.core.ui.DownloadIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
@@ -104,9 +106,15 @@ fun AppCard(
             .fillMaxWidth()
             .padding(horizontal = 2.dp, vertical = 2.dp)
             .tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.06f)
-            .onFocusChanged { state -> isCardFocused = state.hasFocus }
-            .focusProperties { canFocus = false }
-            .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() },
+            .onFocusChanged { state -> isCardFocused = state.isFocused || state.hasFocus }
+            .clickable {
+                ComicSoundPlayer.play(ComicSound.CLICK)
+                if (status == AppStatus.INSTALLED) {
+                    onOpen()
+                } else {
+                    onDetail?.invoke()
+                }
+            },
         backgroundColor = containerColor,
         borderColor = borderColor,
         shadowColor = if (isCardFocused) c.Primary.copy(alpha = 0.55f) else null,
@@ -165,7 +173,7 @@ fun AppCard(
                             containerColor = if (isFavorite) c.Warning else c.SurfaceRaised,
                             contentColor = if (isFavorite) c.OnWarning else c.Muted,
                             borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
-                            modifier = Modifier.clickable { onToggleFavorite() },
+                            onClick = onToggleFavorite,
                         )
                     }
                 }

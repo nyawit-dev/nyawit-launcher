@@ -93,12 +93,12 @@ fun ComicButton(
 
     // Tactile push physics:
     // Normal: 0dp
-    // Hover: -0.5dp (subtle lift)
+    // Hover/Focus: -0.5dp (subtle lift)
     // Pressed: +shadowOffset (pushes fully into the shadow floor)
     val targetOffset = when {
         !isEffectivelyEnabled -> 0.dp
         isPressed -> shadowOffset
-        isHovered -> (-0.5).dp
+        isHovered || isFocused -> (-0.5).dp
         else -> 0.dp
     }
 
@@ -114,6 +114,8 @@ fun ComicButton(
         else -> c.ComicInk
     }
 
+    val effectiveBorderWidth = if (isFocused) borderWidth + 0.5.dp else borderWidth
+
     val shadowBg = if (c.isDark) Color(0xFF000000) else Color(0xFF0F172A)
     val shadowRim = when {
         isFocused || isHovered -> c.Primary
@@ -121,9 +123,7 @@ fun ComicButton(
     }
 
     Box(
-        modifier = modifier
-            .padding(bottom = shadowOffset, end = shadowOffset)
-            .onFocusChanged { isFocused = it.isFocused || it.hasFocus },
+        modifier = modifier.padding(bottom = shadowOffset, end = shadowOffset),
     ) {
         // Shadow layer
         if (variant != ComicButtonVariant.GHOST && isEffectivelyEnabled) {
@@ -132,7 +132,7 @@ fun ComicButton(
                     .matchParentSize()
                     .offset(x = shadowOffset, y = shadowOffset)
                     .background(shadowBg, shape)
-                    .border(borderWidth, shadowRim, shape),
+                    .border(effectiveBorderWidth, shadowRim, shape),
             )
         }
 
@@ -144,7 +144,8 @@ fun ComicButton(
                     if (isEffectivelyEnabled) containerColor else containerColor.copy(alpha = 0.35f),
                     shape,
                 )
-                .border(borderWidth, borderColor, shape)
+                .border(effectiveBorderWidth, borderColor, shape)
+                .onFocusChanged { state -> isFocused = state.isFocused || state.hasFocus }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -243,7 +244,7 @@ fun ComicIconButton(
     val targetOffset = when {
         !enabled -> 0.dp
         isPressed -> shadowOffset
-        isHovered -> (-0.5).dp
+        isHovered || isFocused -> (-0.5).dp
         else -> 0.dp
     }
 
@@ -258,11 +259,12 @@ fun ComicIconButton(
         else -> c.ComicInk
     }
 
+    val effectiveBorderWidth = if (isFocused) 2.5.dp else 2.dp
+
     Box(
         modifier = modifier
             .padding(bottom = shadowOffset, end = shadowOffset)
-            .size(size)
-            .onFocusChanged { isFocused = it.isFocused || it.hasFocus },
+            .size(size),
     ) {
         // Shadow
         if (enabled) {
@@ -271,7 +273,7 @@ fun ComicIconButton(
                     .matchParentSize()
                     .offset(x = shadowOffset, y = shadowOffset)
                     .background(if (c.isDark) Color(0xFF000000) else Color(0xFF0F172A), shape)
-                    .border(2.dp, if (isFocused || isHovered) c.Primary else c.ComicShadowRim, shape),
+                    .border(effectiveBorderWidth, if (isFocused || isHovered) c.Primary else c.ComicShadowRim, shape),
             )
         }
 
@@ -281,7 +283,8 @@ fun ComicIconButton(
                 .matchParentSize()
                 .offset(x = currentOffset, y = currentOffset)
                 .background(if (enabled) containerColor else containerColor.copy(alpha = 0.35f), shape)
-                .border(2.dp, borderColor, shape)
+                .border(effectiveBorderWidth, borderColor, shape)
+                .onFocusChanged { state -> isFocused = state.isFocused || state.hasFocus }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,

@@ -44,6 +44,8 @@ import dev.nyawit.launcher.core.ui.ComicButton
 import dev.nyawit.launcher.core.ui.ComicButtonVariant
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
+import dev.nyawit.launcher.core.ui.ComicSound
+import dev.nyawit.launcher.core.ui.ComicSoundPlayer
 import dev.nyawit.launcher.core.ui.GridIcon
 import dev.nyawit.launcher.core.ui.InfoIcon
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
@@ -134,7 +136,10 @@ fun AppSidebar(
                                                 if (c.isDark) Color(0xFF020617) else Color(0xFF0F172A),
                                                 RoundedCornerShape(6.dp)
                                             )
-                                            .clickable { onClose() },
+                                            .clickable {
+                                                ComicSoundPlayer.play(ComicSound.POP)
+                                                onClose()
+                                            },
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
@@ -348,7 +353,10 @@ private fun NavItem(
     Box(
         Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable {
+                ComicSoundPlayer.play(ComicSound.POP)
+                onClick()
+            }
             .tvFocusHighlight(RoundedCornerShape(8.dp), 1f)
     ) {
         // Comic Hard Drop Shadow

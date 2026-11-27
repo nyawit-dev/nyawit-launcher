@@ -58,6 +58,8 @@ fun ComicSearchBar(
     placeholder: String = NyawitStrings.SEARCH_PLACEHOLDER,
     focusRequester: FocusRequester? = null,
     onSearch: (() -> Unit)? = null,
+    readOnly: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val c = LocalNyawitColors.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -66,6 +68,7 @@ fun ComicSearchBar(
     val shape = RoundedCornerShape(8.dp)
 
     val borderColor = when {
+        !enabled -> if (c.isDark) Color(0xFF334155) else Color(0xFFCBD5E1)
         isFocused -> c.Primary
         isHovered -> c.Primary.copy(alpha = 0.7f)
         else -> c.ComicInk
@@ -96,6 +99,14 @@ fun ComicSearchBar(
                 .height(44.dp)
                 .background(if (isFocused) c.SurfaceRaised else c.Surface, shape)
                 .border(2.dp, borderColor, shape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled && !isFocused && !readOnly,
+                    onClick = {
+                        focusRequester?.requestFocus()
+                    },
+                )
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -120,13 +131,20 @@ fun ComicSearchBar(
                     value = query,
                     onValueChange = onQueryChange,
                     singleLine = true,
+                    readOnly = readOnly,
+                    enabled = enabled,
                     textStyle = NyawitType.Body.copy(
                         color = c.Text,
                         fontWeight = FontWeight.SemiBold,
                     ),
                     cursorBrush = SolidColor(c.Primary),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { onSearch?.invoke() }),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            ComicSoundPlayer.play(ComicSound.CLICK)
+                            onSearch?.invoke()
+                        },
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
@@ -134,7 +152,7 @@ fun ComicSearchBar(
                 )
             }
 
-            AnimatedVisibility(visible = query.isNotEmpty(), enter = fadeIn(), exit = fadeOut()) {
+            AnimatedVisibility(visible = query.isNotEmpty() && enabled, enter = fadeIn(), exit = fadeOut()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -144,7 +162,10 @@ fun ComicSearchBar(
                             modifier = Modifier
                                 .background(c.Primary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
                                 .border(1.dp, c.Primary, RoundedCornerShape(4.dp))
-                                .clickable { onSearch() }
+                                .clickable {
+                                    ComicSoundPlayer.play(ComicSound.CLICK)
+                                    onSearch()
+                                }
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                         ) {
                             Text(
@@ -162,7 +183,10 @@ fun ComicSearchBar(
                             .size(24.dp)
                             .background(c.SurfaceHighlight, RoundedCornerShape(4.dp))
                             .border(1.5.dp, c.ComicInk, RoundedCornerShape(4.dp))
-                            .clickable { onQueryChange("") },
+                            .clickable {
+                                ComicSoundPlayer.play(ComicSound.POP)
+                                onQueryChange("")
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         CloseIcon(modifier = Modifier.size(14.dp), color = c.Muted)

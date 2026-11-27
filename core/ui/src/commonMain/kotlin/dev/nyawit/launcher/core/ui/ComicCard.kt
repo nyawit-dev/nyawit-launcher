@@ -107,7 +107,10 @@ fun ComicCard(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick,
+                onClick = {
+                    ComicSoundPlayer.play(ComicSound.CLICK)
+                    onClick()
+                },
             ),
         backgroundColor = containerColor,
         borderColor = borderColor,

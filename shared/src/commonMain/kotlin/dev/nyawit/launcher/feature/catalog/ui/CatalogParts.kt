@@ -12,7 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
@@ -168,8 +170,11 @@ fun QuickFilterAndSortRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Quick Status Filters
+        // Quick Status Filters (Horizontally scrollable if space is constrained)
         Row(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -200,12 +205,14 @@ fun QuickFilterAndSortRow(
             }
         }
 
+        Spacer(Modifier.width(8.dp))
+
         // Sort Order Selector Toggle
         ComicBadge(
             text = "SORT: ${sortOrder.label}",
             containerColor = c.SurfaceRaised,
             contentColor = c.Primary,
-            modifier = Modifier.clickable {
+            onClick = {
                 val next = when (sortOrder) {
                     CatalogSortOrder.FAVORITES_FIRST -> CatalogSortOrder.A_TO_Z
                     CatalogSortOrder.A_TO_Z -> CatalogSortOrder.Z_TO_A
@@ -458,7 +465,7 @@ fun FeaturedApp(
                                     containerColor = if (isFavorite) c.Warning else c.SurfaceRaised,
                                     contentColor = if (isFavorite) c.OnWarning else c.Muted,
                                     borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
-                                    modifier = Modifier.clickable { onToggleFavorite() },
+                                    onClick = onToggleFavorite,
                                 )
                             }
                             Text(
@@ -553,7 +560,7 @@ fun FeaturedApp(
                             containerColor = if (isFavorite) c.Warning else c.SurfaceRaised,
                             contentColor = if (isFavorite) c.OnWarning else c.Muted,
                             borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
-                            modifier = Modifier.clickable { onToggleFavorite() },
+                            onClick = onToggleFavorite,
                         )
                     }
                 }

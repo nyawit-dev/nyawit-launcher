@@ -115,7 +115,10 @@ fun ComicNotice(
                                 .size(26.dp)
                                 .background(c.SurfaceRaised, RoundedCornerShape(4.dp))
                                 .border(1.5.dp, c.ComicInk, RoundedCornerShape(4.dp))
-                                .clickable { onDismiss() },
+                                .clickable {
+                                    ComicSoundPlayer.play(ComicSound.POP)
+                                    onDismiss()
+                                },
                             contentAlignment = Alignment.Center,
                         ) {
                             CloseIcon(modifier = Modifier.size(14.dp), color = c.Muted)

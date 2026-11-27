@@ -135,7 +135,10 @@ fun ComicDialog(
                                     .size(28.dp)
                                     .background(c.SurfaceHighlight, RoundedCornerShape(4.dp))
                                     .border(1.5.dp, c.ComicInk, RoundedCornerShape(4.dp))
-                                    .clickable { onCloseClick() },
+                                    .clickable {
+                                        ComicSoundPlayer.play(ComicSound.POP)
+                                        onCloseClick()
+                                    },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 CloseIcon(modifier = Modifier.size(16.dp), color = c.Muted)
