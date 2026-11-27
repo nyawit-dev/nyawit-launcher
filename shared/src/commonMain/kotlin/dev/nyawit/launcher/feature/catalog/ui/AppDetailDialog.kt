@@ -2,6 +2,7 @@ package dev.nyawit.launcher.feature.catalog.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,29 +20,36 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicButton
 import dev.nyawit.launcher.core.ui.ComicButtonVariant
 import dev.nyawit.launcher.core.ui.ComicDivider
+import dev.nyawit.launcher.core.ui.ComicIconButton
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
-import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.feature.catalog.data.CatalogApp
+import dev.nyawit.launcher.feature.catalog.data.GitHubCatalog
+import dev.nyawit.launcher.feature.catalog.data.ReleaseDetails
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 
@@ -48,6 +57,9 @@ import dev.nyawit.launcher.theme.NyawitType
 fun AppDetailDialog(
     app: CatalogApp,
     status: AppStatus,
+    catalog: GitHubCatalog? = null,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
     onInstall: () -> Unit,
     onUpdate: () -> Unit,
     onOpen: () -> Unit,
@@ -57,6 +69,17 @@ fun AppDetailDialog(
     val c = LocalNyawitColors.current
     val responsiveScale = LocalResponsiveScale.current
 
+    var releaseInfo by remember { mutableStateOf<ReleaseDetails?>(null) }
+    var loadingChangelog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(app.fullName) {
+        if (catalog != null) {
+            loadingChangelog = true
+            releaseInfo = catalog.latestReleaseInfo(app.fullName)
+            loadingChangelog = false
+        }
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         ComicPanel(
             shape = RoundedCornerShape(12.dp),
@@ -64,25 +87,39 @@ fun AppDetailDialog(
             borderWidth = 2.5.dp,
             borderColor = if (c.isDark) c.Primary else Color(0xFF0F172A),
             shadowOffset = 6.dp,
-            modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = responsiveScale.dp(580)),
+            modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = responsiveScale.dp(600)),
         ) {
             Column {
                 Column(
                     Modifier
-                        .padding(24.dp)
+                        .padding(22.dp)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    // Header Bar
+                    // Header Bar with Category & Favorite Pin
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ComicBadge(
-                            text = "DOKUMEN MODUL // DETAIL",
-                            containerColor = c.Primary,
-                            contentColor = c.OnPrimary,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            ComicBadge(
+                                text = "DOKUMEN MODUL // DETAIL",
+                                containerColor = c.Primary,
+                                contentColor = c.OnPrimary,
+                            )
+                            if (onToggleFavorite != null) {
+                                ComicBadge(
+                                    text = if (isFavorite) "★ FAVORIT" else "☆ FAVORITKAN",
+                                    containerColor = if (isFavorite) c.Warning else c.SurfaceHighlight,
+                                    contentColor = if (isFavorite) c.OnWarning else c.Text,
+                                    borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
+                                    modifier = Modifier.clickable { onToggleFavorite() },
+                                )
+                            }
+                        }
 
                         ComicBadge(
                             text = app.category.uppercase(),
@@ -126,20 +163,20 @@ fun AppDetailDialog(
                         }
                     }
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(16.dp))
                     Text(
                         app.description,
                         style = NyawitType.Body,
                         color = c.Text,
                     )
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(16.dp))
 
                     // Spec grid
                     Surface(
                         color = c.SurfaceRaised,
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, c.Border),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.5.dp, c.ComicInk),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -171,6 +208,73 @@ fun AppDetailDialog(
                         }
                     }
 
+                    // Changelog Section
+                    Spacer(Modifier.height(16.dp))
+                    ComicPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = c.SurfaceRaised,
+                        borderWidth = 1.5.dp,
+                        shadowOffset = 2.dp,
+                    ) {
+                        Column(Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "CATATAN RILIS // WHAT'S NEW",
+                                    style = NyawitType.Overline,
+                                    fontWeight = FontWeight.Black,
+                                    color = c.Primary,
+                                )
+                                if (releaseInfo?.tag != null) {
+                                    ComicBadge(
+                                        text = releaseInfo?.tag.orEmpty(),
+                                        containerColor = c.Surface,
+                                        contentColor = c.Text,
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            when {
+                                loadingChangelog -> {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp, color = c.Primary)
+                                        Text("Memuat catatan rilis dari GitHub...", style = NyawitType.Caption, color = c.Muted)
+                                    }
+                                }
+                                releaseInfo != null && releaseInfo!!.changelog.isNotBlank() -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(max = 160.dp)
+                                            .verticalScroll(rememberScrollState()),
+                                    ) {
+                                        Text(
+                                            text = releaseInfo!!.changelog,
+                                            style = NyawitType.Caption,
+                                            color = c.Text,
+                                            lineHeight = 18.sp,
+                                        )
+                                    }
+                                }
+                                else -> {
+                                    Text(
+                                        text = "Tidak ada catatan rilis khusus untuk rilis ini.",
+                                        style = NyawitType.Caption,
+                                        color = c.Muted,
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(Modifier.height(14.dp))
                     Text(
                         NyawitStrings.DETAIL_VERIFICATION_NOTICE,
@@ -178,8 +282,9 @@ fun AppDetailDialog(
                         color = c.Faint,
                     )
 
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(20.dp))
 
+                    // Action buttons
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -198,6 +303,7 @@ fun AppDetailDialog(
                                 text = "PERBARUI!",
                                 onClick = { onUpdate(); onDismiss() },
                                 variant = ComicButtonVariant.WARNING,
+                                burstBadge = "UP!",
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                                 textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
                             )
@@ -210,6 +316,7 @@ fun AppDetailDialog(
                                 textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
                             )
                         }
+
                         if (status == AppStatus.INSTALLED || status == AppStatus.UPDATE_AVAILABLE) {
                             ComicButton(
                                 text = "HAPUS!",
@@ -219,7 +326,9 @@ fun AppDetailDialog(
                                 textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
                             )
                         }
+
                         Spacer(Modifier.weight(1f))
+
                         ComicButton(
                             text = NyawitStrings.BTN_CLOSE,
                             onClick = onDismiss,

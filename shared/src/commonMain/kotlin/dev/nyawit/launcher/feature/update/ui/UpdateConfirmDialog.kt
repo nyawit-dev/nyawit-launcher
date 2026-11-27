@@ -1,6 +1,5 @@
 package dev.nyawit.launcher.feature.update.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,29 +8,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import dev.nyawit.launcher.core.ui.ComicActionBurst
+import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
+import dev.nyawit.launcher.core.ui.ComicDialog
+import dev.nyawit.launcher.core.ui.ComicDivider
+import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.NyawitStrings
-import dev.nyawit.launcher.core.ui.tvFocusHighlight
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
-import nyawit_launcher.shared.generated.resources.Res
-import nyawit_launcher.shared.generated.resources.update_illustration
 
-/** Konfirmasi sebelum launcher mengunduh installer pembaruan atau informasi versi mutakhir. */
+/** Konfirmasi sebelum launcher mengunduh installer pembaruan atau informasi versi mutakhir (Comic Style). */
 @Composable
 fun UpdateConfirmDialog(
     currentVersion: String,
@@ -42,127 +36,113 @@ fun UpdateConfirmDialog(
     onDismiss: () -> Unit,
 ) {
     val c = LocalNyawitColors.current
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = c.Surface,
-            border = BorderStroke(1.dp, c.Border),
-            modifier = Modifier.fillMaxWidth(0.9f).widthIn(max = 480.dp),
-        ) {
-            Column(Modifier.padding(24.dp)) {
-                androidx.compose.foundation.Image(
-                    painter = org.jetbrains.compose.resources.painterResource(
-                        Res.drawable.update_illustration,
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                )
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    if (isUpToDate) NyawitStrings.UPDATE_UP_TO_DATE_BADGE else NyawitStrings.UPDATE_AVAILABLE_BADGE,
-                    style = NyawitType.Overline,
-                    color = c.Primary,
-                )
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    if (isUpToDate) NyawitStrings.UPDATE_UP_TO_DATE_TITLE else NyawitStrings.updateUpgradePrompt(newVersion),
-                    style = NyawitType.Title,
-                    color = c.Text,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    if (isUpToDate) NyawitStrings.updateUpToDateDesc(currentVersion)
-                    else NyawitStrings.updateCurrentVersionDesc(currentVersion),
-                    style = NyawitType.Caption,
-                    color = c.Muted,
-                )
 
-                Spacer(Modifier.height(20.dp))
-                Surface(
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
+    val title = if (isUpToDate) NyawitStrings.UPDATE_UP_TO_DATE_TITLE else NyawitStrings.updateUpgradePrompt(newVersion)
+    val badge = if (isUpToDate) "LATEST // V$currentVersion" else "UPDATE // V$newVersion"
+
+    ComicDialog(
+        onDismissRequest = onDismiss,
+        title = title,
+        badgeText = badge,
+        onCloseClick = onDismiss,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Hero Status Strip
+            ComicPanel(
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = c.SurfaceRaised,
+                borderWidth = 1.5.dp,
+                shadowOffset = 2.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            color = c.Primary.copy(alpha = 0.14f),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Box(Modifier.fillMaxWidth(), Alignment.Center) {
-                                Text(
-                                    if (isUpToDate) "✓" else "↓",
-                                    color = c.Primary,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                installerName,
-                                style = NyawitType.Caption,
-                                color = c.Text,
-                                maxLines = 1,
-                            )
-                            Text(
-                                if (isUpToDate) "Paket terverifikasi dari GitHub" else "Installer bawaan platform",
-                                style = NyawitType.Overline,
-                                color = c.Faint,
-                            )
-                        }
+                    ComicActionBurst(
+                        text = if (isUpToDate) "OK!" else "NEW!",
+                        size = 38.dp,
+                        burstColor = if (isUpToDate) c.Primary else c.ComicBurstYellow,
+                        textColor = c.OnPrimary,
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = if (isUpToDate) "VERSI APLIKASI TERKINI" else "PEMBARUAN SIAP DIUNDUH",
+                            style = NyawitType.Subtitle,
+                            fontWeight = FontWeight.Black,
+                            color = c.Text,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = if (isUpToDate) NyawitStrings.updateUpToDateDesc(currentVersion)
+                            else NyawitStrings.updateCurrentVersionDesc(currentVersion),
+                            style = NyawitType.Caption,
+                            color = c.Muted,
+                        )
                     }
                 }
+            }
 
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    if (isUpToDate) "Anda sudah menikmati seluruh fitur dan perbaikan terkini. Jika mengalami kendala pada instalasi saat ini, Anda dapat memasang ulang."
-                    else "Launcher akan mengunduh installer dan menyerahkannya ke sistem Anda. Ikuti proses pemasangan, lalu restart launcher jika diminta.",
-                    style = NyawitType.Caption,
-                    color = c.Faint,
-                )
+            if (!isUpToDate) {
+                ComicPanel(
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = c.Surface,
+                    borderWidth = 1.5.dp,
+                    shadowOffset = 2.dp,
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Text(
+                            text = "PAKET PEMBARUAN:",
+                            style = NyawitType.Overline,
+                            fontWeight = FontWeight.Black,
+                            color = c.Primary,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = installerName,
+                            style = NyawitType.Caption,
+                            fontWeight = FontWeight.Bold,
+                            color = c.Text,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Proses pembaruan akan mengunduh dan menerapkan berkas instalasi terbaru tanpa perlu me-restart perangkat Anda.",
+                            style = NyawitType.Caption,
+                            color = c.Muted,
+                        )
+                    }
+                }
+            }
 
-                Spacer(Modifier.height(24.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    if (isUpToDate) {
-                        TextButton(
-                            onClick = onConfirm,
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                        ) {
-                            Text(NyawitStrings.BTN_RETRY, style = NyawitType.Caption, color = c.Muted)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Button(
+            ComicDivider(dashed = true)
+
+            // Action Command Strip
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                if (isUpToDate) {
+                    ComicButton(
+                        text = NyawitStrings.BTN_CLOSE,
+                        onClick = onDismiss,
+                        variant = ComicButtonVariant.PRIMARY,
+                        shadowOffset = 2.dp,
+                    )
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ComicButton(
+                            text = NyawitStrings.BTN_CANCEL,
                             onClick = onDismiss,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = c.Primary,
-                                contentColor = c.OnPrimary,
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                        ) {
-                            Text(NyawitStrings.BTN_CLOSE, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
-                        }
-                    } else {
-                        TextButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp), 1f),
-                        ) {
-                            Text(NyawitStrings.BTN_LATER, style = NyawitType.Caption, color = c.Muted)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Button(
+                            variant = ComicButtonVariant.SECONDARY,
+                            shadowOffset = 2.dp,
+                        )
+                        ComicButton(
+                            text = NyawitStrings.BTN_UPDATE,
                             onClick = onConfirm,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = c.Primary,
-                                contentColor = c.OnPrimary,
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(10.dp), 1f),
-                        ) {
-                            Text(NyawitStrings.BTN_UPDATE, style = NyawitType.Caption, fontWeight = FontWeight.Bold)
-                        }
+                            variant = ComicButtonVariant.PRIMARY,
+                            burstBadge = "GO!",
+                            shadowOffset = 2.dp,
+                        )
                     }
                 }
             }

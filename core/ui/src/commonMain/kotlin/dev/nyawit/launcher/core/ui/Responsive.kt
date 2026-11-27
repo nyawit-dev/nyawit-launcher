@@ -213,13 +213,13 @@ fun rememberScaledDensity(scaleFactor: Float): Density {
 @Composable
 fun Modifier.tvFocusHighlight(
     shape: Shape = RoundedCornerShape(20.dp),
-    scale: Float = 1.03f,
-    borderWidth: Dp = 2.dp,
+    scale: Float = 1.06f,
+    borderWidth: Dp = 2.5.dp,
 ): Modifier {
     var focused by remember { mutableStateOf(false) }
     val animatedScale by animateFloatAsState(
         targetValue = if (focused) scale else 1f,
-        animationSpec = tween(180),
+        animationSpec = tween(150),
     )
     val requester = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
@@ -227,8 +227,12 @@ fun Modifier.tvFocusHighlight(
     return this
         .bringIntoViewRequester(requester)
         .onFocusChanged { state ->
+            val wasFocused = focused
             focused = state.isFocused || state.hasFocus
-            if (focused) scope.launch { requester.bringIntoView() }
+            if (focused && !wasFocused) {
+                ComicSoundPlayer.play(ComicSound.FOCUS)
+                scope.launch { requester.bringIntoView() }
+            }
         }
         .graphicsLayer {
             scaleX = animatedScale

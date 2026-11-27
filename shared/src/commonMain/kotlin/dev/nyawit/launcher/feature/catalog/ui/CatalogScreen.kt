@@ -62,6 +62,8 @@ import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicButton
 import dev.nyawit.launcher.core.ui.ComicButtonVariant
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
+import dev.nyawit.launcher.core.ui.ComicSound
+import dev.nyawit.launcher.core.ui.ComicSoundPlayer
 import dev.nyawit.launcher.core.ui.LocalResponsiveScale
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
@@ -115,10 +117,12 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     val profile = rememberDeviceProfile()
     val currentPlatform = remember { currentAppPlatform() }
     val version = remember { appVersion(platformContext) }
-    val catalog = remember {
+    val settingsController = LocalSettingsController.current
+    val catalog = remember(settingsController.customCatalogUrl) {
         GitHubCatalog(
             localCatalogJson = localCatalogOverride(),
             bundledCatalog = { Res.readBytes("files/catalog.json").decodeToString() },
+            customCatalogUrlProvider = { settingsController.customCatalogUrl },
             platformContext = platformContext,
         )
     }
@@ -128,13 +132,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var apps by remember { mutableStateOf<List<CatalogApp>>(emptyList()) }
     var statuses by remember { mutableStateOf<Map<String, AppStatus>>(emptyMap()) }
     var busyApps by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var cancelledApps by remember { mutableStateOf<Set<String>>(emptySet()) }
     var progress by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var notice by remember { mutableStateOf<Notice?>(null) }
     var selfBusy by remember { mutableStateOf(false) }
     var selfUpdateDone by remember { mutableStateOf(false) }
-    val settingsController = LocalSettingsController.current
     var updateTag by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableStateOf(0) }
     var statusKey by remember { mutableStateOf(0) }
@@ -142,6 +146,8 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     var page by remember { mutableStateOf(AppPage.APPS) }
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("__ALL__") }
+    var statusFilter by remember { mutableStateOf(CatalogStatusFilter.ALL) }
+    var sortOrder by remember { mutableStateOf(CatalogSortOrder.A_TO_Z) }
     val searchFocus = remember { FocusRequester() }
     val initialTvFocus = remember { FocusRequester() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -254,6 +260,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     /** Menjalankan unduhan/instalasi dari request yang sudah disiapkan. */
     fun startInstall(app: CatalogApp, request: InstallRequest) {
         if (app.fullName in busyApps) return
+        cancelledApps = cancelledApps - app.fullName
         busyApps = busyApps + app.fullName
         progress = progress + (app.fullName to 0f)
         notice = Notice(if (request.filePath != null) NyawitStrings.noticeOpeningInstaller(app.name) else NyawitStrings.noticeDownloadingApp(app.name))
@@ -270,11 +277,13 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         installApp(
             request,
             onProgress = { progress = progress + (app.fullName to it) },
-            shouldCancel = { false },
+            shouldCancel = { app.fullName in cancelledApps },
         ) { ok, msg ->
             busyApps = busyApps - app.fullName
             progress = progress - app.fullName
+            cancelledApps = cancelledApps - app.fullName
             if (ok) {
+                ComicSoundPlayer.play(ComicSound.SUCCESS)
                 scope.launch(Dispatchers.Default) {
                     cleanupDownloadedFiles(platformContext)
                 }
@@ -295,6 +304,14 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
             )
             // Hitung ulang dari perangkat: installer sistem bisa selesai setelah callback ini.
             statusKey++
+        }
+    }
+
+    /** Membatalkan antrean atau proses unduhan yang sedang berjalan. */
+    fun cancelInstall(app: CatalogApp) {
+        if (app.fullName in busyApps) {
+            cancelledApps = cancelledApps + app.fullName
+            notice = Notice("Membatalkan proses ${app.name}...")
         }
     }
 
@@ -357,6 +374,7 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
 
     fun open(app: CatalogApp) {
+        settingsController.markUsed(app.packageName)
         if (!launchInstalledApp(app.packageName, platformContext, app.name)) {
             val detail = lastLaunchError()?.takeIf { it.isNotBlank() }
             notice = Notice(
@@ -404,12 +422,19 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
     }
 
     val updateCount = statuses.values.count { it == AppStatus.UPDATE_AVAILABLE }
+    val installedCount = statuses.values.count { it == AppStatus.INSTALLED || it == AppStatus.UPDATE_AVAILABLE }
+    val favorites = settingsController.favorites
+    val favoritesSet = remember(favorites) { favorites.toSet() }
 
     val platformMatchedApps = apps.filter { app ->
         when (currentPlatform) {
             AppPlatform.DESKTOP -> AppPlatform.DESKTOP in app.platforms
             else -> AppPlatform.ANDROID in app.platforms || AppPlatform.TV in app.platforms
         }
+    }
+
+    val favoriteCount = remember(platformMatchedApps, favoritesSet) {
+        platformMatchedApps.count { it.packageName in favoritesSet }
     }
 
     val categories = remember(platformMatchedApps) {
@@ -427,15 +452,39 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         counts
     }
 
-    val visibleApps = platformMatchedApps.filter { app ->
-        val matchCategory = selectedCategory == "__ALL__" ||
-            app.category.equals(selectedCategory, ignoreCase = true)
-        val matchQuery = query.isBlank() ||
-            app.name.contains(query, true) ||
-            app.description.contains(query, true) ||
-            app.category.contains(query, true)
-        matchCategory && matchQuery
-    }
+    val visibleApps = platformMatchedApps
+        .filter { app ->
+            val appStatus = statuses[app.fullName] ?: AppStatus.UNKNOWN
+            val matchStatus = when (statusFilter) {
+                CatalogStatusFilter.ALL -> true
+                CatalogStatusFilter.FAVORITES -> app.packageName in favoritesSet
+                CatalogStatusFilter.INSTALLED -> appStatus == AppStatus.INSTALLED || appStatus == AppStatus.UPDATE_AVAILABLE
+                CatalogStatusFilter.UPDATE -> appStatus == AppStatus.UPDATE_AVAILABLE
+            }
+            val matchCategory = selectedCategory == "__ALL__" ||
+                app.category.equals(selectedCategory, ignoreCase = true)
+            val matchQuery = query.isBlank() ||
+                app.name.contains(query, true) ||
+                app.description.contains(query, true) ||
+                app.category.contains(query, true)
+            matchStatus && matchCategory && matchQuery
+        }
+        .let { list ->
+            when (sortOrder) {
+                CatalogSortOrder.FAVORITES_FIRST -> list.sortedWith(
+                    compareByDescending<CatalogApp> { it.packageName in favoritesSet }
+                        .thenBy { it.name.lowercase() },
+                )
+                CatalogSortOrder.A_TO_Z -> list.sortedBy { it.name.lowercase() }
+                CatalogSortOrder.Z_TO_A -> list.sortedByDescending { it.name.lowercase() }
+                CatalogSortOrder.CATEGORY -> list.sortedWith(compareBy({ it.category.lowercase() }, { it.name.lowercase() }))
+                CatalogSortOrder.UPDATE_FIRST -> list.sortedWith(
+                    compareByDescending<CatalogApp> { statuses[it.fullName] == AppStatus.UPDATE_AVAILABLE }
+                        .thenByDescending { statuses[it.fullName] == AppStatus.INSTALLED }
+                        .thenBy { it.name.lowercase() },
+                )
+            }
+        }
 
     val isCompactLayout = (profile.kind == ScreenKind.PHONE || profile.widthDp < 860f) && profile.kind != ScreenKind.TV
     val isPhone = profile.kind == ScreenKind.PHONE
@@ -592,8 +641,19 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                     if (profile.kind != ScreenKind.TV) {
                         CatalogSearchBar(query, { query = it }, searchFocus)
 
+                        Spacer(Modifier.height(10.dp))
+                        QuickFilterAndSortRow(
+                            statusFilter = statusFilter,
+                            onStatusFilterChange = { statusFilter = it },
+                            sortOrder = sortOrder,
+                            onSortOrderChange = { sortOrder = it },
+                            installedCount = installedCount,
+                            updateCount = updateCount,
+                            favoriteCount = favoriteCount,
+                        )
+
                         if (categories.size > 1) {
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(10.dp))
                             CategoryFilterChips(
                                 categories = categories,
                                 selectedCategory = selectedCategory,
@@ -631,12 +691,15 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                                     statuses = statuses,
                                     busyApps = busyApps,
                                     progress = progress,
+                                    favorites = favoritesSet,
                                     showSpotlight = showSpotlight,
                                     selectedCategory = selectedCategory,
                                     updateCount = updateCount,
                                     onInstall = { install(it) },
                                     onOpen = { open(it) },
                                     onDetail = { detailApp = it },
+                                    onToggleFavorite = { settingsController.toggleFavorite(it.packageName) },
+                                    onCancel = { cancelInstall(it) },
                                 )
                             } else {
                                 AppGrid(
@@ -645,12 +708,15 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
                                     statuses = statuses,
                                     busyApps = busyApps,
                                     progress = progress,
+                                    favorites = favoritesSet,
                                     showSpotlight = showSpotlight,
                                     selectedCategory = selectedCategory,
                                     updateCount = updateCount,
                                     onInstall = { install(it) },
                                     onOpen = { open(it) },
                                     onDetail = { detailApp = it },
+                                    onToggleFavorite = { settingsController.toggleFavorite(it.packageName) },
+                                    onCancel = { cancelInstall(it) },
                                 )
                             }
                         }
@@ -723,6 +789,9 @@ fun CatalogScreen(modifier: Modifier, platformContext: Any?) {
         AppDetailDialog(
             app = app,
             status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
+            catalog = catalog,
+            isFavorite = settingsController.isFavorite(app.packageName),
+            onToggleFavorite = { settingsController.toggleFavorite(app.packageName) },
             onInstall = { install(app) },
             onUpdate = { update(app) },
             onOpen = { open(app) },
@@ -738,12 +807,15 @@ private fun AppList(
     statuses: Map<String, AppStatus>,
     busyApps: Set<String>,
     progress: Map<String, Float>,
+    favorites: Set<String> = emptySet(),
     showSpotlight: Boolean,
     selectedCategory: String,
     updateCount: Int,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
     onDetail: (CatalogApp) -> Unit,
+    onToggleFavorite: ((CatalogApp) -> Unit)? = null,
+    onCancel: ((CatalogApp) -> Unit)? = null,
 ) {
     val featuredApp = if (showSpotlight && apps.isNotEmpty()) apps.first() else null
     val listApps = if (showSpotlight && apps.isNotEmpty()) apps.drop(1) else apps
@@ -758,6 +830,8 @@ private fun AppList(
                 FeaturedApp(
                     app = featuredApp,
                     status = statuses[featuredApp.fullName] ?: AppStatus.NOT_INSTALLED,
+                    isFavorite = featuredApp.packageName in favorites,
+                    onToggleFavorite = { onToggleFavorite?.invoke(featuredApp) },
                     onOpen = { onOpen(featuredApp) },
                     onInstall = { onInstall(featuredApp) },
                     onDetail = { onDetail(featuredApp) },
@@ -778,6 +852,9 @@ private fun AppList(
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
                 busy = app.fullName in busyApps,
                 progress = progress[app.fullName],
+                isFavorite = app.packageName in favorites,
+                onToggleFavorite = { onToggleFavorite?.invoke(app) },
+                onCancel = { onCancel?.invoke(app) },
                 onDetail = { onDetail(app) },
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },
@@ -793,12 +870,15 @@ private fun AppGrid(
     statuses: Map<String, AppStatus>,
     busyApps: Set<String>,
     progress: Map<String, Float>,
+    favorites: Set<String> = emptySet(),
     showSpotlight: Boolean,
     selectedCategory: String,
     updateCount: Int,
     onInstall: (CatalogApp) -> Unit,
     onOpen: (CatalogApp) -> Unit,
     onDetail: (CatalogApp) -> Unit,
+    onToggleFavorite: ((CatalogApp) -> Unit)? = null,
+    onCancel: ((CatalogApp) -> Unit)? = null,
 ) {
     val featuredApp = if (showSpotlight && apps.isNotEmpty()) apps.first() else null
     val gridApps = if (showSpotlight && apps.isNotEmpty()) apps.drop(1) else apps
@@ -816,6 +896,8 @@ private fun AppGrid(
                 FeaturedApp(
                     app = featuredApp,
                     status = statuses[featuredApp.fullName] ?: AppStatus.NOT_INSTALLED,
+                    isFavorite = featuredApp.packageName in favorites,
+                    onToggleFavorite = { onToggleFavorite?.invoke(featuredApp) },
                     onOpen = { onOpen(featuredApp) },
                     onInstall = { onInstall(featuredApp) },
                     onDetail = { onDetail(featuredApp) },
@@ -836,6 +918,9 @@ private fun AppGrid(
                 status = statuses[app.fullName] ?: AppStatus.NOT_INSTALLED,
                 busy = app.fullName in busyApps,
                 progress = progress[app.fullName],
+                isFavorite = app.packageName in favorites,
+                onToggleFavorite = { onToggleFavorite?.invoke(app) },
+                onCancel = { onCancel?.invoke(app) },
                 onDetail = { onDetail(app) },
                 onInstall = { onInstall(app) },
                 onOpen = { onOpen(app) },

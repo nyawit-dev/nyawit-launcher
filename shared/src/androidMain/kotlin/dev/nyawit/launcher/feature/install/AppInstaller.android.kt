@@ -399,3 +399,32 @@ actual fun cleanupDownloadedFiles(platformContext: Any?) {
         }
     } catch (_: Throwable) {}
 }
+
+actual fun getDownloadedFilesSize(platformContext: Any?): Long {
+    val context = platformContext as? Context ?: return 0L
+    return try {
+        val filesDir = context.filesDir.listFiles()?.filter { it.isFile && (it.name.endsWith(".apk") || it.name.endsWith(".part")) } ?: emptyList()
+        val cacheDir = context.cacheDir.listFiles()?.filter { it.isFile } ?: emptyList()
+        (filesDir + cacheDir).sumOf { it.length() }
+    } catch (_: Throwable) {
+        0L
+    }
+}
+
+actual fun clearAllDownloadedFiles(platformContext: Any?): Long {
+    val context = platformContext as? Context ?: return 0L
+    return try {
+        val filesDir = context.filesDir.listFiles()?.filter { it.isFile && (it.name.endsWith(".apk") || it.name.endsWith(".part")) } ?: emptyList()
+        val cacheDir = context.cacheDir.listFiles()?.filter { it.isFile } ?: emptyList()
+        var totalDeleted = 0L
+        for (file in filesDir + cacheDir) {
+            val len = file.length()
+            if (file.delete()) {
+                totalDeleted += len
+            }
+        }
+        totalDeleted
+    } catch (_: Throwable) {
+        0L
+    }
+}

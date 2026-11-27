@@ -6,14 +6,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,21 +38,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.nyawit.launcher.core.platform.AppPlatform
 import dev.nyawit.launcher.core.platform.LocalSettingsController
 import dev.nyawit.launcher.core.platform.clearCatalogCache
+import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.ui.AppLanguage
 import dev.nyawit.launcher.core.ui.CheckIcon
+import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
+import dev.nyawit.launcher.core.ui.ComicDivider
+import dev.nyawit.launcher.core.ui.ComicFilterChip
+import dev.nyawit.launcher.core.ui.ComicHalftonePattern
+import dev.nyawit.launcher.core.ui.ComicNotice
+import dev.nyawit.launcher.core.ui.ComicNoticeType
 import dev.nyawit.launcher.core.ui.ComicPanel
-import dev.nyawit.launcher.core.ui.GlobeIcon
-import dev.nyawit.launcher.core.ui.LocalResponsiveScale
+import dev.nyawit.launcher.core.ui.ComicSearchBar
+import dev.nyawit.launcher.core.ui.ComicSound
+import dev.nyawit.launcher.core.ui.ComicSoundPlayer
 import dev.nyawit.launcher.core.ui.NyawitStrings
 import dev.nyawit.launcher.core.ui.ScreenKind
 import dev.nyawit.launcher.core.ui.SettingsIcon
 import dev.nyawit.launcher.core.ui.rememberDeviceProfile
 import dev.nyawit.launcher.core.ui.tvFocusHighlight
+import dev.nyawit.launcher.feature.install.clearAllDownloadedFiles
+import dev.nyawit.launcher.feature.install.formatByteSize
+import dev.nyawit.launcher.feature.install.getDownloadedFilesSize
 import dev.nyawit.launcher.theme.LocalNyawitColors
 import dev.nyawit.launcher.theme.NyawitType
 import dev.nyawit.launcher.theme.ThemeMode
@@ -67,6 +87,8 @@ fun SettingsScreen(
     val profile = rememberDeviceProfile()
     val isNarrow = profile.kind == ScreenKind.PHONE || profile.widthDp < 680f
     var cacheClearedNotice by remember { mutableStateOf(false) }
+    var cleanedBytesNotice by remember { mutableStateOf<String?>(null) }
+    var downloadFilesSize by remember { mutableStateOf(getDownloadedFilesSize(platformContext)) }
     val initialFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -93,68 +115,78 @@ fun SettingsScreen(
                     horizontal = if (isNarrow) 16.dp else 24.dp,
                     vertical = if (isNarrow) 16.dp else 20.dp,
                 ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            // Deck Command Header
-            Row(
+            // Masthead Panel
+            ComicPanel(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                backgroundColor = c.SurfaceRaised,
+                comicRivets = true,
+                borderWidth = 2.5.dp,
+                shadowOffset = 4.dp,
             ) {
-                Surface(
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        SettingsIcon(Modifier.size(24.dp), color = c.Primary)
-                    }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = NyawitStrings.SETTINGS_TITLE.uppercase(),
-                            style = NyawitType.Wordmark,
-                            fontWeight = FontWeight.Black,
-                            color = c.Text,
-                        )
-                        ComicBadge(
-                            text = "KONFIGURASI SISTEM",
-                            containerColor = c.Primary,
-                            contentColor = c.OnPrimary,
-                        )
-                    }
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = NyawitStrings.SETTINGS_SUBTITLE,
-                        style = NyawitType.Body,
-                        color = c.Muted,
-                    )
-                }
+                ComicHalftonePattern(
+                    modifier = Modifier.matchParentSize(),
+                    dotRadius = 1.2f,
+                    spacing = 16f,
+                    dotColor = c.Primary.copy(alpha = 0.08f),
+                )
 
-                if (onBack != null) {
-                    Spacer(Modifier.weight(1f))
-                    Surface(
-                        onClick = onBack,
-                        color = c.SurfaceRaised,
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.5.dp, c.BorderHighlight),
-                        modifier = Modifier.tvFocusHighlight(shape = RoundedCornerShape(8.dp), scale = 1.05f),
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        Surface(
+                            color = c.Surface,
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(2.dp, c.ComicInk),
+                            modifier = Modifier.size(48.dp),
                         ) {
-                            Text("←", color = c.Primary, fontWeight = FontWeight.Black)
+                            Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                SettingsIcon(Modifier.size(24.dp), color = c.Primary)
+                            }
+                        }
+
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = NyawitStrings.SETTINGS_TITLE.uppercase(),
+                                    style = NyawitType.Wordmark,
+                                    fontWeight = FontWeight.Black,
+                                    color = c.Text,
+                                )
+                                ComicBadge(
+                                    text = "KONFIGURASI SISTEM",
+                                    containerColor = c.Primary,
+                                    contentColor = c.OnPrimary,
+                                )
+                            }
+                            Spacer(Modifier.height(3.dp))
                             Text(
-                                "KEMBALI",
-                                style = NyawitType.Caption,
-                                color = c.Text,
-                                fontWeight = FontWeight.Bold,
+                                text = NyawitStrings.SETTINGS_SUBTITLE,
+                                style = NyawitType.Body,
+                                color = c.Muted,
                             )
                         }
+                    }
+
+                    if (onBack != null) {
+                        ComicButton(
+                            text = "KEMBALI",
+                            onClick = onBack,
+                            variant = ComicButtonVariant.SECONDARY,
+                            shadowOffset = 2.dp,
+                        )
                     }
                 }
             }
@@ -163,6 +195,7 @@ fun SettingsScreen(
             SettingsSectionCard(
                 title = NyawitStrings.SETTINGS_SEC_APPEARANCE,
                 description = NyawitStrings.SETTINGS_SEC_APPEARANCE_DESC,
+                badge = "TEMA",
             ) {
                 val modes = ThemeMode.entries
                 if (isNarrow) {
@@ -174,7 +207,7 @@ fun SettingsScreen(
                             ) {
                                 rowModes.forEachIndexed { colIndex, mode ->
                                     val isInitial = rowIndex == 0 && colIndex == 0
-                                    ThemeModeCard(
+                                    ComicThemeCard(
                                         mode = mode,
                                         selected = settingsController.themeController.mode == mode,
                                         onClick = { settingsController.setTheme(mode) },
@@ -193,7 +226,7 @@ fun SettingsScreen(
                     ) {
                         modes.forEachIndexed { index, mode ->
                             val isInitial = index == 0
-                            ThemeModeCard(
+                            ComicThemeCard(
                                 mode = mode,
                                 selected = settingsController.themeController.mode == mode,
                                 onClick = { settingsController.setTheme(mode) },
@@ -210,12 +243,13 @@ fun SettingsScreen(
             SettingsSectionCard(
                 title = NyawitStrings.SETTINGS_SEC_LANGUAGE,
                 description = NyawitStrings.SETTINGS_SEC_LANGUAGE_DESC,
+                badge = "BAHASA",
             ) {
                 val languages = AppLanguage.entries
                 if (isNarrow) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         languages.forEach { lang ->
-                            LanguageCard(
+                            ComicLanguageCard(
                                 lang = lang,
                                 selected = settingsController.languageController.language == lang,
                                 onClick = { settingsController.setLanguage(lang) },
@@ -229,7 +263,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         languages.forEach { lang ->
-                            LanguageCard(
+                            ComicLanguageCard(
                                 lang = lang,
                                 selected = settingsController.languageController.language == lang,
                                 onClick = { settingsController.setLanguage(lang) },
@@ -244,15 +278,13 @@ fun SettingsScreen(
             SettingsSectionCard(
                 title = NyawitStrings.SETTINGS_SEC_UPDATES,
                 description = NyawitStrings.SETTINGS_SEC_UPDATES_DESC,
+                badge = "OTOMATIS",
             ) {
-                Surface(
-                    onClick = { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) },
-                    color = c.SurfaceRaised,
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, c.BorderHighlight),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.02f),
+                ComicPanel(
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = c.SurfaceRaised,
+                    borderWidth = 1.5.dp,
+                    shadowOffset = 2.dp,
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -264,7 +296,7 @@ fun SettingsScreen(
                                 text = NyawitStrings.SETTINGS_AUTO_CHECK_TITLE,
                                 style = NyawitType.Subtitle,
                                 color = c.Text,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Black,
                             )
                             Spacer(Modifier.height(3.dp))
                             Text(
@@ -274,79 +306,247 @@ fun SettingsScreen(
                             )
                         }
                         Spacer(Modifier.width(16.dp))
-                        Surface(
-                            color = if (settingsController.autoCheckUpdates) c.Primary else c.SurfaceHighlight,
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, if (settingsController.autoCheckUpdates) c.Primary else c.Border),
-                        ) {
-                            Text(
-                                text = if (settingsController.autoCheckUpdates) "AKTIF" else "NONAKTIF",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = NyawitType.Overline,
-                                color = if (settingsController.autoCheckUpdates) c.OnPrimary else c.Muted,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
+                        ComicButton(
+                            text = if (settingsController.autoCheckUpdates) "AKTIF" else "NONAKTIF",
+                            onClick = { settingsController.setAutoCheck(!settingsController.autoCheckUpdates) },
+                            variant = if (settingsController.autoCheckUpdates) ComicButtonVariant.PRIMARY else ComicButtonVariant.SECONDARY,
+                            shadowOffset = 2.dp,
+                        )
                     }
                 }
             }
 
-            // Section 5: Penyimpanan & Cache
+            // Section 4: Manajemen Penyimpanan & Pembersih Residu (Storage Manager)
             SettingsSectionCard(
-                title = NyawitStrings.SETTINGS_SEC_STORAGE,
-                description = NyawitStrings.SETTINGS_SEC_STORAGE_DESC,
+                title = "MANAJEMEN PENYIMPANAN & BERKAS RESIDU",
+                description = "Pantau dan bersihkan berkas paket installer serta cache katalog yang tidak terpakai.",
+                badge = "STORAGE",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    // Item A: Pembersih Installer Berkas Unduhan
+                    ComicPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = c.SurfaceRaised,
+                        borderWidth = 1.5.dp,
+                        shadowOffset = 2.dp,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        text = "BERKAS INSTALLER TERSIMPAN",
+                                        style = NyawitType.Subtitle,
+                                        color = c.Text,
+                                        fontWeight = FontWeight.Black,
+                                    )
+                                    ComicBadge(
+                                        text = formatByteSize(downloadFilesSize),
+                                        containerColor = if (downloadFilesSize > 0) c.Warning else c.SurfaceHighlight,
+                                        contentColor = if (downloadFilesSize > 0) c.OnWarning else c.Muted,
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "Paket instalasi (.zip, .exe, .apk) sementara di direktori unduhan perangkat.",
+                                    style = NyawitType.Body,
+                                    color = c.Muted,
+                                )
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            ComicButton(
+                                text = "BERSIHKAN RESIDU",
+                                onClick = {
+                                    val freed = clearAllDownloadedFiles(platformContext)
+                                    downloadFilesSize = getDownloadedFilesSize(platformContext)
+                                    cleanedBytesNotice = "${formatByteSize(freed)} berkas installer berhasil dibersihkan!"
+                                },
+                                enabled = downloadFilesSize > 0L,
+                                variant = ComicButtonVariant.DANGER,
+                                shadowOffset = 2.dp,
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(visible = cleanedBytesNotice != null, enter = fadeIn(), exit = fadeOut()) {
+                        ComicNotice(
+                            text = cleanedBytesNotice.orEmpty(),
+                            type = ComicNoticeType.SUCCESS,
+                            onDismiss = { cleanedBytesNotice = null },
+                        )
+                    }
+
+                    ComicDivider(dashed = true)
+
+                    // Item B: Pembersih Cache Katalog
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = "CACHE KATALOG APLIKASI",
+                                style = NyawitType.Subtitle,
+                                color = c.Text,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                text = "Menyimpan data daftar aplikasi dan metadata dari server repositori.",
+                                style = NyawitType.Body,
+                                color = c.Muted,
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        ComicButton(
+                            text = NyawitStrings.SETTINGS_BTN_CLEAR_CACHE,
+                            onClick = {
+                                val success = clearCatalogCache(platformContext)
+                                if (success) {
+                                    cacheClearedNotice = true
+                                    onCatalogCacheCleared?.invoke()
+                                }
+                            },
+                            variant = ComicButtonVariant.SECONDARY,
+                            shadowOffset = 2.dp,
+                        )
+                    }
+
+                    AnimatedVisibility(visible = cacheClearedNotice, enter = fadeIn(), exit = fadeOut()) {
+                        ComicNotice(
+                            text = NyawitStrings.SETTINGS_CACHE_CLEARED,
+                            type = ComicNoticeType.SUCCESS,
+                            onDismiss = { cacheClearedNotice = false },
+                        )
+                    }
+                }
+            }
+
+            // Seksi: Efek Suara Retro Arcade
+            SettingsSectionCard(
+                title = "EFEK SUARA RETRO / ARCADE SFX",
+                description = "Efek suara mekanis 8-bit saat modul ditekan, D-Pad TV berpindah, dan aplikasi selesai dipasang.",
+                badge = if (settingsController.soundEffectsEnabled) "AKTIF // 8-BIT" else "SENYAP",
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Surface(
+                    ComicFilterChip(
+                        text = if (settingsController.soundEffectsEnabled) "EFEK SUARA: AKTIF" else "EFEK SUARA: SENYAP",
+                        selected = settingsController.soundEffectsEnabled,
                         onClick = {
-                            val success = clearCatalogCache(platformContext)
-                            if (success) {
-                                cacheClearedNotice = true
-                                onCatalogCacheCleared?.invoke()
-                            }
+                            val next = !settingsController.soundEffectsEnabled
+                            settingsController.updateSoundEffects(next)
+                            if (next) ComicSoundPlayer.play(ComicSound.SUCCESS)
                         },
-                        color = c.Danger.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.5.dp, c.Danger.copy(alpha = 0.55f)),
-                        modifier = Modifier.tvFocusHighlight(shape = RoundedCornerShape(8.dp), scale = 1.05f),
+                    )
+
+                    ComicButton(
+                        text = "TES SUARA!",
+                        onClick = {
+                            ComicSoundPlayer.play(ComicSound.SUCCESS)
+                        },
+                        variant = ComicButtonVariant.SECONDARY,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    )
+                }
+            }
+
+            // Seksi: Repositori / Katalog Kustom
+            var customUrlInput by remember(settingsController.customCatalogUrl) {
+                mutableStateOf(settingsController.customCatalogUrl)
+            }
+            var repoSavedNotice by remember { mutableStateOf(false) }
+
+            SettingsSectionCard(
+                title = "REPOSITORI KATALOG KUSTOM",
+                description = "URL endpoint JSON eksternal untuk menambahkan atau menyesuaikan daftar aplikasi komunitas.",
+                badge = if (settingsController.customCatalogUrl.isNotBlank()) "KUSTOM" else "OFFICIAL",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ComicSearchBar(
+                        query = customUrlInput,
+                        onQueryChange = { customUrlInput = it },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = NyawitStrings.SETTINGS_BTN_CLEAR_CACHE,
-                            style = NyawitType.Caption,
-                            color = c.Danger,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                            fontWeight = FontWeight.Bold,
+                        ComicButton(
+                            text = "SIMPAN REPO",
+                            onClick = {
+                                settingsController.updateCustomCatalog(customUrlInput)
+                                repoSavedNotice = true
+                                onCatalogCacheCleared?.invoke()
+                            },
+                            variant = ComicButtonVariant.PRIMARY,
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                        if (settingsController.customCatalogUrl.isNotBlank()) {
+                            ComicButton(
+                                text = "RESET KE DEFAULT",
+                                onClick = {
+                                    customUrlInput = ""
+                                    settingsController.updateCustomCatalog("")
+                                    repoSavedNotice = true
+                                    onCatalogCacheCleared?.invoke()
+                                },
+                                variant = ComicButtonVariant.SECONDARY,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+                    AnimatedVisibility(visible = repoSavedNotice, enter = fadeIn(), exit = fadeOut()) {
+                        ComicNotice(
+                            text = if (settingsController.customCatalogUrl.isNotBlank())
+                                "URL katalog kustom berhasil disimpan. Katalog akan dimuat ulang!"
+                            else "Katalog dikembalikan ke repositori resmi.",
+                            type = ComicNoticeType.SUCCESS,
+                            onDismiss = { repoSavedNotice = false },
                         )
                     }
+                }
+            }
 
-                    AnimatedVisibility(
-                        visible = cacheClearedNotice,
-                        enter = fadeIn(),
-                        exit = fadeOut(),
+            // Seksi: Integrasi Desktop (System Tray & Start on Boot)
+            if (currentAppPlatform() == AppPlatform.DESKTOP) {
+                SettingsSectionCard(
+                    title = "INTEGRASI DESKTOP // TRAY & STARTUP",
+                    description = "Konfigurasi jalannya launcher di background Windows/Linux.",
+                    badge = "DESKTOP PC",
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Surface(
-                            color = c.PrimaryMuted,
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, c.Primary.copy(alpha = 0.35f)),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                CheckIcon(Modifier.size(14.dp), color = c.Primary)
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = NyawitStrings.SETTINGS_CACHE_CLEARED,
-                                    style = NyawitType.Caption,
-                                    color = c.Primary,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            }
-                        }
+                        ComicFilterChip(
+                            text = if (settingsController.minimizeToTray) "MINIMIZE KE TRAY: AKTIF" else "MINIMIZE KE TRAY: NONAKTIF",
+                            selected = settingsController.minimizeToTray,
+                            onClick = {
+                                settingsController.updateMinimizeToTray(!settingsController.minimizeToTray)
+                            },
+                        )
+
+                        ComicFilterChip(
+                            text = if (settingsController.startOnBoot) "START ON BOOT: AKTIF" else "START ON BOOT: NONAKTIF",
+                            selected = settingsController.startOnBoot,
+                            onClick = {
+                                val next = !settingsController.startOnBoot
+                                settingsController.updateStartOnBoot(next)
+                            },
+                        )
                     }
                 }
             }
@@ -359,12 +559,10 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CheckIcon(Modifier.size(14.dp), color = c.Primary)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = NyawitStrings.SETTINGS_STORAGE_SAVED_NOTICE,
-                    style = NyawitType.Caption,
-                    color = c.Muted,
+                ComicBadge(
+                    text = "AUTO-SAVED // SISTEM TERSINKRONISASI",
+                    containerColor = c.SurfaceRaised,
+                    contentColor = c.Muted,
                 )
             }
         }
@@ -372,7 +570,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun ThemeModeCard(
+private fun ComicThemeCard(
     mode: ThemeMode,
     selected: Boolean,
     onClick: () -> Unit,
@@ -387,87 +585,106 @@ private fun ThemeModeCard(
         ThemeMode.NORDIC_LIGHT -> "Nordic Light"
     }
 
-    Surface(
-        onClick = onClick,
-        color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = if (selected) c.Primary else c.BorderHighlight,
-        ),
-        modifier = modifier.tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.04f),
+    val shadowOffset = if (selected) 3.dp else 1.5.dp
+    val shape = RoundedCornerShape(8.dp)
+
+    Box(
+        modifier = modifier
+            .padding(bottom = shadowOffset, end = shadowOffset)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
     ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Box(Modifier.size(13.dp).background(modeColors.Background, CircleShape).border(1.dp, c.Border, CircleShape))
-                    Box(Modifier.size(13.dp).background(modeColors.Surface, CircleShape).border(1.dp, c.Border, CircleShape))
-                    Box(Modifier.size(13.dp).background(modeColors.Primary, CircleShape))
+        // Shadow
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .offset(x = shadowOffset, y = shadowOffset)
+                .background(if (c.isDark) Color(0xFF000000) else Color(0xFF0F172A), shape)
+                .border(1.5.dp, if (selected) c.Primary else Color.Transparent, shape),
+        )
+
+        // Foreground
+        Box(
+            modifier = Modifier
+                .background(if (selected) c.PrimaryMuted else c.SurfaceRaised, shape)
+                .border(2.dp, if (selected) c.Primary else c.ComicInk, shape)
+                .padding(14.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Box(Modifier.size(13.dp).background(modeColors.Background, CircleShape).border(1.dp, c.ComicInk, CircleShape))
+                        Box(Modifier.size(13.dp).background(modeColors.Surface, CircleShape).border(1.dp, c.ComicInk, CircleShape))
+                        Box(Modifier.size(13.dp).background(modeColors.Primary, CircleShape))
+                    }
+                    if (selected) {
+                        CheckIcon(Modifier.size(14.dp), color = c.Primary)
+                    }
                 }
-                if (selected) {
-                    CheckIcon(Modifier.size(14.dp), color = c.Primary)
-                }
+                Text(
+                    text = modeName.uppercase(),
+                    style = NyawitType.Subtitle,
+                    color = if (selected) c.Primary else c.Text,
+                    fontWeight = FontWeight.Black,
+                )
             }
-            Text(
-                text = modeName,
-                style = NyawitType.Subtitle,
-                color = if (selected) c.Primary else c.Text,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            )
         }
     }
 }
 
 @Composable
-private fun LanguageCard(
+private fun ComicLanguageCard(
     lang: AppLanguage,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = LocalNyawitColors.current
-    Surface(
-        onClick = onClick,
-        color = if (selected) c.PrimaryMuted else c.SurfaceRaised,
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = if (selected) c.Primary else c.BorderHighlight,
-        ),
-        modifier = modifier.tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.04f),
+    val shadowOffset = if (selected) 3.dp else 1.5.dp
+    val shape = RoundedCornerShape(8.dp)
+
+    Box(
+        modifier = modifier
+            .padding(bottom = shadowOffset, end = shadowOffset)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
     ) {
+        // Shadow
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .offset(x = shadowOffset, y = shadowOffset)
+                .background(if (c.isDark) Color(0xFF000000) else Color(0xFF0F172A), shape)
+                .border(1.5.dp, if (selected) c.Primary else Color.Transparent, shape),
+        )
+
+        // Foreground
         Row(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier
+                .background(if (selected) c.PrimaryMuted else c.SurfaceRaised, shape)
+                .border(2.dp, if (selected) c.Primary else c.ComicInk, shape)
+                .padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    color = if (selected) c.Primary.copy(alpha = 0.2f) else c.SurfaceHighlight,
-                    shape = RoundedCornerShape(6.dp),
-                ) {
-                    Text(
-                        when (lang) {
-                            AppLanguage.ID -> "ID"
-                            AppLanguage.EN -> "EN"
-                        },
-                        style = NyawitType.Overline,
-                        color = if (selected) c.Primary else c.Muted,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                    )
-                }
+                ComicBadge(
+                    text = when (lang) {
+                        AppLanguage.ID -> "ID"
+                        AppLanguage.EN -> "EN"
+                    },
+                    containerColor = if (selected) c.Primary else c.SurfaceHighlight,
+                    contentColor = if (selected) c.OnPrimary else c.Muted,
+                )
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = lang.nativeName,
+                        text = lang.nativeName.uppercase(),
                         style = NyawitType.Subtitle,
                         color = if (selected) c.Primary else c.Text,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = FontWeight.Black,
                     )
                     Text(
                         text = lang.label,
@@ -487,6 +704,7 @@ private fun LanguageCard(
 private fun SettingsSectionCard(
     title: String,
     description: String,
+    badge: String? = null,
     content: @Composable () -> Unit,
 ) {
     val c = LocalNyawitColors.current
@@ -501,18 +719,31 @@ private fun SettingsSectionCard(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    text = title.uppercase(),
-                    style = NyawitType.Subtitle,
-                    color = c.Primary,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    text = description,
-                    style = NyawitType.Caption,
-                    color = c.Muted,
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title.uppercase(),
+                        style = NyawitType.Subtitle,
+                        color = c.Primary,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        text = description,
+                        style = NyawitType.Caption,
+                        color = c.Muted,
+                    )
+                }
+                if (badge != null) {
+                    ComicBadge(
+                        text = badge,
+                        containerColor = c.SurfaceRaised,
+                        contentColor = c.Muted,
+                    )
+                }
             }
             content()
         }

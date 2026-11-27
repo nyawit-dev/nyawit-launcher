@@ -168,7 +168,21 @@ data class GithubRepo(
 data class GithubAsset(val name: String, @SerialName("browser_download_url") val downloadUrl: String)
 
 @Serializable
-data class GithubRelease(@SerialName("tag_name") val tag: String = "", val assets: List<GithubAsset> = emptyList())
+data class GithubRelease(
+    @SerialName("tag_name") val tag: String = "",
+    val name: String? = null,
+    val body: String? = null,
+    @SerialName("published_at") val publishedAt: String? = null,
+    val assets: List<GithubAsset> = emptyList(),
+)
+
+@Serializable
+data class ReleaseDetails(
+    val tag: String,
+    val title: String,
+    val changelog: String,
+    val publishedAt: String = "",
+)
 
 data class CatalogApp(
     val fullName: String,
@@ -285,6 +299,7 @@ class GitHubCatalog(
     private val localCatalogJson: String? = null,
     /** Katalog bawaan yang dipakai bila GitHub dan cache tidak tersedia. */
     private val bundledCatalog: suspend () -> String? = { null },
+    private val customCatalogUrlProvider: () -> String? = { null },
     private val platformContext: Any? = null,
     private val client: HttpClient = HttpClient {
         install(ContentNegotiation) { json(catalogJson) }
@@ -300,9 +315,10 @@ class GitHubCatalog(
     } catch (_: Throwable) { emptyList() }
 
     suspend fun loadApps(): List<CatalogApp> {
-        // 1) Unduh dari GitHub. 2) Simpan ke cache. 3) Saat offline baca cache.
+        val targetUrl = customCatalogUrlProvider()?.takeIf { it.isNotBlank() } ?: CatalogSources.CONFIG_URL
+        // 1) Unduh dari GitHub atau Custom Repo. 2) Simpan ke cache. 3) Saat offline baca cache.
         val remoteJson = try {
-            client.get(CatalogSources.CONFIG_URL).body<String>().takeIf { it.isNotBlank() }
+            client.get(targetUrl).body<String>().takeIf { it.isNotBlank() }
         } catch (_: Throwable) {
             null
         }
@@ -388,8 +404,29 @@ class GitHubCatalog(
     }
 
     private val releaseTagCache = mutableMapOf<String, Pair<String?, TimeSource.Monotonic.ValueTimeMark>>()
+    private val releaseInfoCache = mutableMapOf<String, Pair<ReleaseDetails?, TimeSource.Monotonic.ValueTimeMark>>()
 
     fun close() { client.close() }
+
+    suspend fun latestReleaseInfo(fullName: String, forceRefresh: Boolean = false): ReleaseDetails? {
+        val cached = releaseInfoCache[fullName]
+        if (!forceRefresh && cached != null && cached.second.elapsedNow() < 5.minutes) {
+            return cached.first
+        }
+        val details = try {
+            val release: GithubRelease = client.get("https://api.github.com/repos/$fullName/releases/latest").body()
+            ReleaseDetails(
+                tag = release.tag,
+                title = release.name?.ifBlank { release.tag } ?: release.tag,
+                changelog = release.body.orEmpty().trim(),
+                publishedAt = release.publishedAt.orEmpty(),
+            )
+        } catch (_: Throwable) {
+            null
+        }
+        releaseInfoCache[fullName] = details to TimeSource.Monotonic.markNow()
+        return details
+    }
 
     suspend fun latestReleaseTag(fullName: String, forceRefresh: Boolean = false): String? {
         val cached = releaseTagCache[fullName]

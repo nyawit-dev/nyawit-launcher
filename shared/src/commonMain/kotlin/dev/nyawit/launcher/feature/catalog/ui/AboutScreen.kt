@@ -32,6 +32,9 @@ import dev.nyawit.launcher.BuildConfig
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicArcadeIllustration
 import dev.nyawit.launcher.core.ui.ComicBadge
+import dev.nyawit.launcher.core.ui.ComicButton
+import dev.nyawit.launcher.core.ui.ComicButtonVariant
+import dev.nyawit.launcher.core.ui.ComicDivider
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
 import dev.nyawit.launcher.core.ui.ComicPanel
 import dev.nyawit.launcher.core.ui.NyawitStrings
@@ -115,27 +118,12 @@ fun AboutScreen(
                                 borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
                             )
                             if (onBack != null) {
-                                Surface(
+                                ComicButton(
+                                    text = "KEMBALI",
                                     onClick = onBack,
-                                    color = c.SurfaceRaised,
-                                    shape = RoundedCornerShape(8.dp),
-                                    border = BorderStroke(1.5.dp, c.BorderHighlight),
-                                    modifier = Modifier.tvFocusHighlight(shape = RoundedCornerShape(8.dp), scale = 1.05f),
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        Text("←", color = c.Primary, fontWeight = FontWeight.Black)
-                                        Text(
-                                            "KEMBALI",
-                                            style = NyawitType.Caption,
-                                            color = c.Text,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                }
+                                    variant = ComicButtonVariant.SECONDARY,
+                                    shadowOffset = 2.dp,
+                                )
                             }
                         }
                     }
@@ -230,19 +218,12 @@ fun AboutScreen(
                             }
                         }
 
-                        Button(
+                        ComicButton(
+                            text = NyawitStrings.SETTINGS_BTN_OPEN,
                             onClick = onOpenSettings,
-                            colors = ButtonDefaults.buttonColors(containerColor = c.Primary, contentColor = c.OnPrimary),
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(2.dp, c.BorderHighlight),
-                            modifier = Modifier.tvFocusHighlight(RoundedCornerShape(6.dp), 1.05f),
-                        ) {
-                            Text(
-                                "${NyawitStrings.SETTINGS_BTN_OPEN.uppercase()} ➔",
-                                style = NyawitType.Caption,
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
+                            variant = ComicButtonVariant.PRIMARY,
+                            shadowOffset = 2.dp,
+                        )
                     }
                 }
             }
@@ -341,13 +322,7 @@ private fun MetaRow(label: String, value: String) {
 
 @Composable
 private fun MetaDivider() {
-    val c = LocalNyawitColors.current
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(1.5.dp)
-            .background(c.BorderHighlight.copy(alpha = 0.5f)),
-    )
+    ComicDivider(dashed = true)
 }
 
 @Composable

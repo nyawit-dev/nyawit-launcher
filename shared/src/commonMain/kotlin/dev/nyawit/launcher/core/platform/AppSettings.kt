@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import dev.nyawit.launcher.core.ui.AppLanguage
+import dev.nyawit.launcher.core.ui.ComicSoundPlayer
 import dev.nyawit.launcher.core.ui.LanguageController
 import dev.nyawit.launcher.core.ui.ScalePreference
 import dev.nyawit.launcher.theme.ThemeController
@@ -19,6 +20,12 @@ data class LauncherSettingsData(
     val language: String = AppLanguage.ID.name,
     val scalePreference: String = ScalePreference.AUTO.name,
     val autoCheckUpdates: Boolean = true,
+    val favorites: List<String> = emptyList(),
+    val recentlyUsed: List<String> = emptyList(),
+    val soundEffectsEnabled: Boolean = true,
+    val customCatalogUrl: String = "",
+    val minimizeToTray: Boolean = true,
+    val startOnBoot: Boolean = false,
 )
 
 expect fun readLauncherSettings(platformContext: Any?): String?
@@ -38,8 +45,27 @@ class SettingsController(
     var autoCheckUpdates by mutableStateOf(true)
         private set
 
+    var favorites by mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    var recentlyUsed by mutableStateOf<List<String>>(emptyList())
+        private set
+
+    var soundEffectsEnabled by mutableStateOf(true)
+        private set
+
+    var customCatalogUrl by mutableStateOf("")
+        private set
+
+    var minimizeToTray by mutableStateOf(true)
+        private set
+
+    var startOnBoot by mutableStateOf(false)
+        private set
+
     init {
         load()
+        ComicSoundPlayer.enabled = soundEffectsEnabled
         themeController.onModeChanged = { save() }
         languageController.onLanguageChanged = { save() }
     }
@@ -58,6 +84,13 @@ class SettingsController(
             }
             scalePreference = ScalePreference.fromKey(data.scalePreference)
             autoCheckUpdates = data.autoCheckUpdates
+            favorites = data.favorites.toSet()
+            recentlyUsed = data.recentlyUsed
+            soundEffectsEnabled = data.soundEffectsEnabled
+            ComicSoundPlayer.enabled = data.soundEffectsEnabled
+            customCatalogUrl = data.customCatalogUrl
+            minimizeToTray = data.minimizeToTray
+            startOnBoot = data.startOnBoot
         } catch (_: Throwable) {
             // Fallback ke default bila terjadi korupsi file konfigurasi
         }
@@ -70,9 +103,31 @@ class SettingsController(
                 language = languageController.language.name,
                 scalePreference = scalePreference.name,
                 autoCheckUpdates = autoCheckUpdates,
+                favorites = favorites.toList(),
+                recentlyUsed = recentlyUsed,
+                soundEffectsEnabled = soundEffectsEnabled,
+                customCatalogUrl = customCatalogUrl,
+                minimizeToTray = minimizeToTray,
+                startOnBoot = startOnBoot,
             )
             writeLauncherSettings(json.encodeToString(data), platformContext)
         } catch (_: Throwable) {}
+    }
+
+    fun isFavorite(packageName: String): Boolean = favorites.contains(packageName)
+
+    fun toggleFavorite(packageName: String) {
+        favorites = if (favorites.contains(packageName)) {
+            favorites - packageName
+        } else {
+            favorites + packageName
+        }
+        save()
+    }
+
+    fun markUsed(packageName: String) {
+        recentlyUsed = (listOf(packageName) + (recentlyUsed - packageName)).take(12)
+        save()
     }
 
     fun setTheme(mode: ThemeMode) {
@@ -92,6 +147,27 @@ class SettingsController(
 
     fun setAutoCheck(enabled: Boolean) {
         autoCheckUpdates = enabled
+        save()
+    }
+
+    fun updateSoundEffects(enabled: Boolean) {
+        soundEffectsEnabled = enabled
+        ComicSoundPlayer.enabled = enabled
+        save()
+    }
+
+    fun updateCustomCatalog(url: String) {
+        customCatalogUrl = url.trim()
+        save()
+    }
+
+    fun updateMinimizeToTray(enabled: Boolean) {
+        minimizeToTray = enabled
+        save()
+    }
+
+    fun updateStartOnBoot(enabled: Boolean) {
+        startOnBoot = enabled
         save()
     }
 }

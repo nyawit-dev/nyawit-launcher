@@ -149,7 +149,10 @@ fun ComicButton(
                     interactionSource = interactionSource,
                     indication = null,
                     enabled = isEffectivelyEnabled,
-                    onClick = onClick,
+                    onClick = {
+                        ComicSoundPlayer.play(ComicSound.CLICK)
+                        onClick()
+                    },
                 )
                 .padding(contentPadding)
                 .defaultMinSize(minHeight = 42.dp),
@@ -283,7 +286,10 @@ fun ComicIconButton(
                     interactionSource = interactionSource,
                     indication = null,
                     enabled = enabled,
-                    onClick = onClick,
+                    onClick = {
+                        ComicSoundPlayer.play(ComicSound.CLICK)
+                        onClick()
+                    },
                 ),
             contentAlignment = Alignment.Center,
         ) {

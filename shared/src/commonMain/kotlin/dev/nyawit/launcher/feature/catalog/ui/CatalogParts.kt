@@ -136,6 +136,89 @@ fun CatalogSearchBar(query: String, onQuery: (String) -> Unit, focusRequester: F
     )
 }
 
+enum class CatalogStatusFilter(val label: String) {
+    ALL("SEMUA"),
+    FAVORITES("FAVORIT"),
+    INSTALLED("TERPASANG"),
+    UPDATE("ADA UPDATE"),
+}
+
+enum class CatalogSortOrder(val label: String) {
+    FAVORITES_FIRST("FAVORIT UTAMA"),
+    A_TO_Z("A ➔ Z"),
+    Z_TO_A("Z ➔ A"),
+    CATEGORY("KATEGORI"),
+    UPDATE_FIRST("PRIORITAS UPDATE"),
+}
+
+@Composable
+fun QuickFilterAndSortRow(
+    statusFilter: CatalogStatusFilter,
+    onStatusFilterChange: (CatalogStatusFilter) -> Unit,
+    sortOrder: CatalogSortOrder,
+    onSortOrderChange: (CatalogSortOrder) -> Unit,
+    installedCount: Int,
+    updateCount: Int,
+    favoriteCount: Int = 0,
+    modifier: Modifier = Modifier,
+) {
+    val c = LocalNyawitColors.current
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Quick Status Filters
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ComicFilterChip(
+                text = "SEMUA",
+                selected = statusFilter == CatalogStatusFilter.ALL,
+                onClick = { onStatusFilterChange(CatalogStatusFilter.ALL) },
+            )
+            ComicFilterChip(
+                text = "★ FAVORIT",
+                selected = statusFilter == CatalogStatusFilter.FAVORITES,
+                count = if (favoriteCount > 0) favoriteCount else null,
+                onClick = { onStatusFilterChange(CatalogStatusFilter.FAVORITES) },
+            )
+            ComicFilterChip(
+                text = "TERPASANG",
+                selected = statusFilter == CatalogStatusFilter.INSTALLED,
+                count = installedCount,
+                onClick = { onStatusFilterChange(CatalogStatusFilter.INSTALLED) },
+            )
+            if (updateCount > 0) {
+                ComicFilterChip(
+                    text = "ADA UPDATE",
+                    selected = statusFilter == CatalogStatusFilter.UPDATE,
+                    count = updateCount,
+                    onClick = { onStatusFilterChange(CatalogStatusFilter.UPDATE) },
+                )
+            }
+        }
+
+        // Sort Order Selector Toggle
+        ComicBadge(
+            text = "SORT: ${sortOrder.label}",
+            containerColor = c.SurfaceRaised,
+            contentColor = c.Primary,
+            modifier = Modifier.clickable {
+                val next = when (sortOrder) {
+                    CatalogSortOrder.FAVORITES_FIRST -> CatalogSortOrder.A_TO_Z
+                    CatalogSortOrder.A_TO_Z -> CatalogSortOrder.Z_TO_A
+                    CatalogSortOrder.Z_TO_A -> CatalogSortOrder.UPDATE_FIRST
+                    CatalogSortOrder.UPDATE_FIRST -> CatalogSortOrder.CATEGORY
+                    CatalogSortOrder.CATEGORY -> CatalogSortOrder.FAVORITES_FIRST
+                }
+                onSortOrderChange(next)
+            },
+        )
+    }
+}
+
 @Composable
 fun CategoryFilterChips(
     categories: List<String>,
@@ -294,6 +377,8 @@ private fun AppPlatform.badgeLabel() = when (this) {
 fun FeaturedApp(
     app: CatalogApp,
     status: AppStatus,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
     onOpen: () -> Unit,
     onInstall: () -> Unit,
     onDetail: () -> Unit,
@@ -367,6 +452,15 @@ fun FeaturedApp(
                                 textColor = Color(0xFF0F172A),
                                 size = 28.dp,
                             )
+                            if (onToggleFavorite != null) {
+                                ComicBadge(
+                                    text = if (isFavorite) "★" else "☆",
+                                    containerColor = if (isFavorite) c.Warning else c.SurfaceRaised,
+                                    contentColor = if (isFavorite) c.OnWarning else c.Muted,
+                                    borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
+                                    modifier = Modifier.clickable { onToggleFavorite() },
+                                )
+                            }
                             Text(
                                 app.name,
                                 style = NyawitType.Subtitle,
@@ -453,6 +547,15 @@ fun FeaturedApp(
                         containerColor = c.Primary,
                         contentColor = c.OnPrimary,
                     )
+                    if (onToggleFavorite != null) {
+                        ComicBadge(
+                            text = if (isFavorite) "★ FAVORIT" else "☆ FAVORITKAN",
+                            containerColor = if (isFavorite) c.Warning else c.SurfaceRaised,
+                            contentColor = if (isFavorite) c.OnWarning else c.Muted,
+                            borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
+                            modifier = Modifier.clickable { onToggleFavorite() },
+                        )
+                    }
                 }
 
                 ComicBadge(

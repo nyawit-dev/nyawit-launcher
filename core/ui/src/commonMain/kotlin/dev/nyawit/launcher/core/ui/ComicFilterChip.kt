@@ -110,7 +110,10 @@ fun ComicFilterChip(
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
-                    onClick = onClick,
+                    onClick = {
+                        ComicSoundPlayer.play(ComicSound.POP)
+                        onClick()
+                    },
                 )
                 .padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,

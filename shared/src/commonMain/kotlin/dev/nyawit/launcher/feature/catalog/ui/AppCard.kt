@@ -79,6 +79,9 @@ fun AppCard(
     status: AppStatus,
     busy: Boolean,
     progress: Float? = null,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
     onDetail: (() -> Unit)? = null,
     onInstall: () -> Unit,
     onOpen: () -> Unit,
@@ -100,6 +103,7 @@ fun AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 2.dp, vertical = 2.dp)
+            .tvFocusHighlight(shape = RoundedCornerShape(10.dp), scale = 1.06f)
             .onFocusChanged { state -> isCardFocused = state.hasFocus }
             .focusProperties { canFocus = false }
             .clickable { if (status == AppStatus.INSTALLED) onOpen() else onInstall() },
@@ -138,18 +142,33 @@ fun AppCard(
         }
 
         Column(Modifier.padding(15.dp)) {
-            // Upper Bay: Comic Category Caption & State Badge
+            // Upper Bay: Comic Category Caption, Favorite Pin & State Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ComicBadge(
-                    text = app.category.uppercase(),
-                    containerColor = c.SurfaceHighlight,
-                    contentColor = c.Primary,
-                    borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    ComicBadge(
+                        text = app.category.uppercase(),
+                        containerColor = c.SurfaceHighlight,
+                        contentColor = c.Primary,
+                        borderColor = if (c.isDark) c.Primary.copy(alpha = 0.5f) else Color(0xFF0F172A),
+                    )
+
+                    if (onToggleFavorite != null) {
+                        ComicBadge(
+                            text = if (isFavorite) "★" else "☆",
+                            containerColor = if (isFavorite) c.Warning else c.SurfaceRaised,
+                            contentColor = if (isFavorite) c.OnWarning else c.Muted,
+                            borderColor = if (isFavorite) c.Warning else c.BorderHighlight,
+                            modifier = Modifier.clickable { onToggleFavorite() },
+                        )
+                    }
+                }
 
                 StatusBadge(status)
             }
@@ -266,6 +285,19 @@ fun AppCard(
                     isUpdate -> ComicButtonVariant.WARNING
                     isInstalled -> ComicButtonVariant.PRIMARY
                     else -> ComicButtonVariant.SECONDARY
+                }
+
+                if (busy && onCancel != null) {
+                    ComicButton(
+                        text = "BATALKAN",
+                        onClick = onCancel,
+                        variant = ComicButtonVariant.DANGER,
+                        contentPadding = PaddingValues(
+                            horizontal = responsiveScale.dp(12),
+                            vertical = responsiveScale.dp(8),
+                        ),
+                        textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                    )
                 }
 
                 ComicButton(

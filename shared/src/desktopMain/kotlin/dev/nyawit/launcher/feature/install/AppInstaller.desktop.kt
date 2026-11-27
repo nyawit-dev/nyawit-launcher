@@ -324,6 +324,35 @@ actual fun cleanupDownloadedFiles(platformContext: Any?) {
     } catch (_: Throwable) {}
 }
 
+actual fun getDownloadedFilesSize(platformContext: Any?): Long {
+    return try {
+        val dir = downloadDir()
+        val files = dir.listFiles() ?: return 0L
+        files.sumOf { if (it.isFile) it.length() else 0L }
+    } catch (_: Throwable) {
+        0L
+    }
+}
+
+actual fun clearAllDownloadedFiles(platformContext: Any?): Long {
+    return try {
+        val dir = downloadDir()
+        val files = dir.listFiles() ?: return 0L
+        var totalDeleted = 0L
+        for (file in files) {
+            if (file.isFile) {
+                val len = file.length()
+                if (file.delete()) {
+                    totalDeleted += len
+                }
+            }
+        }
+        totalDeleted
+    } catch (_: Throwable) {
+        0L
+    }
+}
+
 fun cleanupDownloadedInstallersForApp(displayName: String, packageName: String) {
     runCatching {
         val dir = downloadDir()
