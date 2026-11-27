@@ -105,3 +105,9 @@ actual fun launchInstalledApp(
         false
     }
 }
+
+actual fun createDesktopShortcut(
+    packageName: String,
+    displayName: String,
+    platformContext: Any?,
+): Boolean = false

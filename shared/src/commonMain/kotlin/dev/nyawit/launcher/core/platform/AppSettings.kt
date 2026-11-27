@@ -170,6 +170,48 @@ class SettingsController(
         startOnBoot = enabled
         save()
     }
+
+    fun exportSettings(): String = json.encodeToString(
+        LauncherSettingsData(
+            themeMode = themeController.mode.name,
+            language = languageController.language.name,
+            scalePreference = scalePreference.name,
+            autoCheckUpdates = autoCheckUpdates,
+            favorites = favorites.toList(),
+            recentlyUsed = recentlyUsed,
+            soundEffectsEnabled = soundEffectsEnabled,
+            customCatalogUrl = customCatalogUrl,
+            minimizeToTray = minimizeToTray,
+            startOnBoot = startOnBoot,
+        ),
+    )
+
+    fun importSettings(jsonString: String): Boolean {
+        return try {
+            val data = json.decodeFromString<LauncherSettingsData>(jsonString.trim())
+            val savedTheme = ThemeMode.entries.find { it.name.equals(data.themeMode, ignoreCase = true) }
+            if (savedTheme != null) {
+                themeController.set(savedTheme)
+            }
+            val savedLang = AppLanguage.entries.find { it.name.equals(data.language, ignoreCase = true) }
+            if (savedLang != null) {
+                languageController.set(savedLang)
+            }
+            scalePreference = ScalePreference.fromKey(data.scalePreference)
+            autoCheckUpdates = data.autoCheckUpdates
+            favorites = data.favorites.toSet()
+            recentlyUsed = data.recentlyUsed
+            soundEffectsEnabled = data.soundEffectsEnabled
+            ComicSoundPlayer.enabled = data.soundEffectsEnabled
+            customCatalogUrl = data.customCatalogUrl
+            minimizeToTray = data.minimizeToTray
+            startOnBoot = data.startOnBoot
+            save()
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
 }
 
 val LocalSettingsController = staticCompositionLocalOf<SettingsController> {

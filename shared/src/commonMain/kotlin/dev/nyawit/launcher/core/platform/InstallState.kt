@@ -14,3 +14,10 @@ expect fun launchInstalledApp(
 
 /** Alasan kegagalan `launchInstalledApp` terakhir, atau null bila berhasil. */
 expect fun lastLaunchError(): String?
+
+/** Membuat pintasan di Desktop (Windows / Linux) untuk aplikasi yang terpasang. */
+expect fun createDesktopShortcut(
+    packageName: String,
+    displayName: String,
+    platformContext: Any? = null,
+): Boolean

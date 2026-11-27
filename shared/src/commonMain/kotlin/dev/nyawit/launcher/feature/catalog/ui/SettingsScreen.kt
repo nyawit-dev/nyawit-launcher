@@ -52,6 +52,7 @@ import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicButton
 import dev.nyawit.launcher.core.ui.ComicButtonVariant
+import dev.nyawit.launcher.core.ui.ComicDialog
 import dev.nyawit.launcher.core.ui.ComicDivider
 import dev.nyawit.launcher.core.ui.ComicFilterChip
 import dev.nyawit.launcher.core.ui.ComicHalftonePattern
@@ -547,6 +548,139 @@ fun SettingsScreen(
                                 settingsController.updateStartOnBoot(next)
                             },
                         )
+                    }
+                }
+            }
+
+            // Seksi: Cadangkan & Pulihkan Pengaturan (Backup & Restore)
+            var showExportDialog by remember { mutableStateOf(false) }
+            var showImportDialog by remember { mutableStateOf(false) }
+            var importInputText by remember { mutableStateOf("") }
+            var restoreNotice by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+
+            SettingsSectionCard(
+                title = "CADANGKAN & PULIHKAN // BACKUP & RESTORE",
+                description = "Ekspor atau pulihkan seluruh preferensi, daftar aplikasi favorit, dan kustomisasi launcher dalam format JSON.",
+                badge = "DATA PENGGUNA",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ComicButton(
+                            text = "EKSPOR PENGATURAN",
+                            onClick = {
+                                showExportDialog = true
+                            },
+                            variant = ComicButtonVariant.SECONDARY,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        )
+
+                        ComicButton(
+                            text = "PULIHKAN PENGATURAN",
+                            onClick = {
+                                importInputText = ""
+                                showImportDialog = true
+                            },
+                            variant = ComicButtonVariant.PRIMARY,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                    }
+
+                    restoreNotice?.let { (success, msg) ->
+                        ComicNotice(
+                            text = msg,
+                            type = if (success) ComicNoticeType.SUCCESS else ComicNoticeType.DANGER,
+                            onDismiss = { restoreNotice = null },
+                        )
+                    }
+                }
+            }
+
+            if (showExportDialog) {
+                val exportedJson = remember { settingsController.exportSettings() }
+                ComicDialog(
+                    title = "KODE CADANGAN JSON",
+                    badgeText = "EKSPOR",
+                    onDismissRequest = { showExportDialog = false },
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Text(
+                            text = "Salin kode cadangan pengaturan Anda di bawah ini:",
+                            style = NyawitType.Body,
+                            color = c.Text,
+                        )
+                        ComicSearchBar(
+                            query = exportedJson,
+                            onQueryChange = {},
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            ComicButton(
+                                text = "SELESAI",
+                                onClick = { showExportDialog = false },
+                                variant = ComicButtonVariant.PRIMARY,
+                                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (showImportDialog) {
+                ComicDialog(
+                    title = "PULIHKAN PENGATURAN",
+                    badgeText = "IMPOR",
+                    onDismissRequest = { showImportDialog = false },
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Text(
+                            text = "Tempelkan kode cadangan JSON di bawah untuk memulihkan konfigurasi:",
+                            style = NyawitType.Body,
+                            color = c.Text,
+                        )
+                        ComicSearchBar(
+                            query = importInputText,
+                            onQueryChange = { importInputText = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                        ) {
+                            ComicButton(
+                                text = "BATAL",
+                                onClick = { showImportDialog = false },
+                                variant = ComicButtonVariant.SECONDARY,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            )
+                            ComicButton(
+                                text = "PULIHKAN SEKARANG",
+                                onClick = {
+                                    val ok = settingsController.importSettings(importInputText)
+                                    if (ok) {
+                                        restoreNotice = true to "Pengaturan dan favorit berhasil dipulihkan!"
+                                        showImportDialog = false
+                                        onCatalogCacheCleared?.invoke()
+                                    } else {
+                                        restoreNotice = false to "Gagal memulihkan: format JSON tidak sesuai."
+                                    }
+                                },
+                                variant = ComicButtonVariant.PRIMARY,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            )
+                        }
                     }
                 }
             }

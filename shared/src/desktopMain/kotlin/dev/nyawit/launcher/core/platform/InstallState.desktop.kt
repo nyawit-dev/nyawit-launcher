@@ -47,3 +47,43 @@ actual fun launchInstalledApp(
     DesktopLog.debug("Launch", "'$label' berhasil dibuka")
     return true
 }
+
+actual fun createDesktopShortcut(
+    packageName: String,
+    displayName: String,
+    platformContext: Any?,
+): Boolean {
+    val native = findNativeApp(displayName, packageName) ?: return false
+    val exePath = native.executable ?: return false
+    val exeFile = java.io.File(exePath)
+    if (!exeFile.exists()) return false
+
+    val os = System.getProperty("os.name", "").lowercase()
+    return try {
+        if ("win" in os) {
+            val desktopDir = System.getProperty("user.home") + "\\Desktop"
+            val lnkPath = "$desktopDir\\$displayName.lnk"
+            val workingDir = exeFile.parentFile?.absolutePath ?: ""
+            val psCommand = "\$ws = New-Object -ComObject WScript.Shell; \$s = \$ws.CreateShortcut('$lnkPath'); \$s.TargetPath = '$exePath'; \$s.WorkingDirectory = '$workingDir'; \$s.Save()"
+            ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", psCommand).start().waitFor() == 0
+        } else if ("linux" in os) {
+            val desktopDir = java.io.File(System.getProperty("user.home"), "Desktop")
+            if (desktopDir.exists()) {
+                val shortcutFile = java.io.File(desktopDir, "$displayName.desktop")
+                shortcutFile.writeText(
+                    """
+                    [Desktop Entry]
+                    Type=Application
+                    Name=$displayName
+                    Exec="$exePath"
+                    Terminal=false
+                    """.trimIndent(),
+                )
+                shortcutFile.setExecutable(true)
+                true
+            } else false
+        } else false
+    } catch (_: Throwable) {
+        false
+    }
+}

@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import dev.nyawit.launcher.core.platform.AppPlatform
+import dev.nyawit.launcher.core.platform.createDesktopShortcut
+import dev.nyawit.launcher.core.platform.currentAppPlatform
 import dev.nyawit.launcher.core.ui.ComicActionBurst
 import dev.nyawit.launcher.core.ui.ComicBadge
 import dev.nyawit.launcher.core.ui.ComicButton
@@ -324,6 +326,20 @@ fun AppDetailDialog(
                                 variant = ComicButtonVariant.DANGER,
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                                 textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Black),
+                            )
+                        }
+
+                        if (status == AppStatus.INSTALLED && currentAppPlatform() == AppPlatform.DESKTOP) {
+                            var shortcutNotice by remember { mutableStateOf<String?>(null) }
+                            ComicButton(
+                                text = shortcutNotice ?: "BUAT PINTASAN",
+                                onClick = {
+                                    val ok = createDesktopShortcut(app.packageName, app.name)
+                                    shortcutNotice = if (ok) "TERBUAT!" else "GAGAL"
+                                },
+                                variant = ComicButtonVariant.SECONDARY,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                textStyle = NyawitType.Caption.copy(fontWeight = FontWeight.Bold),
                             )
                         }
 
